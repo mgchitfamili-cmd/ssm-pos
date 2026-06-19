@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sales Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6d28d9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Sone Sone Mommy">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("service-worker.js").catch(function(){});});}</script>
+  <script>(function(){try{if((localStorage.getItem('ssm_role')||'staff')!=='admin'){location.replace('index.html');}}catch(e){}})();</script>
+  <style>
+    :root{
+      --bg:#f4f5f8; --surface:#ffffff; --line:#eaecf1; --line-2:#dcdfe7;
+      --ink:#15171c; --ink-2:#5a616e; --ink-3:#8b919e;
+      --brand:#6d28d9; --brand-ink:#5b21b6; --brand-tint:#f4f0fe; --brand-line:#e7defb;
+      --green:#15803d; --red:#dc2626; --amber:#b45309; --blue:#1d4ed8;
+      --r:16px; --r-sm:11px;
+      --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 18px rgba(16,24,40,.04);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; }
+    body{ font-family:system-ui,'Noto Sans Myanmar','Padauk','Myanmar Text','Segoe UI',sans-serif;
+      background:var(--bg); color:var(--ink); line-height:1.5; padding:0 0 30px 0; -webkit-text-size-adjust:100%; }
+
+    .top-bar{ position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:8px;
+      padding:11px 12px; margin:0; background:rgba(255,255,255,.85);
+      backdrop-filter:saturate(150%) blur(10px); -webkit-backdrop-filter:saturate(150%) blur(10px);
+      border-bottom:1px solid var(--line); }
+    #menuBtn{ background:none; border:none; font-size:23px; line-height:1; color:var(--ink);
+      cursor:pointer; padding:6px 9px; border-radius:10px; }
+    #menuBtn:active{ background:var(--line); }
+    .top-bar .top-title{ margin:0; font-size:16px !important; font-weight:700; letter-spacing:-.01em; }
+
+    h1{ font-size:15px; font-weight:800; color:var(--ink); margin:14px 14px 12px; letter-spacing:-.01em; }
+    h2{ font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-3); margin:20px 14px 9px; }
+
+    .period-row{ display:flex; gap:8px; margin:0 14px 14px; flex-wrap:wrap; }
+    .period-btn{ padding:8px 15px; border-radius:999px; border:1px solid var(--line-2); background:var(--surface);
+      font-size:13px; font-weight:600; cursor:pointer; color:var(--ink-2); font-family:inherit;
+      transition:background .12s, color .12s, border-color .12s; }
+    .period-btn.active{ background:var(--brand); color:#fff; border-color:var(--brand); }
+
+    .stat-row{ display:flex; gap:10px; margin:0 14px 10px; flex-wrap:wrap; }
+    .stat-card{ flex:1; min-width:140px; background:var(--surface); border:1px solid var(--line);
+      border-radius:14px; padding:14px; box-shadow:var(--shadow); }
+    .stat-card .label{ font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--ink-3); }
+    .stat-card .value{ font-size:22px; font-weight:800; margin-top:5px; letter-spacing:-.02em; color:var(--ink); }
+    .stat-card .sub{ font-size:11px; color:var(--ink-3); margin-top:3px; }
+
+    .green{ color:var(--green); } .blue{ color:var(--blue); } .orange{ color:var(--amber); }
+    .red{ color:var(--red); } .purple{ color:var(--brand-ink); }
+
+    /* hero top-staff card */
+    .hero-staff{ display:flex; align-items:center; gap:14px; margin:0 14px 14px;
+      background:linear-gradient(135deg, var(--brand-ink), var(--brand)); color:#fff;
+      border-radius:var(--r); padding:16px 18px; box-shadow:0 8px 22px rgba(109,40,217,.28); }
+    .hero-staff .hero-icon{ width:50px; height:50px; flex:none; border-radius:14px; display:flex;
+      align-items:center; justify-content:center; font-size:26px; background:rgba(255,255,255,.18); }
+    .hero-staff .hero-label{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:rgba(255,255,255,.82); }
+    .hero-staff .hero-value{ font-size:21px; font-weight:800; margin-top:2px; letter-spacing:-.01em; }
+    .hero-staff .hero-sub{ font-size:12px; color:rgba(255,255,255,.82); margin-top:2px; }
+
+    .box{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px;
+      margin:0 14px 12px; box-shadow:var(--shadow); }
+
+    .rank-item{ display:flex; justify-content:space-between; align-items:center; padding:10px 0;
+      border-bottom:1px solid var(--line); font-size:14px; }
+    .rank-item:last-child{ border-bottom:none; }
+    .rank-item .name{ color:var(--ink); }
+    .rank-item .count{ font-weight:700; color:var(--brand-ink); }
+
+    .bar-row{ margin:10px 0; }
+    .bar-label{ font-size:12px; color:var(--ink-3); margin-bottom:4px; display:flex; justify-content:space-between; }
+    .bar-track{ background:var(--line); border-radius:7px; height:24px; overflow:hidden; }
+    .bar-fill{ background:linear-gradient(90deg, var(--brand), #a78bfa); height:100%; border-radius:7px;
+      display:flex; align-items:center; justify-content:flex-end; padding-right:7px; color:#fff;
+      font-size:11px; font-weight:700; min-width:26px; box-sizing:border-box; }
+
+    .empty{ color:var(--ink-3); text-align:center; padding:20px; font-size:14px; }
+
+    /* slide menu */
+    #menuOverlay{ display:none; position:fixed; inset:0; background:rgba(15,17,25,.45); z-index:9998; }
+    #sideMenu{ position:fixed; top:0; left:-300px; width:284px; height:100%; background:var(--surface);
+      z-index:9999; transition:left .25s ease; overflow-y:auto; box-shadow:8px 0 34px rgba(16,24,40,.18); }
+    #sideMenu.open{ left:0; }
+    #menuOverlay.open{ display:block; }
+    .menu-header{ padding:26px 20px 22px; color:#fff; background:linear-gradient(135deg, var(--brand-ink), var(--brand)); }
+    .menu-header h2{ margin:0; font-size:18px; font-weight:800; letter-spacing:-.01em; color:#fff; text-transform:none; }
+    .menu-header p{ margin:5px 0 0; font-size:12px; color:rgba(255,255,255,.82); }
+    .menu-item{ display:flex; align-items:center; gap:13px; margin:5px 8px; padding:9px 11px;
+      border-radius:12px; color:var(--ink); cursor:pointer; font-size:15px; font-weight:500; }
+    .menu-item:first-of-type{ margin-top:9px; }
+    .menu-item:active{ background:var(--line); }
+    .menu-item.active{ background:var(--brand-tint); color:var(--brand-ink); font-weight:700; }
+    .menu-item .ic{ width:38px; height:38px; flex:none; border-radius:10px; display:flex; align-items:center;
+      justify-content:center; font-size:18px; background:var(--brand-tint); border:1px solid var(--brand-line); }
+    .menu-item.active .ic{ background:#fff; }
+
+    @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+    /* ── Dark mode (toggled via html.dark) ── */
+    html.dark{
+      --bg:#0f1116; --surface:#181b22; --line:#252a33; --line-2:#333a46;
+      --ink:#e8eaef; --ink-2:#aab1bd; --ink-3:#727a87;
+      --brand:#8b5cf6; --brand-ink:#c4b5fd; --brand-tint:#1d1930; --brand-line:#352c57;
+      --green:#22c55e; --green-tint:#10271a; --green-line:#1f4a32;
+      --red:#f87171; --red-tint:#2a1414; --red-line:#5c2b2b;
+      --amber:#e0b84e; --amber-tint:#272010; --amber-line:#544619;
+      --blue:#93b4fb; --blue-tint:#161d2e; --blue-line:#2c3a5a;
+      --teal:#5fd0e6;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
+    }
+    html.dark .top-bar{ background:rgba(18,20,26,.82); }
+    html.dark .checkout-bar{ background:rgba(18,20,26,.92); }
+    html.dark input:not([type=range]):not([type=checkbox]),
+    html.dark select, html.dark textarea,
+    html.dark #searchBox,
+    html.dark .field input, html.dark .field select,
+    html.dark .modal-box input, html.dark .modal-box select{ background:#1e222a; }
+    html.dark input[readonly]{ background:#15181e; color:var(--ink-3); }
+    html.dark .csel-btn{ background-color:#1e222a; }
+    html.dark table button{ background:#1e222a; }
+    html.dark #parcelAlert{ color:#7a5b00; }
+    html.dark .btn-edit, html.dark .btn-delete, html.dark .icon-btn,
+    html.dark .cart-del, html.dark .popup-cancel,
+    html.dark .filter-btn, html.dark .filter-row .chip{ background-color:#1e222a; }
+    html.dark .filter-btn.active, html.dark .filter-row .chip.active{ background:var(--brand); color:#fff; }
+    html.dark input:focus, html.dark select:focus, html.dark textarea:focus,
+    html.dark #searchBox:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
+    /* WIDE-SCREEN CAP — comfortable centered column on tablets */
+    @media (min-width:700px){
+      h1, h2, .period-row, .hero-staff, .stat-row, .box { max-width:640px; margin-left:auto; margin-right:auto; }
+    }
+    .dr-box{ padding:14px; }
+    .dr-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .dr-eyebrow{ font-size:13px; font-weight:700; color:var(--ink-2); }
+    .dr-count{ font-size:12px; font-weight:600; color:var(--ink-3); }
+    .date-range{ display:flex; align-items:flex-end; gap:8px; }
+    .date-range .dr-field{ flex:1; min-width:0; }
+    .date-range .dr-field label{ display:block; font-size:11px; font-weight:600; color:var(--ink-3); margin:0 0 4px 2px; }
+    .date-range input[type=date]{ width:100%; padding:9px 10px; font-size:13px; font-family:inherit; color:var(--ink);
+      background:var(--surface); border:1px solid var(--line-2); border-radius:10px; outline:none; -webkit-appearance:none; }
+    .date-range input[type=date]:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    .date-range .dr-clear{ flex:none; width:38px; height:38px; padding:0; border-radius:10px; background:var(--surface);
+      color:var(--ink-3); border:1px solid var(--line-2); font-size:15px; cursor:pointer; }
+  </style>
+</head>
+
+<body>
+
+  
+  <!-- Slide Menu -->
+  <div id="menuOverlay" onclick="closeMenu()"></div>
+  <div id="sideMenu">
+    <div class="menu-header">
+      <h2>Sone Sone Mommy</h2>
+      <p>POS System</p>
+    </div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း</div>
+    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
+    <div class="menu-item" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
+    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
+    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
+      <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+  </div>
+
+  <div class="top-bar">
+    <button id="menuBtn" onclick="openMenu()">☰</button>
+    <span class="top-title" style="font-size:18px;font-weight:bold;">စာရင်းချုပ်</span>
+  </div>
+  <h1>📊 Sales Report</h1>
+
+  <!-- Period -->
+  <div class="period-row">
+    <button class="period-btn active" data-p="today" onclick="setPeriod('today', this)">ဒီနေ့</button>
+    <button class="period-btn"        data-p="week"  onclick="setPeriod('week', this)">ဒီအပတ်</button>
+    <button class="period-btn"        data-p="month" onclick="setPeriod('month', this)">ဒီလ</button>
+    <button class="period-btn"        data-p="all"   onclick="setPeriod('all', this)">အကုန်</button>
+  </div>
+
+  <div class="box dr-box">
+    <div class="dr-head">
+      <span class="dr-eyebrow">Date range</span>
+      <span class="dr-count" id="rangeCount">0 sales in range</span>
+    </div>
+    <div class="date-range">
+      <div class="dr-field"><label>From</label><input type="date" id="repFrom" onchange="applyDateRange()"></div>
+      <div class="dr-field"><label>To</label><input type="date" id="repTo" onchange="applyDateRange()"></div>
+      <button class="dr-clear" onclick="clearRepRange()" aria-label="Clear">✕</button>
+    </div>
+  </div>
+
+  <!-- Top staff hero -->
+  <div class="hero-staff">
+    <div class="hero-icon">🏆</div>
+    <div>
+      <div class="hero-label">အဖွင့်အများဆုံး Staff</div>
+      <div class="hero-value" id="topStaffValue">—</div>
+      <div class="hero-sub" id="topStaffSub">data မရှိ</div>
+    </div>
+  </div>
+
+  <!-- Main Stats -->
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="label">ရောင်းရငွေ (Net)</div>
+      <div class="value green" id="totalSales">0</div>
+      <div class="sub" id="orderCount">0 orders</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">ပျှမ်းမျှ / order</div>
+      <div class="value blue" id="avgOrder">0</div>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="label">Delivered</div>
+      <div class="value green" id="deliveredCount">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Pending</div>
+      <div class="value orange" id="pendingCount">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">RTS</div>
+      <div class="value red" id="rtsCount">0</div>
+    </div>
+  </div>
+
+  <!-- Pending Parcel -->
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="label">📦 Parcel မထုတ်ရသေး</div>
+      <div class="value orange" id="parcelPending">0</div>
+      <div class="sub">ထုတ်ရန် ကျန်နေသော</div>
+    </div>
+  </div>
+
+  <!-- Payment breakdown -->
+  <h2>💵 Payment</h2>
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="label">COD</div>
+      <div class="value orange" id="codCount">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Prepaid</div>
+      <div class="value green" id="prepaidCount">0</div>
+      <div class="sub" id="prepaidAmount">0 ကျပ်</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">ပစ္စည်းဖိုးပဲ</div>
+      <div class="value purple" id="partialCount">0</div>
+    </div>
+  </div>
+
+  <!-- Top Products -->
+  <h2>📦 အရောင်းရဆုံး Products</h2>
+  <div class="box" id="topProducts"></div>
+
+  <!-- Staff -->
+  <h2>👤 Staff အလိုက် Order</h2>
+  <div class="box" id="staffStats"></div>
+
+  <!-- Delivery Service -->
+  <h2>🚚 Delivery Service အလိုက်</h2>
+  <div class="box" id="serviceStats"></div>
+
+  <!-- Daily chart -->
+  <h2>📈 နေ့စဉ် ရောင်းအား</h2>
+  <div class="box" id="dailyChart"></div>
+
+  <script>
+
+    let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+    let period = "today";
+
+    // ── Date helpers ──────────────────────────────────────────────
+    // payDate/orderDate မရှိရင် order index ကို အကုန်အဖြစ် ယူမယ်
+    function getOrderDate(sale) {
+      // orderDate သိမ်းထားရင် သုံး၊ မရှိရင် null
+      return sale.orderDate || null;
+    }
+
+    function _repVal(id){ var e = document.getElementById(id); return e ? e.value : ""; }
+    function _repDay(iso){ var d = new Date(iso); if (isNaN(d.getTime())) return ""; return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+    function inPeriod(sale) {
+      if (period === "custom") {
+        var ds0 = getOrderDate(sale); if (!ds0) return false;
+        var day = _repDay(ds0), from = _repVal("repFrom"), to = _repVal("repTo");
+        if (from && day < from) return false;
+        if (to && day > to) return false;
+        return true;
+      }
+      if (period === "all") return true;
+
+      let ds = getOrderDate(sale);
+      if (!ds) return period === "all"; // date မရှိရင် "အကုန်" မှာပဲ ပြ
+
+      let d = new Date(ds);
+      let now = new Date();
+
+      if (period === "today") {
+        return d.toLocaleDateString() === now.toLocaleDateString();
+      }
+      if (period === "week") {
+        let weekAgo = new Date(); weekAgo.setDate(now.getDate() - 7);
+        return d >= weekAgo;
+      }
+      if (period === "month") {
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }
+      return true;
+    }
+
+    function getNet(sale) {
+      let num = Number(String(sale.netTotal || "").replace(/[^0-9.-]/g, ""));
+      return isNaN(num) ? 0 : num;
+    }
+
+    // ── Set Period ────────────────────────────────────────────────
+    function setPeriod(p, btn) {
+      period = p;
+      var rf = document.getElementById("repFrom"), rt = document.getElementById("repTo");
+      if (rf) rf.value = ""; if (rt) rt.value = "";
+      document.querySelectorAll(".period-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      render();
+    }
+    function applyDateRange() {
+      var from = document.getElementById("repFrom").value, to = document.getElementById("repTo").value;
+      document.querySelectorAll(".period-btn").forEach(function (b) { b.classList.remove("active"); });
+      if (!from && !to) {
+        period = "all";
+        var ab = document.querySelector('.period-btn[data-p="all"]'); if (ab) ab.classList.add("active");
+      } else { period = "custom"; }
+      render();
+    }
+    function clearRepRange() {
+      var rf = document.getElementById("repFrom"), rt = document.getElementById("repTo");
+      if (rf) rf.value = ""; if (rt) rt.value = "";
+      applyDateRange();
+    }
+
+    // ── Render ────────────────────────────────────────────────────
+    function render() {
+      salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      let orders = salesHistory.filter(inPeriod);
+
+      // Main stats
+      let totalSales = 0;
+      orders.forEach(function (s) { totalSales += getNet(s); });
+      let orderCount = orders.length;
+      let avg = orderCount > 0 ? Math.round(totalSales / orderCount) : 0;
+
+      document.getElementById("totalSales").innerText = totalSales.toLocaleString();
+      document.getElementById("orderCount").innerText = orderCount + " orders";
+      document.getElementById("avgOrder").innerText   = avg.toLocaleString();
+
+      // Status counts
+      let delivered = 0, pending = 0, rts = 0;
+      orders.forEach(function (s) {
+        let st = s.deliveryStatus || "Pending";
+        if (st === "Delivered") delivered++;
+        else if (st === "RTS")  rts++;
+        else pending++;
+      });
+      document.getElementById("deliveredCount").innerText = delivered;
+      document.getElementById("pendingCount").innerText   = pending;
+      document.getElementById("rtsCount").innerText       = rts;
+
+      // Parcel pending (period အလိုက်)
+      let parcelPending = orders.filter(function (s) { return !s.deliveryParcel; }).length;
+      document.getElementById("parcelPending").innerText = parcelPending;
+
+      // Payment
+      let cod = 0, prepaid = 0, partial = 0, prepaidAmount = 0;
+      orders.forEach(function (s) {
+        let ps = s.payStatus || "COD";
+        if (ps === "Prepaid")      { prepaid++; prepaidAmount += Number(s.payAmount || 0); }
+        else if (ps === "Partial") { partial++; prepaidAmount += Number(s.payAmount || 0); }
+        else cod++;
+      });
+      document.getElementById("codCount").innerText      = cod;
+      document.getElementById("prepaidCount").innerText  = prepaid;
+      document.getElementById("partialCount").innerText  = partial;
+      document.getElementById("prepaidAmount").innerText = prepaidAmount.toLocaleString() + " ကျပ်";
+
+      // Top Products
+      let productMap = {};
+      orders.forEach(function (s) {
+        if (s.items) s.items.forEach(function (item) {
+          let name = item.product || "-";
+          productMap[name] = (productMap[name] || 0) + Number(item.qty || 0);
+        });
+      });
+      renderRanking("topProducts", productMap, "ခု");
+
+      // Staff
+      let staffMap = {};
+      orders.forEach(function (s) {
+        let name = s.staff || "(မရွေး)";
+        staffMap[name] = (staffMap[name] || 0) + 1;
+      });
+      renderRanking("staffStats", staffMap, "order");
+
+      // Delivery Service
+      let serviceMap = {};
+      orders.forEach(function (s) {
+        let name = s.deliveryService || "(မရွေး)";
+        serviceMap[name] = (serviceMap[name] || 0) + 1;
+      });
+      renderRanking("serviceStats", serviceMap, "order");
+
+      // Daily chart
+      renderDailyChart(orders);
+    }
+
+    // ── Render Ranking List ───────────────────────────────────────
+    function renderRanking(elemId, map, unit) {
+      let arr = Object.keys(map).map(function (k) { return { name: k, count: map[k] }; });
+      arr.sort(function (a, b) { return b.count - a.count; });
+
+      if (arr.length === 0) {
+        document.getElementById(elemId).innerHTML = `<p class="empty">data မရှိပါ</p>`;
+        return;
+      }
+
+      let html = "";
+      arr.forEach(function (item) {
+        html += `
+          <div class="rank-item">
+            <span class="name">${item.name}</span>
+            <span class="count">${item.count} ${unit}</span>
+          </div>`;
+      });
+      document.getElementById(elemId).innerHTML = html;
+    }
+
+    // ── Daily Chart ───────────────────────────────────────────────
+    function renderDailyChart(orders) {
+      let dayMap = {};
+      orders.forEach(function (s) {
+        let ds = getOrderDate(s);
+        let key = ds ? new Date(ds).toLocaleDateString() : "(date မရှိ)";
+        dayMap[key] = (dayMap[key] || 0) + getNet(s);
+      });
+
+      let arr = Object.keys(dayMap).map(function (k) { return { day: k, amount: dayMap[k] }; });
+
+      if (arr.length === 0) {
+        document.getElementById("dailyChart").innerHTML = `<p class="empty">data မရှိပါ</p>`;
+        return;
+      }
+
+      let max = Math.max.apply(null, arr.map(function (a) { return a.amount; }));
+
+      let html = "";
+      arr.forEach(function (item) {
+        let pct = max > 0 ? (item.amount / max * 100) : 0;
+        html += `
+          <div class="bar-row">
+            <div class="bar-label">
+              <span>${item.day}</span>
+              <span>${item.amount.toLocaleString()}</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${pct}%;">${item.amount.toLocaleString()}</div>
+            </div>
+          </div>`;
+      });
+      document.getElementById("dailyChart").innerHTML = html;
+    }
+
+    // ── Top staff (most receipts in period) ──
+    (function () {
+      if (typeof render !== "function") return;
+      var _orig = render;
+      render = function () {
+        _orig();
+        var sales = JSON.parse(localStorage.getItem("salesHistory")) || [];
+        var orders = sales.filter(inPeriod);
+        var rc = document.getElementById("rangeCount");
+        if (rc) rc.textContent = orders.length + " sales in range";
+        var map = {};
+        orders.forEach(function (s) { var n = s.staff || "(မရွေး)"; map[n] = (map[n] || 0) + 1; });
+        var top = Object.keys(map).map(function (k) { return { name: k, count: map[k] }; })
+                        .sort(function (a, b) { return b.count - a.count; })[0];
+        var v = document.getElementById("topStaffValue");
+        var sub = document.getElementById("topStaffSub");
+        if (v) {
+          if (top) { v.textContent = top.name; sub.textContent = top.count + " ဘောင်ချာ ဖွင့်ထား"; }
+          else { v.textContent = "—"; sub.textContent = "data မရှိ"; }
+        }
+      };
+      render();
+    })();
+
+    // ── Init ──────────────────────────────────────────────────────
+    render();
+
+  
+    // ── Slide Menu ──
+    function openMenu() {
+      document.getElementById("sideMenu").classList.add("open");
+      document.getElementById("menuOverlay").classList.add("open");
+    }
+    function closeMenu() {
+      document.getElementById("sideMenu").classList.remove("open");
+      document.getElementById("menuOverlay").classList.remove("open");
+    }
+    // active page highlight
+    (function () {
+      let path = location.pathname.split("/").pop() || "index.html";
+      document.querySelectorAll(".menu-item").forEach(function (m) {
+        if (m.dataset.page === path) m.classList.add("active");
+      });
+    })();
+
+  </script>
+  <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
+</body>
+</html>

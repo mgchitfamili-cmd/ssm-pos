@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sone Sone Mommy POS</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6d28d9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Sone Sone Mommy">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("service-worker.js").catch(function(){});});}</script>
+  <style>
+    :root{
+      --bg:#f4f5f8;
+      --surface:#ffffff;
+      --line:#eaecf1;
+      --line-2:#dcdfe7;
+      --ink:#15171c;
+      --ink-2:#5a616e;
+      --ink-3:#8b919e;
+      --brand:#6d28d9;
+      --brand-ink:#5b21b6;
+      --brand-tint:#f4f0fe;
+      --brand-line:#e7defb;
+      --green:#15803d;
+      --green-tint:#ecfaf1;
+      --green-line:#bfe9cd;
+      --red:#dc2626;
+      --red-line:#f3c5c5;
+      --amber-tint:#fff8e8;
+      --amber-line:#f3d488;
+      --amber-ink:#9a6b00;
+      --r:16px;
+      --r-sm:11px;
+      --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 18px rgba(16,24,40,.04);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; }
+    body{
+      font-family:system-ui,'Noto Sans Myanmar','Padauk','Myanmar Text','Segoe UI',sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      line-height:1.5;
+      padding:0 0 94px 0;
+      -webkit-text-size-adjust:100%;
+    }
+
+    /* ── App bar ── */
+    .top-bar{
+      position:sticky; top:0; z-index:50;
+      display:flex; align-items:center; gap:8px;
+      padding:11px 12px;
+      background:rgba(255,255,255,.85);
+      backdrop-filter:saturate(150%) blur(10px);
+      -webkit-backdrop-filter:saturate(150%) blur(10px);
+      border-bottom:1px solid var(--line);
+      margin:0;
+    }
+    #menuBtn{
+      background:none; border:none; font-size:23px; line-height:1; color:var(--ink);
+      cursor:pointer; padding:6px 9px; border-radius:10px;
+    }
+    #menuBtn:active{ background:var(--line); }
+    .top-bar h1{
+      margin:0; font-size:16px; font-weight:700; letter-spacing:-.01em;
+      flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    #orderNo{
+      margin:0; font-size:11.5px; font-weight:700; color:var(--brand-ink);
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+      padding:5px 11px; border-radius:999px; white-space:nowrap;
+    }
+    #orderNo:empty{ display:none; }
+
+    .wrap{ max-width:600px; margin:0 auto; padding:14px; }
+
+    /* ── Parcel alert ── */
+    #parcelAlert{
+      margin:0 0 14px 0; padding:11px 14px; border-radius:12px;
+      font-size:13px; font-weight:600; border:1px solid var(--amber-line);
+    }
+
+    /* ── Cards ── */
+    .card{
+      background:var(--surface); border:1px solid var(--line);
+      border-radius:var(--r); padding:16px; margin-bottom:14px; box-shadow:var(--shadow);
+    }
+    .eyebrow{
+      display:flex; align-items:center; gap:8px;
+      font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+      color:var(--ink-3); margin:0 0 14px 0;
+    }
+    .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--brand); flex:none; }
+
+    /* ── Fields ── */
+    .field{ margin:0 0 12px 0; }
+    .field:last-child{ margin-bottom:0; }
+    .lbl{
+      display:block; font-size:12.5px; font-weight:600; color:var(--ink-2);
+      margin:0 0 6px 2px;
+    }
+    .lbl .hint{ font-weight:500; color:var(--ink-3); font-size:11.5px; }
+
+    input:not([type=range]):not([type=checkbox]), select, textarea{
+      width:100%; padding:11px 12px; font-size:15px; line-height:1.45; color:var(--ink);
+      background:#fff; border:1px solid var(--line-2); border-radius:var(--r-sm);
+      font-family:inherit; outline:none; -webkit-appearance:none; appearance:none;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    select{
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%238b919e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 11px center; padding-right:38px;
+    }
+    input:focus, select:focus, textarea:focus{
+      border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13);
+    }
+    input[readonly]{ background:#f4f5f7; color:var(--ink-2); }
+    textarea{ min-height:62px; resize:vertical; }
+    ::placeholder{ color:var(--ink-3); }
+
+    .row{ display:flex; gap:10px; }
+    .row > *{ flex:1; min-width:0; }
+
+    /* ── Buttons ── */
+    button{
+      font-family:inherit; font-size:15px; font-weight:600; color:#fff;
+      background:var(--brand); border:none; border-radius:var(--r-sm);
+      padding:12px 16px; cursor:pointer; transition:filter .15s, transform .05s;
+    }
+    button:active{ transform:translateY(1px); }
+    button:disabled{ background:#c6b8e8; cursor:not-allowed; }
+    .btn-block{ width:100%; }
+    .add-btn{ width:100%; margin-top:2px; }
+
+    /* gift checkbox */
+    .gift-label{
+      display:flex; align-items:center; gap:11px; font-size:14px; font-weight:500;
+      color:var(--ink); cursor:pointer; padding:11px 12px; margin:0 0 12px 0;
+      background:var(--brand-tint); border:1px solid var(--brand-line); border-radius:var(--r-sm);
+    }
+    .gift-label input{ width:19px; height:19px; accent-color:var(--brand); margin:0; flex:none; }
+
+    /* ── Sale list (cart) ── */
+    .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -4px; }
+    table{ width:100%; border-collapse:collapse; font-size:13px; }
+    th{
+      text-align:left; font-size:10.5px; font-weight:700; letter-spacing:.04em;
+      text-transform:uppercase; color:var(--ink-3); white-space:nowrap;
+      padding:0 10px 10px; border-bottom:1px solid var(--line-2);
+    }
+    td{ padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+    tr:last-child td{ border-bottom:none; }
+
+    .cart-prod{ min-width:120px; }
+    .cart-name{ font-size:14px; font-weight:700; color:var(--ink); line-height:1.3; }
+    .cart-sub{ font-size:12px; color:var(--ink-3); margin-top:3px; line-height:1.3; }
+    th.col-num, .cart-price, .cart-qty, .cart-total{ text-align:right; white-space:nowrap; }
+    th.col-qty, .cart-qty{ text-align:center; }
+    .cart-price{ color:var(--ink-2); }
+    .cart-total{ color:var(--brand-ink); font-weight:800; font-size:14px; }
+    .cart-act{ text-align:right; width:1%; white-space:nowrap; }
+    .cart-del{
+      background:#fff; color:var(--red); border:1px solid var(--red-line);
+      width:36px; height:36px; padding:0; font-size:16px; border-radius:10px; line-height:1;
+    }
+    .cart-del:active{ background:#fef2f2; }
+
+    /* cart footer */
+    .cart-foot{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-top:14px; padding-top:13px; border-top:1px solid var(--line-2);
+    }
+    .cart-foot .ci{ font-size:13px; font-weight:600; color:var(--ink-2); }
+    .cart-foot .ci b{ color:var(--brand-ink); }
+    #grandTotal{ margin:0; font-size:18px; font-weight:800; color:var(--brand-ink); letter-spacing:-.01em; }
+    #discountShow{ margin:11px 2px 0; font-size:13.5px; font-weight:700; color:var(--red); text-align:right; }
+    #discountShow:empty{ display:none; }
+
+    /* discount box — subtle violet, on-brand */
+    .disc-box{
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+      border-radius:var(--r-sm); padding:13px; margin:0 0 12px 0;
+    }
+    .disc-box .lbl{ color:var(--brand-ink); }
+    #discountNote{ font-size:12px; color:var(--brand-ink); margin:9px 2px 0; font-weight:500; }
+    #discountNote:empty{ display:none; }
+
+    /* after-save */
+    #afterSaveActions{
+      display:none; background:var(--green-tint); border:1px solid var(--green-line);
+      border-radius:var(--r); padding:16px; margin-bottom:14px;
+    }
+    #afterSaveActions h3{ margin:0 0 13px; font-size:15px; color:var(--green); }
+    .save-actions{ display:flex; flex-direction:column; gap:9px; }
+    .btn-print{ background:var(--brand); width:100%; }
+    .btn-share{ background:var(--green); width:100%; }
+    .btn-new{ background:#fff; color:var(--red); border:1px solid var(--red-line); width:100%; }
+
+    /* ── Sticky checkout bar ── */
+    .checkout-bar{
+      position:fixed; left:0; right:0; bottom:0; z-index:40;
+      display:flex; align-items:center; gap:12px;
+      padding:11px 14px calc(11px + env(safe-area-inset-bottom,0px));
+      background:rgba(255,255,255,.93);
+      backdrop-filter:saturate(150%) blur(10px);
+      -webkit-backdrop-filter:saturate(150%) blur(10px);
+      border-top:1px solid var(--line);
+    }
+    .checkout-bar .net{ flex:1; min-width:0; }
+    .checkout-bar .net small{
+      display:block; font-size:10.5px; font-weight:700; letter-spacing:.06em;
+      text-transform:uppercase; color:var(--ink-3);
+    }
+    #netTotal{ margin:1px 0 0; font-size:19px; font-weight:800; letter-spacing:-.02em; white-space:nowrap; }
+    #saveBtn{ flex:none; padding:13px 24px; }
+
+    /* ── Slide menu (matches app, brand-accented) ── */
+    #menuOverlay{
+      display:none; position:fixed; inset:0; background:rgba(15,17,25,.45); z-index:9998;
+    }
+    #sideMenu{
+      position:fixed; top:0; left:-300px; width:284px; height:100%;
+      background:var(--surface); z-index:9999; transition:left .25s ease;
+      overflow-y:auto; box-shadow:8px 0 34px rgba(16,24,40,.18);
+    }
+    #sideMenu.open{ left:0; }
+    #menuOverlay.open{ display:block; }
+    .menu-header{
+      padding:26px 20px 22px; color:#fff;
+      background:linear-gradient(135deg, var(--brand-ink), var(--brand));
+    }
+    .menu-header h2{ margin:0; font-size:18px; font-weight:800; letter-spacing:-.01em; }
+    .menu-header p{ margin:5px 0 0; font-size:12px; color:rgba(255,255,255,.82); }
+    .menu-item{
+      display:flex; align-items:center; gap:13px;
+      margin:5px 8px; padding:9px 11px; border-radius:12px;
+      color:var(--ink); cursor:pointer; font-size:15px; font-weight:500;
+    }
+    .menu-item:first-of-type{ margin-top:9px; }
+    .menu-item:active{ background:var(--line); }
+    .menu-item.active{ background:var(--brand-tint); color:var(--brand-ink); font-weight:700; }
+    .menu-item .ic{
+      width:38px; height:38px; flex:none; border-radius:10px;
+      display:flex; align-items:center; justify-content:center; font-size:18px;
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+    }
+    .menu-item.active .ic{ background:#fff; }
+
+
+    /* Receipt preview — Share image အတွက်ပဲ၊ screen မှာ မပြ */
+    #receiptPreview{
+      position:absolute; left:-9999px; top:0; width:340px;
+      border:2px solid #000; padding:20px; border-radius:10px; background:#fff;
+      font-family:'Courier New',monospace;
+    }
+
+    @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+    /* ── Custom Popup (alert/confirm) ── */
+    .popup-overlay{
+      position:fixed; inset:0; z-index:10000; padding:24px;
+      display:none; align-items:center; justify-content:center;
+      background:rgba(15,17,25,.5);
+      backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+    }
+    .popup-overlay.show{ display:flex; }
+    .popup-card{
+      width:100%; max-width:320px; background:var(--surface);
+      border:1px solid var(--line); border-radius:18px; padding:22px 20px 18px;
+      box-shadow:0 22px 55px rgba(0,0,0,.3); text-align:center;
+      transform:translateY(10px) scale(.96); opacity:0;
+      transition:transform .18s ease, opacity .18s ease;
+    }
+    .popup-overlay.show .popup-card{ transform:none; opacity:1; }
+    .popup-icon{
+      width:48px; height:48px; margin:0 auto 13px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; font-size:24px;
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+    }
+    .popup-msg{ font-size:15px; font-weight:600; color:var(--ink); line-height:1.55; margin:0 0 18px; }
+    .popup-actions{ display:flex; gap:9px; }
+    .popup-actions button{ flex:1; }
+    .popup-cancel{ background:var(--surface); color:var(--ink-2); border:1px solid var(--line-2); }
+    /* ── Custom select (bottom sheet, replaces native picker) ── */
+    .csel-native{ display:none !important; }
+    .csel-btn{
+      width:100%; text-align:left; font-family:inherit; font-size:15px; font-weight:500;
+      color:var(--ink); cursor:pointer;
+      background-color:#fff;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%238b919e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 11px center;
+      border:1px solid var(--line-2); border-radius:var(--r-sm);
+      padding:11px 40px 11px 12px; line-height:1.45;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    .csel-btn.is-placeholder{ color:var(--ink-3); }
+    .csel-btn:active{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+
+    .sheet-overlay{
+      position:fixed; inset:0; z-index:9000; display:none;
+      background:rgba(15,17,25,.5);
+      backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+    }
+    .sheet-overlay.show{ display:block; }
+    .sheet{
+      position:fixed; left:0; right:0; bottom:0; z-index:9001;
+      background:var(--surface); border:1px solid var(--line); border-bottom:none;
+      border-top-left-radius:22px; border-top-right-radius:22px;
+      max-height:72vh; display:flex; flex-direction:column;
+      transform:translateY(101%); transition:transform .26s cubic-bezier(.32,.72,0,1);
+      padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -10px 40px rgba(0,0,0,.22);
+    }
+    .sheet.show{ transform:none; }
+    .sheet-grip{ width:40px; height:4px; border-radius:999px; background:var(--line-2); margin:10px auto 2px; flex:none; }
+    .sheet-title{
+      font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+      color:var(--ink-3); padding:8px 20px 10px; flex:none;
+    }
+    .sheet-list{ overflow-y:auto; -webkit-overflow-scrolling:touch; padding:2px 0 8px; }
+    .sheet-opt{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:15px 20px; font-size:15px; color:var(--ink); cursor:pointer;
+      border-top:1px solid var(--line);
+    }
+    .sheet-opt:first-child{ border-top:none; }
+    .sheet-opt:active{ background:var(--brand-tint); }
+    .sheet-opt.sel{ color:var(--brand-ink); font-weight:700; }
+    .sheet-opt .tick{ color:var(--brand); font-size:17px; opacity:0; }
+    .sheet-opt.sel .tick{ opacity:1; }
+
+    /* searchable sheet */
+    .sheet-search{ padding:4px 16px 10px; flex:none; }
+    .sheet-search input{ width:100%; }
+    .sheet-opt.custom{ color:var(--brand-ink); font-weight:600; }
+    .sheet-empty{ padding:20px; text-align:center; color:var(--ink-3); font-size:14px; }
+    /* ===== Dark mode (toggle via html.dark) ===== */
+    html.dark{
+      --bg:#0f1116; --surface:#181b22; --line:#252a33; --line-2:#333a46;
+      --ink:#e8eaef; --ink-2:#aab1bd; --ink-3:#727a87;
+      --brand:#8b5cf6; --brand-ink:#c4b5fd; --brand-tint:#1d1930; --brand-line:#352c57;
+      --green:#22c55e; --green-tint:#10271a; --green-line:#1f4a32;
+      --red:#f87171; --red-tint:#2a1414; --red-line:#5c2b2b;
+      --amber:#e0b84e; --amber-tint:#272010; --amber-line:#544619;
+      --blue:#93b4fb; --blue-tint:#172033; --blue-line:#2c3c5c;
+      --teal:#5fd0e6;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
+    }
+    html.dark .top-bar{ background:rgba(18,20,26,.82); }
+    html.dark .checkout-bar{ background:rgba(18,20,26,.92); }
+    html.dark input:not([type=range]):not([type=checkbox]),
+    html.dark select, html.dark textarea,
+    html.dark .field input, html.dark .field select,
+    html.dark .modal-box input, html.dark .modal-box select,
+    html.dark #searchBox, html.dark .csel-btn{ background:#1e222a; }
+    html.dark .csel-btn{ background-color:#1e222a; }
+    html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
+    html.dark #parcelAlert{ color:#7a5b00; }
+    html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
+    /* ── Live receipt preview + responsive form/preview layout ── */
+    @media (min-width:900px){
+      .layout{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:18px;
+        max-width:1000px; margin:0 auto; align-items:start; }
+      .layout .wrap{ max-width:none; margin:0; padding-left:0; padding-right:0; }
+      .preview-col{ position:sticky; top:64px; padding:14px 0; }
+    }
+    .preview-col{ padding:0 14px 8px; }
+    .rcpt-eyebrow{ display:flex; align-items:center; justify-content:center; gap:8px;
+      font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+      color:var(--ink-3); margin:0 0 10px; }
+    .rcpt-eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--brand); }
+    .rcpt{ width:300px; max-width:100%; margin:0 auto; background:#fff; color:#000;
+      padding:14px; border:1px solid var(--line-2); border-radius:12px;
+      font-family:'Courier New', monospace; font-size:11px; line-height:1.3; box-shadow:var(--shadow); }
+    .rcpt hr{ border:none; border-top:1px dashed #000; margin:5px 0; }
+    .rcpt .line{ display:flex; justify-content:space-between; margin:2px 0; }
+    .rcpt .mm{ font-family:Arial,sans-serif; }
+    .rcpt .town-mid{ font-family:Arial,sans-serif; font-size:14px; font-weight:bold; }
+    .rcpt .cus-mid{ font-family:Arial,sans-serif; font-size:13px; font-weight:bold; }
+    .rcpt .phone-clear{ font-weight:bold; font-size:12px; }
+    .rcpt .addr-mm{ font-family:Arial,sans-serif; font-size:10px; }
+    .rcpt .item-name{ font-weight:bold; margin-top:4px; }
+    .rcpt .item-sub{ display:flex; justify-content:space-between; font-size:10px; color:#333; }
+    .rcpt .item-remark{ font-size:10px; color:#000; margin-left:4px; }
+    .rcpt .net-box{ text-align:center; font-size:14px; font-weight:bold; border:1.5px solid #000; padding:5px; margin:5px 0; }
+    .rcpt .footer-mm{ font-family:Arial,sans-serif; text-align:center; font-size:11px; margin-top:6px; line-height:1.4; }
+    /* receipt-style editable cart */
+    .rcart{ margin-top:2px; }
+    .rcart-item{ display:flex; align-items:flex-start; gap:8px; padding:9px 0; border-bottom:1px dashed var(--line-2); }
+    .rcart-item:last-child{ border-bottom:none; }
+    .rcart-main{ flex:1; min-width:0; }
+    .rcart .item-name{ font-weight:700; font-size:14px; color:var(--ink); }
+    .rcart .item-sub{ display:flex; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--ink-2); margin-top:2px; }
+    .rcart .item-sub span:last-child{ font-weight:700; color:var(--brand-ink); white-space:nowrap; }
+    .rcart .item-remark{ font-size:12px; color:var(--ink-3); margin-top:2px; }
+    .rcart .cart-del{ flex:none; background:none; border:none; font-size:16px; cursor:pointer; padding:4px 2px; line-height:1; color:var(--red); }
+    .rcart-act{ display:flex; flex-direction:column; gap:2px; flex:none; }
+    .rcart-act .cart-edit{ background:none; border:none; font-size:15px; cursor:pointer; padding:3px 2px; line-height:1; }
+  </style>
+  <script>(function(){try{if(localStorage.getItem("ssmTheme")==="dark")document.documentElement.classList.add("dark");}catch(e){}})();</script>
+</head>
+
+<body>
+
+  <!-- Slide Menu -->
+  <div id="menuOverlay" onclick="closeMenu()"></div>
+  <div id="sideMenu">
+    <div class="menu-header">
+      <h2>Sone Sone Mommy</h2>
+      <p>POS System</p>
+    </div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း</div>
+    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
+    <div class="menu-item" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
+    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
+    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
+      <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+  </div>
+
+  <!-- App bar -->
+  <div class="top-bar no-print">
+    <button id="menuBtn" onclick="openMenu()">☰</button>
+    <h1>Sone Sone Mommy POS</h1>
+    <h3 id="orderNo"></h3>
+  </div>
+
+  <div class="layout">
+  <div class="wrap">
+
+    <h3 id="parcelAlert" class="no-print"></h3>
+
+    <div class="no-print">
+
+      <!-- Order info -->
+      <section class="card">
+        <p class="eyebrow"><span class="dot"></span>အော်ဒါ အချက်အလက်</p>
+
+        <div class="field">
+          <label class="lbl">Order လက်ခံသူ (Staff)</label>
+          <select id="staff">
+            <option value="">Select Staff</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="lbl">Customer အမည်</label>
+          <input id="name" placeholder="Customer Name">
+        </div>
+        <div class="field">
+          <label class="lbl">ဖုန်း</label>
+          <input id="phone" placeholder="Phone">
+        </div>
+        <div class="field">
+          <label class="lbl">လိပ်စာ</label>
+          <input id="address" placeholder="Address">
+        </div>
+        <div class="field">
+          <div class="row">
+            <div>
+              <label class="lbl">Township</label>
+              <input id="township" placeholder="Township ရွေးပါ">
+            </div>
+            <div>
+              <label class="lbl">Order App</label>
+              <select id="orderapp">
+                <option value="">Order App ရွေးပါ</option>
+                <option value="Facebook">Facebook</option>
+                <option value="Viber">Viber</option>
+                <option value="TikTok">TikTok</option>
+                <option value="Telegram">Telegram</option>
+                <option value="Phone">Phone</option>
+                <option value="ဆိုင်လာဝယ်">ဆိုင်လာဝယ်</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="lbl">Delivery Service</label>
+          <select id="deliveryService">
+            <option value="">Select Delivery</option>
+            <option value="Royal">Royal</option>
+            <option value="Ko Nyein Chan Aung">Ko Nyein Chan Aung</option>
+            <option value="Ninja Van">Ninja Van</option>
+            <option value="Own Rider">Own Rider</option>
+            <option value="အိမ်လာယူ">အိမ်လာယူ</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Add item -->
+      <section class="card">
+        <p class="eyebrow"><span class="dot"></span>ပစ္စည်း ထည့်ရန်</p>
+
+        <div class="field">
+          <label class="lbl">ပစ္စည်း</label>
+          <select id="product" onchange="productChanged()"></select>
+        </div>
+
+        <div class="field">
+          <label class="lbl">Sale Type</label>
+          <select id="saleType" onchange="saleTypeChanged()">
+            <option value="weight">Weight</option>
+            <option value="unit">Unit</option>
+          </select>
+        </div>
+
+        <label class="gift-label">
+          <input type="checkbox" id="isGift" onchange="giftChanged()">
+          🎁 လက်ဆောင် item (ဈေးနှုန်း မပါ)
+        </label>
+
+        <div class="field">
+          <div class="row">
+            <div id="sizeBox">
+              <label class="lbl">Size</label>
+              <select id="size" onchange="fillPrice()">
+                <option value="5">5 ကျပ်သား</option>
+                <option value="10">10 ကျပ်သား</option>
+                <option value="15">15 ကျပ်သား</option>
+                <option value="25">25 ကျပ်သား</option>
+                <option value="50">50 ကျပ်သား</option>
+                <option value="1viss">1 ပိဿာ</option>
+              </select>
+            </div>
+            <div id="unitBox" style="display:none;">
+              <label class="lbl">Unit ဈေး</label>
+              <select id="unitChoice" onchange="fillPrice()">
+                <option value="A">Unit A</option>
+                <option value="B">Unit B</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">ဈေးနှုန်း</label>
+              <input id="price" placeholder="Price" oninput="calculateItemTotal()" readonly>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="row">
+            <div>
+              <label class="lbl">အရေအတွက်</label>
+              <input id="qty" placeholder="Qty" oninput="calculateItemTotal()">
+            </div>
+            <div>
+              <label class="lbl">Total</label>
+              <input id="itemTotal" readonly>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="lbl">Remark</label>
+          <input id="remark" placeholder="Remark">
+        </div>
+
+        <button class="add-btn" onclick="addItem()">＋ Add Item</button>
+      </section>
+
+      <!-- Sale list -->
+      <section class="card">
+        <p class="eyebrow"><span class="dot"></span>ရောင်းရ စာရင်း</p>
+        <div id="saleTable" class="rcart"></div>
+        <div class="cart-foot">
+          <span class="ci">Total Items: <b id="cartCount">0</b></span>
+          <h3 id="grandTotal">Total : 0</h3>
+        </div>
+      </section>
+
+      <!-- Discount & payment -->
+      <section class="card">
+        <p class="eyebrow"><span class="dot"></span>လျှော့ဈေး & ပေးချေမှု</p>
+
+        <div class="disc-box">
+          <div class="row">
+            <div>
+              <label class="lbl">💸 Discount</label>
+              <select id="discountType" onchange="calculateNet()">
+                <option value="none">Discount မရှိ</option>
+                <option value="amount">Amount (ငွေပမာဏ)</option>
+                <option value="percent">Percent (%)</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">ပမာဏ</label>
+              <input id="discountValue" placeholder="0" oninput="calculateNet()">
+            </div>
+          </div>
+          <p id="discountNote"></p>
+        </div>
+
+        <div class="field">
+          <label class="lbl">Delivery Fee</label>
+          <input id="delivery" oninput="calculateNet()">
+        </div>
+        <div class="field">
+          <label class="lbl">Deposit</label>
+          <input id="deposit" oninput="calculateNet()">
+        </div>
+        <div class="field">
+          <label class="lbl">📝 မှတ်ချက်</label>
+          <textarea id="note" placeholder="မှတ်ချက် ရေးရန်..."></textarea>
+        </div>
+
+        <h3 id="discountShow"></h3>
+      </section>
+
+    </div>
+
+    <!-- After save -->
+    <div id="afterSaveActions" class="no-print">
+      <h3>✅ Receipt သိမ်းပြီးပါပြီ</h3>
+      <div class="save-actions">
+        <button class="btn-print" onclick="printReceipt()">🖨️ Print</button>
+        <button class="btn-share" onclick="shareReceipt()">📤 Share</button>
+        <button class="btn-new" onclick="newReceipt()">➕ New Receipt</button>
+      </div>
+    </div>
+
+  </div>
+
+    <aside class="preview-col no-print">
+      <div class="rcpt-eyebrow"><span class="dot"></span>Live Preview</div>
+      <div id="livePreview" class="rcpt"></div>
+    </aside>
+  </div>
+
+  <!-- Sticky checkout bar -->
+  <div class="checkout-bar no-print">
+    <div class="net">
+      <small>Grand Total</small>
+      <h2 id="netTotal">Grand Total : 0</h2>
+    </div>
+    <button id="saveBtn" onclick="saveReceipt()">💾 Save</button>
+  </div>
+
+  <!-- Receipt Preview (Share image အတွက်ပဲ၊ screen မှာ မပြ) -->
+  <div id="receiptPreview">
+    <h2 style="text-align:center;">Sone Sone Mommy</h2>
+    <p id="rp-orderNo"></p>
+    <p id="rp-date"></p>
+    <p id="rp-staff"></p>
+    <hr>
+    <p id="rp-customer"></p>
+    <p id="rp-phone"></p>
+    <p id="rp-address"></p>
+    <p id="rp-township"></p>
+    <p id="rp-orderApp"></p>
+    <p id="rp-deliveryService"></p>
+    <hr>
+    <div id="rp-items"></div>
+    <hr>
+    <p id="rp-grandTotal"></p>
+    <p id="rp-discount"></p>
+    <p id="rp-delivery"></p>
+    <p id="rp-deposit"></p>
+    <h3 id="rp-netTotal"></h3>
+  </div>
+
+
+    <script>
+
+    let grandTotal = 0;
+    let items      = [];
+    let savedData  = null;
+    let editIndex  = null;
+    let orderNo    = Number(localStorage.getItem("orderNo")) || 1;
+
+    document.getElementById("orderNo").innerHTML =
+      "Order No : SSM-" + String(orderNo).padStart(4, "0");
+
+    // ── Load Staff Dropdown ───────────────────────────────────────
+    function loadStaffDropdown() {
+      let staffList = JSON.parse(localStorage.getItem("staffList")) || [];
+      let html = '<option value="">Select Staff</option>';
+      staffList.forEach(function (s) {
+        html += `<option value="${s.name}">${s.name}</option>`;
+      });
+      document.getElementById("staff").innerHTML = html;
+    }
+
+    // ── Load Product Dropdown ─────────────────────────────────────
+    function loadProductsDropdown() {
+      let products = JSON.parse(localStorage.getItem("products")) || [];
+      let html = '<option value="">Select Product</option>';
+      products.forEach(function (p) {
+        html += '<option value="' + p.name + '">' + p.name + '</option>';
+      });
+      document.getElementById("product").innerHTML = html;
+    }
+
+    // ── Sale Type Changed (Weight / Unit box ပြောင်း) ─────────────
+    function saleTypeChanged() {
+      let saleType = document.getElementById("saleType").value;
+      document.getElementById("sizeBox").style.display = saleType === "weight" ? "block" : "none";
+      document.getElementById("unitBox").style.display = saleType === "unit"   ? "block" : "none";
+      fillPrice();
+    }
+    // ── Gift Changed ──────────────────────────────────────────────
+    function giftChanged() {
+      let isGift = document.getElementById("isGift").checked;
+      if (isGift) {
+        document.getElementById("price").value = 0;
+        calculateItemTotal();
+      } else {
+        fillPrice();
+      }
+    }
+
+    // ── Item Total ────────────────────────────────────────────────
+    function calculateItemTotal() {
+      let price = Number(document.getElementById("price").value);
+      let qty   = Number(document.getElementById("qty").value);
+      document.getElementById("itemTotal").value = price * qty;
+    }
+
+    // ── Fill Price ────────────────────────────────────────────────
+    function fillPrice() {
+      // လက်ဆောင်ဆို price 0
+      if (document.getElementById("isGift").checked) {
+        document.getElementById("price").value = 0;
+        calculateItemTotal();
+        return;
+      }
+
+      let products    = JSON.parse(localStorage.getItem("products")) || [];
+      let productName = document.getElementById("product").value;
+      let saleType    = document.getElementById("saleType").value;
+      let product     = products.find(function (p) { return p.name == productName; });
+
+      if (!product) return;
+
+      if (saleType == "unit") {
+        let choice = document.getElementById("unitChoice").value;
+        document.getElementById("price").value =
+          choice === "A" ? (product.unitPriceA || 0) : (product.unitPriceB || 0);
+        calculateItemTotal();
+        return;
+      }
+
+      // weight
+      let size = document.getElementById("size").value;
+      let priceMap = {
+        "5":     product.price5,
+        "10":    product.price10,
+        "15":    product.price15,
+        "25":    product.price25,
+        "50":    product.price50,
+        "1viss": product.price1viss
+      };
+      if (priceMap[size] !== undefined) {
+        document.getElementById("price").value = priceMap[size] || 0;
+      }
+      calculateItemTotal();
+    }
+
+    // ── Product Changed ───────────────────────────────────────────
+    function productChanged() {
+      let products    = JSON.parse(localStorage.getItem("products")) || [];
+      let productName = document.getElementById("product").value;
+      let product     = products.find(function (p) { return p.name == productName; });
+
+      if (!product) return;
+
+      let saleTypeEl = document.getElementById("saleType");
+
+      if (product.allowWeight && product.allowUnit) {
+        saleTypeEl.innerHTML = `
+          <option value="weight">Weight</option>
+          <option value="unit">Unit</option>`;
+        saleTypeEl.value = "weight";
+      } else if (product.allowWeight) {
+        saleTypeEl.innerHTML = `<option value="weight">Weight</option>`;
+      } else if (product.allowUnit) {
+        saleTypeEl.innerHTML = `<option value="unit">Unit</option>`;
+      }
+
+      saleTypeChanged();
+    }
+
+    // ── Add Item ──────────────────────────────────────────────────
+    function updateCartCount() {
+      var c = document.getElementById("cartCount");
+      if (c) c.textContent = items.length;
+    }
+
+    function addItem() {
+      let product  = document.getElementById("product").value;
+      let saleType = document.getElementById("saleType").value;
+      let isGift   = document.getElementById("isGift").checked;
+      let price    = Number(document.getElementById("price").value);
+      let qty      = Number(document.getElementById("qty").value);
+      let remark   = document.getElementById("remark").value;
+      let total    = Number(document.getElementById("itemTotal").value);
+
+      // Size / Unit label
+      let sizeLabel = "";
+      if (saleType === "weight") {
+        sizeLabel = document.getElementById("size").options[document.getElementById("size").selectedIndex].text;
+      } else {
+        sizeLabel = "Unit " + document.getElementById("unitChoice").value;
+      }
+
+      // Validation
+      if (!product) { alert("Product ရွေးပါ"); return; }
+      if (!qty)     { alert("Qty ထည့်ပါ");    return; }
+      if (!isGift && !price) { alert("Price မရှိပါ"); return; }
+
+      let item = {
+        id: Date.now() + Math.random(),
+        product, saleType, size: sizeLabel,
+        price, qty, remark, total,
+        isGift: isGift
+      };
+
+      items.push(item);
+      grandTotal += total;
+
+      let giftTag = isGift ? " 🎁" : "";
+
+      var _lbl = saleType === "weight" ? (sizeLabel + " | ") : (isGift ? "လက်ဆောင် | " : "");
+      document.getElementById("saleTable").innerHTML += `
+        <div class="rcart-item" data-id="${item.id}" data-total="${total}">
+          <div class="rcart-main">
+            <div class="item-name">${product}${giftTag}</div>
+            <div class="item-sub"><span>${_lbl}${qty} x ${price}</span><span>${total}</span></div>
+            ${remark ? `<div class="item-remark">→ ${remark}</div>` : ""}
+          </div>
+          <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">✏️</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">🗑️</button></span>
+        </div>`;
+      updateCartCount();
+
+      document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
+      calculateNet();
+
+      // Reset
+      document.getElementById("product").value   = "";
+      document.getElementById("qty").value       = "";
+      document.getElementById("price").value     = "";
+      document.getElementById("remark").value    = "";
+      document.getElementById("itemTotal").value = "";
+      document.getElementById("isGift").checked  = false;
+    }
+
+    // ── Edit Row (load back into form, remove row) ────
+    function editRow(btn) {
+      var row = btn.closest("[data-id]");
+      if (!row) return;
+      var id = String(row.dataset.id);
+      var it = items.find(function (x) { return String(x.id) === id; });
+      if (!it) return;
+
+      var prod = document.getElementById("product");
+      if (prod) { prod.value = it.product; if (typeof productChanged === "function") productChanged(); }
+
+      var st = document.getElementById("saleType");
+      if (st) { st.value = it.saleType; if (typeof saleTypeChanged === "function") saleTypeChanged(); }
+
+      if (it.saleType === "weight") {
+        var size = document.getElementById("size");
+        if (size) { for (var i = 0; i < size.options.length; i++) { if (size.options[i].text === it.size) { size.selectedIndex = i; break; } } }
+      } else {
+        var uc = document.getElementById("unitChoice");
+        if (uc) { uc.value = String(it.size || "").replace("Unit ", ""); }
+      }
+
+      var pr = document.getElementById("price");   if (pr) pr.value = it.price;
+      var q  = document.getElementById("qty");     if (q)  q.value  = it.qty;
+      var rm = document.getElementById("remark");  if (rm) rm.value = it.remark || "";
+      var g  = document.getElementById("isGift");  if (g)  g.checked = !!it.isGift;
+      if (typeof calculateItemTotal === "function") calculateItemTotal();
+
+      deleteRow(btn);   // remove the old row; user re-adds with Add Item
+      if (prod) prod.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    // ── Delete Row ────────────────────────────────────────────────
+    function deleteRow(btn) {
+      let row    = btn.closest("[data-id]");
+      let itemId = String(row.dataset.id);
+
+      items = items.filter(function (item) { return String(item.id) !== itemId; });
+
+      grandTotal -= Number(row.dataset.total || 0);
+      row.remove();
+      updateCartCount();
+
+      document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
+      calculateNet();
+    }
+
+    // ── Check if any unit item exists ─────────────────────────────
+    function hasUnitItem() {
+      return items.some(function (item) { return item.saleType === "unit"; });
+    }
+
+    // ── Calculate Net (Discount အပါအဝင်) ──────────────────────────
+    function calculateNet() {
+      let delivery = Number(document.getElementById("delivery").value);
+      let deposit  = Number(document.getElementById("deposit").value);
+      let discType = document.getElementById("discountType").value;
+      let discVal  = Number(document.getElementById("discountValue").value) || 0;
+
+      let discountAmount = 0;
+      let note = "";
+
+      if (discType === "amount") {
+        discountAmount = discVal;
+      } else if (discType === "percent") {
+        // % က unit item ပါမှ ခွင့်ပြု
+        if (hasUnitItem()) {
+          discountAmount = Math.round(grandTotal * discVal / 100);
+          note = discVal + "% = " + discountAmount + " ကျပ်";
+        } else {
+          discountAmount = 0;
+          note = "⚠️ % discount က Unit ရောင်းမှသာ ရပါတယ်";
+        }
+      }
+
+      document.getElementById("discountNote").innerText = note;
+
+      let discountShow = document.getElementById("discountShow");
+      if (discountAmount > 0) {
+        discountShow.innerText = "Discount : -" + discountAmount;
+      } else {
+        discountShow.innerText = "";
+      }
+
+      let net = grandTotal - discountAmount + delivery - deposit;
+      document.getElementById("netTotal").innerHTML = "Grand Total : " + net;
+    }
+
+    // ── Get Discount Amount (save အတွက်) ──────────────────────────
+    function getDiscountAmount() {
+      let discType = document.getElementById("discountType").value;
+      let discVal  = Number(document.getElementById("discountValue").value) || 0;
+
+      if (discType === "amount") return discVal;
+      if (discType === "percent" && hasUnitItem()) {
+        return Math.round(grandTotal * discVal / 100);
+      }
+      return 0;
+    }
+
+    // ── Save Receipt ──────────────────────────────────────────────
+    function saveReceipt() {
+      let discountAmount = getDiscountAmount();
+
+      savedData = {
+        orderNo:         window.editOrderNo || ("SSM-" + String(orderNo).padStart(4, "0")),
+        staff:           document.getElementById("staff").value,
+        customer:        document.getElementById("name").value,
+        phone:           document.getElementById("phone").value,
+        address:         document.getElementById("address").value,
+        township:        document.getElementById("township").value,
+        orderApp:        document.getElementById("orderapp").value,
+        items:           items,
+        grandTotal:      grandTotal,
+        discountType:    document.getElementById("discountType").value,
+        discountValue:   document.getElementById("discountValue").value,
+        discountAmount:  discountAmount,
+        delivery:        document.getElementById("delivery").value,
+        deliveryService: document.getElementById("deliveryService").value,
+        deliveryStatus:  "Pending",
+        deliveryCode:    "",
+        deliveryParcel:  false,
+        deliveryFeeReal: "",
+        charge:          "",
+        deliveryPhoto:   "",
+        deposit:         document.getElementById("deposit").value,
+        note:            document.getElementById("note").value,
+        netTotal:        document.getElementById("netTotal").innerText,
+        printed:         false,
+        orderDate:       (editIndex != null && JSON.parse(localStorage.getItem("salesHistory"))[editIndex] && JSON.parse(localStorage.getItem("salesHistory"))[editIndex].orderDate)
+                           ? JSON.parse(localStorage.getItem("salesHistory"))[editIndex].orderDate
+                           : new Date().toISOString()
+      };
+
+      let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      let isEditMode   = editIndex != null;
+
+      if (isEditMode) {
+        salesHistory[editIndex] = savedData;
+      } else {
+        salesHistory.push(savedData);
+      }
+
+      localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+
+      if (!isEditMode) {
+        orderNo++;
+        localStorage.setItem("orderNo", orderNo);
+      }
+
+      document.getElementById("saveBtn").disabled  = true;
+      document.getElementById("saveBtn").innerText = "✅ Saved";
+      document.getElementById("afterSaveActions").style.display = "block";
+
+      buildReceiptPreview(savedData);
+    }
+
+    // ── Build Receipt Preview ─────────────────────────────────────
+    function buildReceiptPreview(data) {
+      document.getElementById("rp-orderNo").innerText         = "Order No : " + data.orderNo;
+      document.getElementById("rp-date").innerText            = "Date : " + new Date().toLocaleDateString();
+      document.getElementById("rp-staff").innerText           = "လက်ခံသူ : " + (data.staff || "-");
+      document.getElementById("rp-customer").innerText        = "Customer : " + data.customer;
+      document.getElementById("rp-phone").innerText           = "Phone : " + data.phone;
+      document.getElementById("rp-address").innerText         = "Address : " + data.address;
+      document.getElementById("rp-township").innerText        = "Township : " + data.township;
+      document.getElementById("rp-orderApp").innerText        = "Order App : " + data.orderApp;
+      document.getElementById("rp-deliveryService").innerText = "Delivery : " + data.deliveryService;
+      document.getElementById("rp-grandTotal").innerText      = "Total : " + data.grandTotal;
+      document.getElementById("rp-delivery").innerText        = "Delivery Fee : " + data.delivery;
+      document.getElementById("rp-deposit").innerText         = "Deposit : " + data.deposit;
+      document.getElementById("rp-netTotal").innerText        = data.netTotal;
+
+      // Discount line
+      if (data.discountAmount > 0) {
+        document.getElementById("rp-discount").innerText = "Discount : -" + data.discountAmount;
+      } else {
+        document.getElementById("rp-discount").innerText = "";
+      }
+
+      let itemHtml = "";
+      data.items.forEach(function (item) {
+        let giftTag = item.isGift ? " 🎁(လက်ဆောင်)" : "";
+        itemHtml += `<p>${item.product}${giftTag} | ${item.size} | ${item.qty} x ${item.price} = ${item.total}</p>`;
+      });
+      document.getElementById("rp-items").innerHTML = itemHtml;
+
+    }
+
+    // ── Print ─────────────────────────────────────────────────────
+    function printReceipt() {
+      let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      let last = salesHistory.length - 1;
+      if (editIndex != null) last = editIndex;
+      if (salesHistory[last]) {
+        salesHistory[last].printed = true;
+        localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+        // print.html အတွက် data သိမ်းပြီး သွားမယ်
+        localStorage.setItem("printReceipt", JSON.stringify(salesHistory[last]));
+      }
+      location.href = "print.html";
+    }
+
+    // ── Share ─────────────────────────────────────────────────────
+    function shareReceipt() {
+      let preview = document.getElementById("receiptPreview");
+      html2canvas(preview).then(function (canvas) {
+        canvas.toBlob(function (blob) {
+          let file = new File([blob], "receipt.png", { type: "image/png" });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: "Receipt - " + savedData.orderNo });
+          } else {
+            let link = document.createElement("a");
+            link.href = canvas.toDataURL();
+            link.download = "receipt-" + savedData.orderNo + ".png";
+            link.click();
+            alert("Share API မရှိပါ။ Image ကို Download လုပ်ပေးလိုက်ပါတယ်။");
+          }
+        });
+      });
+    }
+
+    // ── New Receipt ───────────────────────────────────────────────
+    function newReceipt() {
+      location.href = "index.html";
+    }
+
+    // ── Load Edit Receipt ─────────────────────────────────────────
+    function loadEditReceipt() {
+      let idx = localStorage.getItem("editReceiptIndex");
+      if (idx == null) return;
+
+      localStorage.removeItem("editReceiptIndex");
+
+      let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      let receipt      = salesHistory[idx];
+      if (!receipt) return;
+
+      editIndex = idx;
+      window.editOrderNo = receipt.orderNo;
+
+      document.getElementById("staff").value           = receipt.staff           || "";
+      document.getElementById("name").value            = receipt.customer        || "";
+      document.getElementById("phone").value           = receipt.phone           || "";
+      document.getElementById("address").value         = receipt.address         || "";
+      document.getElementById("township").value        = receipt.township        || "";
+      document.getElementById("orderapp").value        = receipt.orderApp        || "";
+      document.getElementById("delivery").value        = receipt.delivery        || "";
+      document.getElementById("deliveryService").value = receipt.deliveryService || "";
+      document.getElementById("deposit").value         = receipt.deposit         || "";
+      document.getElementById("note").value            = receipt.note            || "";
+      document.getElementById("discountType").value    = receipt.discountType    || "none";
+      document.getElementById("discountValue").value   = receipt.discountValue   || "";
+
+      receipt.items.forEach(function (item) {
+        if (!item.id) item.id = Date.now() + Math.random();
+        items.push(item);
+        grandTotal += Number(item.total);
+
+        let giftTag = item.isGift ? " 🎁" : "";
+        var _lbl2 = (item.saleType === "weight") ? ((item.size || "") + " | ") : (item.isGift ? "လက်ဆောင် | " : "");
+        document.getElementById("saleTable").innerHTML += `
+          <div class="rcart-item" data-id="${item.id}" data-total="${item.total}">
+            <div class="rcart-main">
+              <div class="item-name">${item.product}${giftTag}</div>
+              <div class="item-sub"><span>${_lbl2}${item.qty} x ${item.price}</span><span>${item.total}</span></div>
+              ${item.remark ? `<div class="item-remark">→ ${item.remark}</div>` : ""}
+            </div>
+            <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">✏️</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">🗑️</button></span>
+          </div>`;
+      });
+
+      document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
+      calculateNet();
+    }
+
+    // ── Parcel Alert ──────────────────────────────────────────────
+    function loadParcelAlert() {
+      let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      let alertBox = document.getElementById("parcelAlert");
+
+      // Receipt တစ်ခုမှ မရှိရင် box ကို ဖျောက်ထားမယ်
+      if (salesHistory.length === 0) {
+        alertBox.style.display = "none";
+        return;
+      }
+
+      var parcelPending = salesHistory.filter(function (sale) {
+        return !sale.deliveryParcel;
+      }).length;
+      var printPending = salesHistory.filter(function (sale) {
+        return !sale.printed;
+      }).length;
+
+      alertBox.style.display = "block";
+
+      if (parcelPending === 0 && printPending === 0) {
+        alertBox.style.background = "#d1fae5";
+        alertBox.innerHTML = "✅ Parcel & Print အားလုံး ပြီးပါပြီ";
+      } else {
+        alertBox.style.background = "#fef3c7";
+        alertBox.innerHTML = "⚠️ Parcel မထုတ်ရ " + parcelPending + " ခု · Print မထုတ်ရ " + printPending + " ခု";
+      }
+    }
+
+    // ── Init ──────────────────────────────────────────────────────
+    loadStaffDropdown();
+    loadProductsDropdown();
+    loadEditReceipt();
+    updateCartCount();
+    loadParcelAlert();
+
+
+    // ── Slide Menu ──
+    function openMenu() {
+      document.getElementById("sideMenu").classList.add("open");
+      document.getElementById("menuOverlay").classList.add("open");
+    }
+    function closeMenu() {
+      document.getElementById("sideMenu").classList.remove("open");
+      document.getElementById("menuOverlay").classList.remove("open");
+    }
+    // active page highlight
+    (function () {
+      let path = location.pathname.split("/").pop() || "index.html";
+      document.querySelectorAll(".menu-item").forEach(function (m) {
+        if (m.dataset.page === path) m.classList.add("active");
+      });
+    })();
+
+  </script>
+  <script>
+  /* ── Styled popup: replaces native alert(), adds showConfirm() ── */
+  (function () {
+    var ov = document.createElement("div");
+    ov.className = "popup-overlay";
+    ov.innerHTML =
+      '<div class="popup-card" role="dialog" aria-modal="true">' +
+        '<div class="popup-icon" id="popIcon">\u2139\ufe0f</div>' +
+        '<p class="popup-msg" id="popMsg"></p>' +
+        '<div class="popup-actions" id="popActions"></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+
+    var msgEl  = ov.querySelector("#popMsg");
+    var iconEl = ov.querySelector("#popIcon");
+    var actEl  = ov.querySelector("#popActions");
+
+    function close() { ov.classList.remove("show"); }
+
+    function pickIcon(m) {
+      m = String(m);
+      if (/\u2705|\u1015\u103c\u102e\u1038|success/i.test(m)) return "\u2705";
+      if (/\u26a0|\u1019|\u1015\u102b|error|fail/i.test(m)) return "\u26a0\ufe0f";
+      return "\u2139\ufe0f";
+    }
+
+    window.alert = function (message) {
+      msgEl.textContent = message;
+      iconEl.textContent = pickIcon(message);
+      actEl.innerHTML = "";
+      var ok = document.createElement("button");
+      ok.textContent = "\u101b\u1015\u103c\u102e";
+      ok.onclick = close;
+      actEl.appendChild(ok);
+      ov.classList.add("show");
+      ok.focus();
+    };
+
+    window.showConfirm = function (message, onYes, onNo) {
+      msgEl.textContent = message;
+      iconEl.textContent = "\u2753";
+      actEl.innerHTML = "";
+      var cancel = document.createElement("button");
+      cancel.className = "popup-cancel";
+      cancel.textContent = "\u1019\u101c\u102f\u1015\u103a\u1010\u1031\u102c\u1037";
+      cancel.onclick = function () { close(); if (onNo) onNo(); };
+      var yes = document.createElement("button");
+      yes.textContent = "\u101f\u102f\u1010\u103a\u1000\u1032\u1037";
+      yes.onclick = function () { close(); if (onYes) onYes(); };
+      actEl.appendChild(cancel);
+      actEl.appendChild(yes);
+      ov.classList.add("show");
+    };
+
+    ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+  })();
+  </script>
+  <script>
+  /* ── Custom select → bottom sheet (native <select> picker replaced) ── */
+  (function () {
+    var ov = document.createElement("div"); ov.className = "sheet-overlay";
+    var sheet = document.createElement("div"); sheet.className = "sheet";
+    sheet.innerHTML =
+      '<div class="sheet-grip"></div>' +
+      '<div class="sheet-title" id="sheetTitle"></div>' +
+      '<div class="sheet-list" id="sheetList"></div>';
+    document.body.appendChild(ov);
+    document.body.appendChild(sheet);
+    var listEl  = sheet.querySelector("#sheetList");
+    var titleEl = sheet.querySelector("#sheetTitle");
+
+    function titleFor(sel) {
+      var lbl = sel.parentNode && sel.parentNode.querySelector ? sel.parentNode.querySelector(".lbl") : null;
+      if (!lbl) {
+        var box = sel.closest(".field, .discount-box");
+        lbl = box ? box.querySelector(".lbl") : null;
+      }
+      if (lbl) return lbl.textContent.replace(/\s+/g, " ").trim();
+      if (sel.options[0] && sel.options[0].value === "") return sel.options[0].text;
+      return "\u101b\u103d\u1031\u1038\u1015\u102b"; /* ရွေးပါ */
+    }
+
+    function openSheet(sel) {
+      titleEl.textContent = titleFor(sel);
+      listEl.innerHTML = "";
+      Array.prototype.forEach.call(sel.options, function (o, i) {
+        var row = document.createElement("div");
+        row.className = "sheet-opt" + (i === sel.selectedIndex ? " sel" : "");
+        var txt = document.createElement("span"); txt.textContent = o.text;
+        var tk  = document.createElement("span"); tk.className = "tick"; tk.textContent = "\u2713";
+        row.appendChild(txt); row.appendChild(tk);
+        row.addEventListener("click", function () {
+          if (sel.selectedIndex !== i) {
+            sel.selectedIndex = i;
+            sel.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          closeSheet();
+        });
+        listEl.appendChild(row);
+      });
+      ov.classList.add("show");
+      requestAnimationFrame(function () { sheet.classList.add("show"); });
+    }
+    function closeSheet() { sheet.classList.remove("show"); ov.classList.remove("show"); }
+    ov.addEventListener("click", closeSheet);
+
+    var pairs = [];
+    function enhance(sel) {
+      if (sel.dataset.csel) return;
+      sel.dataset.csel = "1";
+      sel.classList.add("csel-native");
+      var btn = document.createElement("button");
+      btn.type = "button"; btn.className = "csel-btn";
+      sel.parentNode.insertBefore(btn, sel.nextSibling);
+      btn.addEventListener("click", function (e) { e.preventDefault(); openSheet(sel); });
+      pairs.push({ sel: sel, btn: btn, last: null });
+    }
+    function enhanceAll() {
+      document.querySelectorAll("select:not([data-csel])").forEach(enhance);
+    }
+
+    function tick() {
+      for (var i = 0; i < pairs.length; i++) {
+        var p = pairs[i], o = p.sel.options[p.sel.selectedIndex];
+        var txt = o ? o.text : "";
+        var key = p.sel.selectedIndex + "|" + txt;
+        if (key !== p.last) {
+          p.last = key;
+          p.btn.textContent = txt;
+          p.btn.classList.toggle("is-placeholder", !p.sel.value);
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    enhanceAll();
+    setTimeout(enhanceAll, 400);
+    requestAnimationFrame(tick);
+  })();
+  </script>
+  <script>
+  /* ── Searchable picker for Township (type to filter, custom allowed) ── */
+  (function () {
+    var TOWNS = [
+      "သန်လျင်","ကျောက်တန်း","ခရမ်း","တွံတေး","ကော့မှူး","ကွမ်းခြုံ",
+      "သာကေတ","ဒဂုံ","ဒဂုံမြို့သစ်(အရှေ့ပိုင်း)","ဒဂုံမြို့သစ်(မြောက်ပိုင်း)",
+      "ဒဂုံမြို့သစ်(တောင်ပိုင်း)","ဒဂုံမြို့သစ်(ဆိပ်ကမ်း)","ဒဂုံဆိပ်ကမ်း",
+      "တာမွေ","ဗဟန်း","ရန်ကင်း","သင်္ဃန်းကျွန်း","တောင်ဥက္ကလာပ","မြောက်ဥက္ကလာပ",
+      "မရမ်းကုန်း","လှိုင်","ကမာရွတ်","အင်းစိန်","လှိုင်သာယာ","ရွှေပြည်သာ",
+      "မင်္ဂလာဒုံ","ထန်းတပင်","မှော်ဘီ","လှည်းကူး",
+      "စမ်းချောင်း","ကြည့်မြင်တိုင်","အလုံ","လမ်းမတော်","လသာ","ပန်းဘဲတန်း",
+      "ကျောက်တံတား","ဗိုလ်တထောင်","ပုဇွန်တောင်","မင်္ဂလာတောင်ညွန့်",
+      "ဒလ","ဆိပ်ကြီးခနောင်တို"
+    ];
+
+    var ov = document.createElement("div"); ov.className = "sheet-overlay";
+    var sheet = document.createElement("div"); sheet.className = "sheet";
+    sheet.innerHTML =
+      '<div class="sheet-grip"></div>' +
+      '<div class="sheet-title">မြို့နယ် ရွေးပါ</div>' +
+      '<div class="sheet-search"><input id="twnSearch" placeholder="မြို့ ရိုက်ရှာရန်..." autocomplete="off"></div>' +
+      '<div class="sheet-list" id="twnList"></div>';
+    document.body.appendChild(ov);
+    document.body.appendChild(sheet);
+
+    var listEl = sheet.querySelector("#twnList");
+    var search = sheet.querySelector("#twnSearch");
+    var target = null;
+
+    function row(label, value, selected, custom) {
+      var r = document.createElement("div");
+      r.className = "sheet-opt" + (selected ? " sel" : "") + (custom ? " custom" : "");
+      var a = document.createElement("span"); a.textContent = label;
+      var b = document.createElement("span"); b.className = "tick"; b.textContent = "\u2713";
+      r.appendChild(a); r.appendChild(b);
+      r.addEventListener("click", function () { choose(value); });
+      return r;
+    }
+
+    function render() {
+      var q = search.value.trim();
+      listEl.innerHTML = "";
+
+      if (q && TOWNS.indexOf(q) < 0) {
+        listEl.appendChild(row("「" + q + "」 ဒီအတိုင်း သုံးမည်", q, false, true));
+      }
+
+      var matches = TOWNS.filter(function (t) { return t.indexOf(q) >= 0; });
+      matches.sort(function (a, b) {
+        return (a.indexOf(q) === 0 ? 0 : 1) - (b.indexOf(q) === 0 ? 0 : 1);
+      });
+      matches.forEach(function (t) {
+        listEl.appendChild(row(t, t, target && target.value === t, false));
+      });
+
+      if (matches.length === 0 && !q) {
+        listEl.appendChild(emptyMsg());
+      } else if (matches.length === 0 && q && TOWNS.indexOf(q) >= 0) {
+        listEl.appendChild(emptyMsg());
+      }
+    }
+
+    function emptyMsg() {
+      var e = document.createElement("div");
+      e.className = "sheet-empty";
+      e.textContent = "တွေ့မရှိပါ — ရိုက်ထားသည့်အတိုင်း သုံးနိုင်သည်";
+      return e;
+    }
+
+    function choose(val) {
+      if (target) { target.value = val; target.dispatchEvent(new Event("input", { bubbles: true })); }
+      close();
+    }
+    function open(inp) {
+      target = inp; search.value = ""; render();
+      ov.classList.add("show");
+      requestAnimationFrame(function () { sheet.classList.add("show"); });
+      setTimeout(function () { search.focus(); }, 280);
+    }
+    function close() { sheet.classList.remove("show"); ov.classList.remove("show"); }
+    ov.addEventListener("click", close);
+    search.addEventListener("input", render);
+
+    function enhance(inp) {
+      if (inp.dataset.spick) return;
+      inp.dataset.spick = "1";
+      inp.classList.add("csel-native");
+      var btn = document.createElement("button");
+      btn.type = "button"; btn.className = "csel-btn";
+      inp.parentNode.insertBefore(btn, inp.nextSibling);
+      btn.addEventListener("click", function (e) { e.preventDefault(); open(inp); });
+      var ph = inp.getAttribute("placeholder") || "ရွေးပါ";
+      var last = null;
+      (function sync() {
+        var v = inp.value || "";
+        if (v !== last) {
+          last = v;
+          btn.textContent = v || ph;
+          btn.classList.toggle("is-placeholder", !v);
+        }
+        requestAnimationFrame(sync);
+      })();
+    }
+
+    var t = document.getElementById("township");
+    if (t) enhance(t);
+  })();
+  </script>
+  <script>
+  /* ── Live receipt preview (mirrors print.html) ── */
+  (function () {
+    function gv(id){ var e=document.getElementById(id); return e?e.value:''; }
+    function gt(id){ var e=document.getElementById(id); return e?e.innerText:''; }
+    function num(s){ var n=Number(String(s==null?'':s).replace(/[^0-9.-]/g,'')); return isNaN(n)?0:n; }
+    function fmt(n){ return Number(n||0).toLocaleString(); }
+
+    function renderLivePreview(){
+      var box = document.getElementById('livePreview');
+      if (!box) return;
+      var S = {};
+      try { S = JSON.parse(localStorage.getItem('shopSettings')) || {}; } catch(e){}
+      var logo  = S.logo || '';
+      var addr  = S.address || 'စုံစုံမာမီ';
+      var ph    = S.phone || '';
+      var lsize = S.logoSize || 115;
+      var tsize = S.textSize || 9;
+
+      var customer = gv('name'), phone = gv('phone'), address = gv('address'),
+          township = gv('township'), staff = gv('staff'), orderApp = gv('orderapp'),
+          service  = gv('deliveryService'), orderNo = gt('orderNo');
+
+      var itemsSum = 0, itemHtml = '';
+      var list = (typeof items !== 'undefined' && items) ? items : [];
+      list.forEach(function(it){
+        itemsSum += num(it.total);
+        var gift = it.isGift ? ' \uD83C\uDF81' : '';
+        var sizeLabel = '';
+        if (it.saleType === 'weight') sizeLabel = (it.size || '') + ' | ';
+        else if (it.isGift) sizeLabel = '\u101C\u1000\u103A\u1006\u1031\u102C\u1004\u103A | ';
+        itemHtml += '<div class="item-name mm">' + (it.product || '') + gift + '</div>';
+        itemHtml += '<div class="item-sub mm"><span>' + sizeLabel + (it.qty || 0) + ' x ' + (it.price || 0) +
+                    '</span><span>' + fmt(it.total) + '</span></div>';
+        if (it.remark) itemHtml += '<div class="item-remark mm">\u2192 ' + it.remark + '</div>';
+      });
+
+      var discount = num(gt('discountShow'));
+      var delivery = num(gv('delivery'));
+      var deposit  = num(gv('deposit'));
+      var net      = num(gt('netTotal'));
+      if (!net) net = itemsSum - discount - deposit + delivery;
+
+      var discLine = discount > 0
+        ? '<div class="line"><span>Discount</span><span>-' + fmt(discount) + '</span></div>' : '';
+      var logoHtml = logo ? '<img src="' + logo + '" style="width:' + lsize + 'px;height:auto;flex-shrink:0;">' : '';
+      var now = new Date();
+      var dt = now.toLocaleDateString() + '  ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+      box.innerHTML =
+        '<div style="display:flex;align-items:center;gap:6px;">' + logoHtml +
+          '<div style="flex:1;">' +
+            '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.3;">' + addr + '<br>\uD83D\uDCDE ' + ph + '</div>' +
+            '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.5;margin-top:4px;border-top:1px solid #000;padding-top:3px;text-align:right;">' +
+              (orderNo || '') + '<br>\u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + (staff || '-') + '<br>' + (orderApp || '-') + '<br>' + (service || '-') + '</div>' +
+          '</div></div><hr>' +
+        '<div class="line" style="align-items:baseline;"><span class="town-mid">' + (township || '-') + '</span><span style="font-size:11px;">' + dt + '</span></div><hr>' +
+        '<div class="cus-mid">' + (customer || '-') + '</div><div class="phone-clear">' + (phone || '-') + '</div><div class="addr-mm">' + (address || '-') + '</div><hr>' +
+        (itemHtml || '<div class="item-sub mm" style="justify-content:center;color:#999;">\u2014 item \u1019\u101B\u103E\u102D\u101E\u1031\u1038 \u2014</div>') + '<hr>' +
+        '<div class="line"><span>Total</span><span>' + fmt(itemsSum) + '</span></div>' + discLine +
+        '<div class="line"><span>Deposit</span><span>' + fmt(deposit) + '</span></div>' +
+        '<div class="line"><span>Delivery Fee</span><span>' + fmt(delivery) + '</span></div>' +
+        '<div class="net-box mm">\u1021\u102D\u1019\u103A\u101B\u1031\u102C\u1000\u103A\u1004\u103D\u1031\u1001\u103B\u1031 : ' + fmt(net) + '</div>' +
+        '<div class="footer-mm">\u1005\u102F\u1036\u1005\u102F\u1036\u1019\u102C\u1019\u102E\u101B\u1032\u1037 \u101C\u1000\u103A\u101B\u102C\u101C\u1031\u1038\u1000\u102D\u102F \u1019\u103C\u100A\u103A\u1038\u1005\u1019\u103A\u1038\u1000\u103C\u100A\u103A\u1037\u1015\u1031\u1038\u101C\u102D\u102F\u1037 \u1000\u103B\u1031\u1038\u1007\u1030\u1038\u1010\u1004\u103A\u1015\u102B\u1010\u101A\u103A \uD83D\uDE4F<br>\u1005\u102C\u1038\u1019\u103C\u102D\u1014\u103A\u1015\u102B\u1005\u1031\u1014\u1031\u102C\u103A \uD83D\uDC9B</div>';
+    }
+    window.renderLivePreview = renderLivePreview;
+
+    // re-render on field changes
+    ['name','phone','address','township','orderapp','deliveryService','staff','delivery','deposit','discountType','discountValue']
+      .forEach(function(id){
+        var e = document.getElementById(id);
+        if (e){ e.addEventListener('input', renderLivePreview); e.addEventListener('change', renderLivePreview); }
+      });
+    // re-render after cart / total functions
+    ['addItem','deleteRow','calculateNet'].forEach(function(fn){
+      if (typeof window[fn] === 'function'){
+        var orig = window[fn];
+        window[fn] = function(){ var r = orig.apply(this, arguments); try{ renderLivePreview(); }catch(e){} return r; };
+      }
+    });
+
+    if (document.readyState !== 'loading') renderLivePreview();
+    else document.addEventListener('DOMContentLoaded', renderLivePreview);
+  })();
+  </script>
+  <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
+</body>
+</html>

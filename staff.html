@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Staff</title>
+  <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6d28d9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Sone Sone Mommy">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("service-worker.js").catch(function(){});});}</script>
+  <style>
+    :root{
+      --bg:#f4f5f8; --surface:#ffffff; --line:#eaecf1; --line-2:#dcdfe7;
+      --ink:#15171c; --ink-2:#5a616e; --ink-3:#8b919e;
+      --brand:#6d28d9; --brand-ink:#5b21b6; --brand-tint:#f4f0fe; --brand-line:#e7defb;
+      --green:#15803d; --red:#dc2626; --red-line:#f3c5c5;
+      --r:16px; --r-sm:11px;
+      --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 18px rgba(16,24,40,.04);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; }
+    body{
+      font-family:system-ui,'Noto Sans Myanmar','Padauk','Myanmar Text','Segoe UI',sans-serif;
+      background:var(--bg); color:var(--ink); line-height:1.5; padding:0 0 104px 0;
+      -webkit-text-size-adjust:100%;
+    }
+
+    /* App bar */
+    .top-bar{
+      position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:8px;
+      padding:11px 12px; background:rgba(255,255,255,.85);
+      backdrop-filter:saturate(150%) blur(10px); -webkit-backdrop-filter:saturate(150%) blur(10px);
+      border-bottom:1px solid var(--line);
+    }
+    #menuBtn, .iconbtn{
+      background:none; border:none; font-size:23px; line-height:1; color:var(--ink);
+      cursor:pointer; padding:6px 9px; border-radius:10px;
+    }
+    #menuBtn:active, .iconbtn:active{ background:var(--line); }
+    .top-bar h1{ margin:0; font-size:16px; font-weight:700; letter-spacing:-.01em; flex:1;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .wrap{ max-width:600px; margin:0 auto; padding:14px; }
+
+    /* Cards / form */
+    .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+      padding:16px; box-shadow:var(--shadow); }
+    .field{ margin:0 0 12px 0; }
+    .lbl{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-2); margin:0 0 6px 2px; }
+    input{
+      width:100%; padding:11px 12px; font-size:15px; line-height:1.45; color:var(--ink);
+      background:#fff; border:1px solid var(--line-2); border-radius:var(--r-sm);
+      font-family:inherit; outline:none; -webkit-appearance:none; appearance:none;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    input:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    ::placeholder{ color:var(--ink-3); }
+    button{ font-family:inherit; font-size:15px; font-weight:600; color:#fff; background:var(--brand);
+      border:none; border-radius:var(--r-sm); padding:12px 16px; cursor:pointer;
+      transition:filter .15s, transform .05s; }
+    button:active{ transform:translateY(1px); }
+    .btn-block{ width:100%; }
+    .btn-save{ width:100%; padding:13px; margin-top:4px; }
+
+    /* Staff list */
+    .staff-card{
+      background:var(--surface); border:1px solid var(--line); border-radius:14px;
+      padding:12px 14px; margin-bottom:10px; display:flex; align-items:center; gap:13px;
+      box-shadow:var(--shadow);
+    }
+    .staff-card .avatar{
+      width:44px; height:44px; flex:none; border-radius:12px;
+      display:flex; align-items:center; justify-content:center; font-size:20px;
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+    }
+    .staff-card .info{ flex:1; min-width:0; }
+    .staff-card .info h3{ margin:0; font-size:15px; font-weight:700; color:var(--ink);
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .staff-card .info p{ margin:2px 0 0; font-size:13px; color:var(--ink-3); }
+    .actions{ display:flex; gap:8px; flex:none; }
+    .icon-btn{ width:38px; height:38px; padding:0; border-radius:10px; font-size:15px; line-height:1; }
+    .btn-edit{ background:#fff; color:var(--brand-ink); border:1px solid var(--brand-line); }
+    .btn-delete{ background:#fff; color:var(--red); border:1px solid var(--red-line); }
+    .empty{ color:var(--ink-3); text-align:center; margin-top:52px; font-size:14px; line-height:1.6; }
+
+    /* FAB */
+    #fabBtn{
+      position:fixed; right:18px; bottom:calc(22px + env(safe-area-inset-bottom,0px));
+      width:58px; height:58px; border-radius:50%; background:var(--brand); color:#fff;
+      font-size:30px; border:none; box-shadow:0 10px 26px rgba(109,40,217,.42);
+      display:flex; align-items:center; justify-content:center; z-index:100;
+    }
+
+    #formPage{ display:none; }
+    #listPage{ display:block; }
+
+    /* Popup */
+    .popup-overlay{ position:fixed; inset:0; z-index:10000; padding:24px; display:none;
+      align-items:center; justify-content:center; background:rgba(15,17,25,.5);
+      backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+    .popup-overlay.show{ display:flex; }
+    .popup-card{ width:100%; max-width:320px; background:var(--surface); border:1px solid var(--line);
+      border-radius:18px; padding:22px 20px 18px; box-shadow:0 22px 55px rgba(0,0,0,.3); text-align:center;
+      transform:translateY(10px) scale(.96); opacity:0; transition:transform .18s ease, opacity .18s ease; }
+    .popup-overlay.show .popup-card{ transform:none; opacity:1; }
+    .popup-icon{ width:48px; height:48px; margin:0 auto 13px; border-radius:50%; display:flex;
+      align-items:center; justify-content:center; font-size:24px; background:var(--brand-tint);
+      border:1px solid var(--brand-line); }
+    .popup-msg{ font-size:15px; font-weight:600; color:var(--ink); line-height:1.55; margin:0 0 18px; }
+    .popup-actions{ display:flex; gap:9px; }
+    .popup-actions button{ flex:1; }
+    .popup-cancel{ background:var(--surface); color:var(--ink-2); border:1px solid var(--line-2); }
+
+    /* Slide menu */
+    #menuOverlay{ display:none; position:fixed; inset:0; background:rgba(15,17,25,.45); z-index:9998; }
+    #sideMenu{ position:fixed; top:0; left:-300px; width:284px; height:100%; background:var(--surface);
+      z-index:9999; transition:left .25s ease; overflow-y:auto; box-shadow:8px 0 34px rgba(16,24,40,.18); }
+    #sideMenu.open{ left:0; }
+    #menuOverlay.open{ display:block; }
+    .menu-header{ padding:26px 20px 22px; color:#fff;
+      background:linear-gradient(135deg, var(--brand-ink), var(--brand)); }
+    .menu-header h2{ margin:0; font-size:18px; font-weight:800; letter-spacing:-.01em; }
+    .menu-header p{ margin:5px 0 0; font-size:12px; color:rgba(255,255,255,.82); }
+    .menu-item{ display:flex; align-items:center; gap:13px; margin:5px 8px; padding:9px 11px;
+      border-radius:12px; color:var(--ink); cursor:pointer; font-size:15px; font-weight:500; }
+    .menu-item:first-of-type{ margin-top:9px; }
+    .menu-item:active{ background:var(--line); }
+    .menu-item.active{ background:var(--brand-tint); color:var(--brand-ink); font-weight:700; }
+    .menu-item .ic{ width:38px; height:38px; flex:none; border-radius:10px; display:flex;
+      align-items:center; justify-content:center; font-size:18px; background:var(--brand-tint);
+      border:1px solid var(--brand-line); }
+    .menu-item.active .ic{ background:#fff; }
+
+    @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+    /* ===== Dark mode (toggle via html.dark) ===== */
+    html.dark{
+      --bg:#0f1116; --surface:#181b22; --line:#252a33; --line-2:#333a46;
+      --ink:#e8eaef; --ink-2:#aab1bd; --ink-3:#727a87;
+      --brand:#8b5cf6; --brand-ink:#c4b5fd; --brand-tint:#1d1930; --brand-line:#352c57;
+      --green:#22c55e; --green-tint:#10271a; --green-line:#1f4a32;
+      --red:#f87171; --red-tint:#2a1414; --red-line:#5c2b2b;
+      --amber:#e0b84e; --amber-tint:#272010; --amber-line:#544619;
+      --blue:#93b4fb; --blue-tint:#172033; --blue-line:#2c3c5c;
+      --teal:#5fd0e6;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
+    }
+    html.dark .top-bar{ background:rgba(18,20,26,.82); }
+    html.dark .checkout-bar{ background:rgba(18,20,26,.92); }
+    html.dark input:not([type=range]):not([type=checkbox]),
+    html.dark select, html.dark textarea,
+    html.dark .field input, html.dark .field select,
+    html.dark .modal-box input, html.dark .modal-box select,
+    html.dark #searchBox, html.dark .csel-btn{ background:#1e222a; }
+    html.dark .csel-btn{ background-color:#1e222a; }
+    html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
+    html.dark #parcelAlert{ color:#7a5b00; }
+    html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
+  </style>
+  <script>(function(){try{if(localStorage.getItem("ssmTheme")==="dark")document.documentElement.classList.add("dark");}catch(e){}})();</script>
+</head>
+
+<body>
+
+  <!-- ══ LIST PAGE ══ -->
+  <div id="listPage">
+    <!-- Slide Menu -->
+    <div id="menuOverlay" onclick="closeMenu()"></div>
+    <div id="sideMenu">
+      <div class="menu-header">
+        <h2>Sone Sone Mommy</h2>
+        <p>POS System</p>
+      </div>
+      <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း</div>
+      <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
+      <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
+      <div class="menu-item" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
+      <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
+      <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
+      <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
+      <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+    </div>
+
+    <div class="top-bar">
+      <button id="menuBtn" onclick="openMenu()">☰</button>
+      <h1>ဝန်ထမ်းများ</h1>
+    </div>
+
+    <div class="wrap">
+      <div id="staffList"></div>
+    </div>
+
+    <button id="fabBtn" onclick="openForm()" aria-label="Add">＋</button>
+  </div>
+
+  <!-- ══ FORM PAGE ══ -->
+  <div id="formPage">
+    <div class="top-bar">
+      <button class="iconbtn" onclick="closeForm()" aria-label="Back">←</button>
+      <h1 id="formTitle">ဝန်ထမ်း အသစ် ထည့်မည်</h1>
+    </div>
+    <div class="wrap">
+      <section class="card">
+        <div class="field">
+          <label class="lbl">ဝန်ထမ်း နာမည်</label>
+          <input id="staffName" placeholder="နာမည်">
+        </div>
+        <div class="field">
+          <label class="lbl">ဖုန်း (optional)</label>
+          <input id="staffPhone" placeholder="ဖုန်းနံပါတ်">
+        </div>
+        <button class="btn-save" id="saveBtn" onclick="saveStaff()">💾 Save</button>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    let staffList    = JSON.parse(localStorage.getItem("staffList")) || [];
+    let editingIndex = null;
+
+    function openForm(index) {
+      document.getElementById("listPage").style.display = "none";
+      document.getElementById("formPage").style.display = "block";
+      window.scrollTo(0, 0);
+      if (index !== undefined) {
+        editingIndex = index;
+        document.getElementById("formTitle").innerText = "ဝန်ထမ်း ပြင်မည်";
+        document.getElementById("staffName").value  = staffList[index].name  || "";
+        document.getElementById("staffPhone").value = staffList[index].phone || "";
+      } else {
+        editingIndex = null;
+        document.getElementById("formTitle").innerText = "ဝန်ထမ်း အသစ် ထည့်မည်";
+        document.getElementById("staffName").value  = "";
+        document.getElementById("staffPhone").value = "";
+      }
+    }
+
+    function closeForm() {
+      document.getElementById("formPage").style.display = "none";
+      document.getElementById("listPage").style.display = "block";
+    }
+
+    function saveStaff() {
+      let name = document.getElementById("staffName").value.trim();
+      if (!name) { alert("နာမည် ထည့်ပါ"); return; }
+
+      let staff = {
+        name:  name,
+        phone: document.getElementById("staffPhone").value.trim()
+      };
+
+      if (editingIndex !== null) {
+        staffList[editingIndex] = staff;
+      } else {
+        staffList.push(staff);
+      }
+
+      localStorage.setItem("staffList", JSON.stringify(staffList));
+      closeForm();
+      loadStaff();
+    }
+
+    function deleteStaff(index) {
+      showConfirm("ဒီ ဝန်ထမ်းကို ဖျက်မှာလား?", function () {
+        staffList.splice(index, 1);
+        localStorage.setItem("staffList", JSON.stringify(staffList));
+        loadStaff();
+      });
+    }
+
+    function loadStaff() {
+      staffList = JSON.parse(localStorage.getItem("staffList")) || [];
+      let html = "";
+
+      if (staffList.length === 0) {
+        html = '<p class="empty">ဝန်ထမ်း မရှိသေးပါ။<br>＋ နှိပ်ပြီး ထည့်ပါ။</p>';
+      }
+
+      staffList.forEach(function (s, index) {
+        html += `
+          <div class="staff-card">
+            <div class="avatar">👤</div>
+            <div class="info">
+              <h3>${s.name}</h3>
+              <p>${s.phone || "—"}</p>
+            </div>
+            <div class="actions">
+              <button class="icon-btn btn-edit"   onclick="openForm(${index})" aria-label="Edit">✏️</button>
+              <button class="icon-btn btn-delete" onclick="deleteStaff(${index})" aria-label="Delete">🗑️</button>
+            </div>
+          </div>`;
+      });
+
+      document.getElementById("staffList").innerHTML = html;
+    }
+
+    loadStaff();
+
+    // ── Slide Menu ──
+    function openMenu() {
+      document.getElementById("sideMenu").classList.add("open");
+      document.getElementById("menuOverlay").classList.add("open");
+    }
+    function closeMenu() {
+      document.getElementById("sideMenu").classList.remove("open");
+      document.getElementById("menuOverlay").classList.remove("open");
+    }
+    (function () {
+      let path = location.pathname.split("/").pop() || "index.html";
+      document.querySelectorAll(".menu-item").forEach(function (m) {
+        if (m.dataset.page === path) m.classList.add("active");
+      });
+    })();
+  </script>
+
+  <script>
+  /* ── Styled popup: replaces native alert(), adds showConfirm() ── */
+  (function () {
+    var ov = document.createElement("div");
+    ov.className = "popup-overlay";
+    ov.innerHTML =
+      '<div class="popup-card" role="dialog" aria-modal="true">' +
+        '<div class="popup-icon" id="popIcon">ℹ️</div>' +
+        '<p class="popup-msg" id="popMsg"></p>' +
+        '<div class="popup-actions" id="popActions"></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    var msgEl = ov.querySelector("#popMsg"), iconEl = ov.querySelector("#popIcon"), actEl = ov.querySelector("#popActions");
+    function close() { ov.classList.remove("show"); }
+    function pickIcon(m){ m=String(m);
+      if (/✅|ပြီး|success/i.test(m)) return "✅";
+      if (/⚠️|မ|ပါ|error|fail/i.test(m)) return "⚠️";
+      return "ℹ️"; }
+    window.alert = function (message) {
+      msgEl.textContent = message; iconEl.textContent = pickIcon(message);
+      actEl.innerHTML = "";
+      var ok = document.createElement("button"); ok.textContent = "ရပြီ"; ok.onclick = close;
+      actEl.appendChild(ok); ov.classList.add("show"); ok.focus();
+    };
+    window.showConfirm = function (message, onYes, onNo) {
+      msgEl.textContent = message; iconEl.textContent = "❓"; actEl.innerHTML = "";
+      var cancel = document.createElement("button"); cancel.className = "popup-cancel";
+      cancel.textContent = "မလုပ်တော့"; cancel.onclick = function(){ close(); if(onNo) onNo(); };
+      var yes = document.createElement("button"); yes.textContent = "ဟုတ်ကဲ့";
+      yes.onclick = function(){ close(); if(onYes) onYes(); };
+      actEl.appendChild(cancel); actEl.appendChild(yes); ov.classList.add("show");
+    };
+    ov.addEventListener("click", function (e){ if (e.target === ov) close(); });
+  })();
+  </script>
+  <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
+</body>
+</html>
