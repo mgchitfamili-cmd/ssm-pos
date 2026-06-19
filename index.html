@@ -400,6 +400,59 @@
     .rcart .cart-del{ flex:none; background:none; border:none; font-size:16px; cursor:pointer; padding:4px 2px; line-height:1; color:var(--red); }
     .rcart-act{ display:flex; flex-direction:column; gap:2px; flex:none; }
     .rcart-act .cart-edit{ background:none; border:none; font-size:15px; cursor:pointer; padding:3px 2px; line-height:1; }
+    /* ===== Responsive Patch ===== */
+
+/* Phone + iPad portrait */
+@media screen and (max-width:1024px) and (orientation:portrait){
+
+  .layout,
+  .main-layout,
+  .sale-layout{
+    display:block !important;
+    grid-template-columns:none !important;
+  }
+
+  .preview-col,
+  .live-preview,
+  #livePreview{
+    position:relative !important;
+    width:100% !important;
+    max-width:100% !important;
+    top:auto !important;
+    right:auto !important;
+    left:auto !important;
+    margin-top:14px !important;
+  }
+
+  .row{
+    flex-direction:column !important;
+    gap:10px !important;
+  }
+
+  .wrap,
+  .container{
+    width:100% !important;
+    max-width:100% !important;
+    padding:12px !important;
+  }
+
+  input,select,textarea,button{
+    width:100% !important;
+  }
+}
+
+/* Landscape only */
+@media screen and (min-width:900px) and (orientation:landscape){
+
+  .layout,
+  .main-layout,
+  .sale-layout{
+    display:grid !important;
+    grid-template-columns:1fr 340px !important;
+    gap:16px !important;
+    align-items:start !important;
+  }
+}
   </style>
   <script>(function(){try{if(localStorage.getItem("ssmTheme")==="dark")document.documentElement.classList.add("dark");}catch(e){}})();</script>
 </head>
