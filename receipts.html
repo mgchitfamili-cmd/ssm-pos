@@ -585,7 +585,7 @@
 
       var payLabel = "အိမ်ရောက်ငွေချေ";
       if (sale.payStatus === "Prepaid") payLabel = "Deli အပါ အားလုံးရှင်းပြီး";
-      else if (sale.payStatus === "Partial") payLabel = "ပစ္စည်းဖိုးရှင်းပြီး";
+      else if (sale.payStatus === "Partial") payLabel = "ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်";
 
       var logoHtml = logo ? '<img src="' + logo + '" style="width:' + lsize + 'px;height:auto;flex-shrink:0;">' : '';
       var d = sale.orderDate ? new Date(sale.orderDate) : new Date();

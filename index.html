@@ -607,7 +607,7 @@
           <label class="oppay-lbl">Payment အခြေအနေ <span style="font-weight:500;color:var(--ink-3);">(receipt အောက် label)</span></label>
           <select id="payStatusSel" onchange="toggleDepFields(); calculateNet();">
             <option value="COD">အိမ်ရောက်ငွေချေ (COD)</option>
-            <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး</option>
+            <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်</option>
             <option value="Prepaid">Deli အပါ အားလုံးရှင်းပြီး</option>
           </select>
           <label class="oppay-lbl">ကြိုတင်ပေးငွေ ပမာဏ (Deposit)</label>
@@ -1683,7 +1683,7 @@
       var discount = num(gt('discountShow'));
       var note = gv('note');
       var _ps = (document.getElementById('payStatusSel')||{}).value || 'COD';
-      var payLabelLive = _ps === 'Prepaid' ? 'Deli အပါ အားလုံးရှင်းပြီး' : (_ps === 'Partial' ? 'ပစ္စည်းဖိုးရှင်းပြီး' : 'အိမ်ရောက်ငွေချေ');
+      var payLabelLive = _ps === 'Prepaid' ? 'Deli အပါ အားလုံးရှင်းပြီး' : (_ps === 'Partial' ? 'ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်' : 'အိမ်ရောက်ငွေချေ');
       var delivery = num(gv('delivery'));
       var deposit  = num(gv('deposit'));
       var net      = num(gt('netTotal'));
