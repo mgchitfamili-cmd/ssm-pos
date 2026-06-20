@@ -598,24 +598,6 @@
       <section class="card">
         <p class="eyebrow"><span class="dot"></span>လျှော့ဈေး & ပေးချေမှု</p>
 
-        <div class="disc-box">
-          <div class="row">
-            <div>
-              <label class="lbl">💸 Discount</label>
-              <select id="discountType" onchange="calculateNet()">
-                <option value="none">Discount မရှိ</option>
-                <option value="amount">Amount (ငွေပမာဏ)</option>
-                <option value="percent">Percent (%)</option>
-              </select>
-            </div>
-            <div>
-              <label class="lbl">ပမာဏ</label>
-              <input id="discountValue" placeholder="0" oninput="calculateNet()">
-            </div>
-          </div>
-          <p id="discountNote"></p>
-        </div>
-
         <div class="field">
           <label class="lbl">Delivery Fee</label>
           <input id="delivery" oninput="calculateNet()">
@@ -647,6 +629,23 @@
             <button type="button" id="depConfirmBtn" class="oppay-confirm" onclick="confirmDeposit()">💰 ငွေ လက်ခံရရှိပါသည် (Confirm)</button>
             <p id="depConfirmNote" class="oppay-note">⚠️ Confirm မလုပ်ရင် Deposit က invoice မှာ မပါပါ</p>
           </div>
+        </div>
+        <div class="disc-box">
+          <div class="row">
+            <div>
+              <label class="lbl">💸 Discount</label>
+              <select id="discountType" onchange="calculateNet()">
+                <option value="none">Discount မရှိ</option>
+                <option value="amount">Amount (ငွေပမာဏ)</option>
+                <option value="percent">Percent (%)</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl">ပမာဏ</label>
+              <input id="discountValue" placeholder="0" oninput="calculateNet()">
+            </div>
+          </div>
+          <p id="discountNote"></p>
         </div>
         <div class="field">
           <label class="lbl">📝 Delivery မှတ်ချက် <span style="font-weight:500;color:var(--ink-3);">(receipt အောက်ခြေ)</span></label>
