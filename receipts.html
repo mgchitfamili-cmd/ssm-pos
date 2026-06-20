@@ -254,9 +254,9 @@
 
       <label>Payment အခြေအနေ</label>
       <select id="payStatus">
-        <option value="COD">COD (ပစ္စည်းရောက်မှ)</option>
-        <option value="Prepaid">Prepaid - အပြည့်ရှင်းပြီး</option>
-        <option value="Partial">ပစ္စည်းဖိုးပဲ ရှင်းပြီး (deli ခ ကျန်)</option>
+        <option value="COD">အိမ်ရောက်ငွေချေ (COD)</option>
+        <option value="Prepaid">ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး</option>
+        <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်</option>
       </select>
 
       <label>ငွေ ပမာဏ (Deposit)</label>
@@ -336,7 +336,7 @@
           payInfo = `
             <div class="items-box" style="background:#ecfeff;">
               <b>💵 Payment</b>
-              <p>အခြေအနေ : ${payStatus === "Prepaid" ? "အပြည့်ရှင်းပြီး" : (payStatus === "Partial" ? "ပစ္စည်းဖိုးပဲ ရှင်းပြီး" : "Deposit (COD ကျန်)")}</p>
+              <p>အခြေအနေ : ${payStatus === "Prepaid" ? "ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး" : (payStatus === "Partial" ? "ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်" : "အိမ်ရောက်ငွေချေ (COD)")}</p>
               <p>Type : ${sale.payType || "-"}</p>
               <p>Code : ${sale.payCode || "-"}</p>
               <p>ပမာဏ : ${sale.payAmount || "-"}</p>
@@ -584,7 +584,7 @@
       });
 
       var payLabel = "အိမ်ရောက်ငွေချေ";
-      if (sale.payStatus === "Prepaid") payLabel = "Deli အပါ အားလုံးရှင်းပြီး";
+      if (sale.payStatus === "Prepaid") payLabel = "ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး";
       else if (sale.payStatus === "Partial") payLabel = "ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်";
 
       var logoHtml = logo ? '<img src="' + logo + '" style="width:' + lsize + 'px;height:auto;flex-shrink:0;">' : '';
