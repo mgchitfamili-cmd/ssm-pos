@@ -98,8 +98,9 @@
 
     // ── Helpers ──
     function getNetNumber(s) {
-      let n = Number(String(s.netTotal || "").replace(/[^0-9.-]/g, ""));
-      return isNaN(n) ? 0 : n;
+      function num(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
+      // total - discount - deposit + delivery
+      return num(s.grandTotal) - num(s.discountAmount) - num(s.deposit) + num(s.delivery);
     }
     function fmt(n) { return Number(n || 0).toLocaleString(); }
 
