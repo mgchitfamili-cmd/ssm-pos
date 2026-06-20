@@ -422,16 +422,6 @@
                 Received : ${received.received}
               </div>
 
-              <!-- မှတ်ချက် -->
-              <div class="field">
-                <label>📝 မှတ်ချက်</label>
-                <textarea
-                  oninput="saveNote(${index}, this.value)"
-                  placeholder="မှတ်ချက် ရေးရန်..."
-                  style="padding:9px; width:100%; box-sizing:border-box; border-radius:8px; border:1px solid #ccc; font-size:14px; min-height:60px; font-family:Arial;"
-                >${sale.note || ""}</textarea>
-              </div>
-
               <!-- Actions -->
               <div class="detail-actions">
                 <button class="btn btn-photo" onclick="uploadPhoto(${index})">
