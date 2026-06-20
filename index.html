@@ -201,6 +201,11 @@
       background:var(--surface); color:var(--brand-ink); font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
     .oppay-upload:active{ background:var(--brand-tint); }
     .oppay-ss-img{ display:block; max-width:150px; border-radius:10px; margin:10px 0 0; border:1px solid var(--brand-line); }
+    .oppay-confirm{ width:100%; margin:12px 0 0; padding:12px; border-radius:var(--r-sm); border:1px solid var(--brand-line);
+      background:var(--surface); color:var(--brand-ink); font-family:inherit; font-weight:800; font-size:13px; cursor:pointer; }
+    .oppay-confirm.on{ background:#16a34a; border-color:#16a34a; color:#fff; }
+    .oppay-note{ margin:8px 0 0; font-size:11px; font-weight:600; color:#b45309; }
+    .oppay-confirm.on ~ .oppay-note{ display:none; }
 
     /* after-save */
     #afterSaveActions{
@@ -624,10 +629,10 @@
             <option value="Prepaid">Deli အပါ အားလုံးရှင်းပြီး</option>
           </select>
           <label class="oppay-lbl">ကြိုတင်ပေးငွေ ပမာဏ (Deposit)</label>
-          <input id="deposit" oninput="calculateNet(); toggleDepFields();" placeholder="0">
+          <input id="deposit" oninput="resetDepConfirm(); toggleDepFields();" placeholder="0">
           <div id="depExtra" style="display:none;">
             <label class="oppay-lbl">Online Payment Type</label>
-            <select id="depPayType">
+            <select id="depPayType" onchange="resetDepConfirm()">
               <option value="">— ရွေးပါ —</option>
               <option value="KPay">KPay</option>
               <option value="Wave Pay">Wave Pay</option>
@@ -638,7 +643,9 @@
             <input type="file" id="depSSInput" accept="image/*" style="display:none" onchange="loadDepSS(event)">
             <button type="button" class="oppay-upload" onclick="document.getElementById('depSSInput').click()">📷 ငွေလွှဲ Screenshot ထည့်ရန်</button>
             <img id="depSSPreview" class="oppay-ss-img" style="display:none;">
-            <input id="depCode" maxlength="6" placeholder="Transaction Code (နောက်ဆုံး ၆ လုံး)">
+            <input id="depCode" maxlength="6" placeholder="Transaction Code (နောက်ဆုံး ၆ လုံး)" oninput="resetDepConfirm()">
+            <button type="button" id="depConfirmBtn" class="oppay-confirm" onclick="confirmDeposit()">💰 ငွေ လက်ခံရရှိပါသည် (Confirm)</button>
+            <p id="depConfirmNote" class="oppay-note">⚠️ Confirm မလုပ်ရင် Deposit က invoice မှာ မပါပါ</p>
           </div>
         </div>
         <div class="field">
@@ -950,7 +957,7 @@
 
     function calculateNet() {
       let delivery = Number(document.getElementById("delivery").value);
-      let deposit  = Number(document.getElementById("deposit").value);
+      let deposit  = effectiveDeposit();
       let discType = document.getElementById("discountType").value;
       let discVal  = Number(document.getElementById("discountValue").value) || 0;
 
@@ -1002,6 +1009,27 @@
       var dep = Number(document.getElementById("deposit").value) || 0;
       document.getElementById("depExtra").style.display = ((v && v !== "COD") || dep > 0) ? "block" : "none";
     }
+    var depositConfirmed = false;
+    function effectiveDeposit() {
+      return depositConfirmed ? (Number(document.getElementById("deposit").value) || 0) : 0;
+    }
+    function confirmDeposit() {
+      var amt = Number(document.getElementById("deposit").value) || 0;
+      if (amt <= 0) { alert("Deposit ပမာဏ ထည့်ပါ။"); return; }
+      if (!document.getElementById("depPayType").value) { alert("Online Payment Type ရွေးပါ။"); return; }
+      if (!depSSData) { alert("ငွေလွှဲ Screenshot ထည့်ပါ။"); return; }
+      if ((document.getElementById("depCode").value || "").trim().length !== 6) { alert("Transaction Code ၆ လုံး အပြည့် ထည့်ပါ။"); return; }
+      depositConfirmed = true;
+      var b = document.getElementById("depConfirmBtn");
+      if (b) { b.classList.add("on"); b.textContent = "✓ ငွေ လက်ခံရရှိပြီး"; }
+      calculateNet();
+    }
+    function resetDepConfirm() {
+      depositConfirmed = false;
+      var b = document.getElementById("depConfirmBtn");
+      if (b) { b.classList.remove("on"); b.textContent = "💰 ငွေ လက်ခံရရှိပါသည် (Confirm)"; }
+      calculateNet();
+    }
     function loadDepSS(event) {
       var file = event.target.files[0];
       if (!file) return;
@@ -1010,6 +1038,7 @@
         depSSData = e.target.result;
         var pv = document.getElementById("depSSPreview");
         pv.src = depSSData; pv.style.display = "block";
+        resetDepConfirm();
       };
       reader.readAsDataURL(file);
     }
@@ -1021,7 +1050,7 @@
       // Online payment (deposit) info
       var depStatus = document.getElementById("payStatusSel").value || "COD";
       var depType = document.getElementById("depPayType").value;
-      var depAmt  = Number(document.getElementById("deposit").value) || 0;
+      var depAmt  = effectiveDeposit();
       var depCode = (document.getElementById("depCode").value || "").trim();
       var depPayAmount = "", depPayDate = "";
       if ((depType || depStatus !== "COD") && depAmt > 0) {
@@ -1030,7 +1059,7 @@
       }
 
       // Duplicate transaction-code check (same as receipts)
-      if (depType && depCode) {
+      if (depositConfirmed && depType && depCode) {
         var _hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
         var _dup = null;
         _hist.forEach(function (s, i) {
@@ -1067,12 +1096,12 @@
         deliveryFeeReal: "",
         charge:          "",
         deliveryPhoto:   "",
-        deposit:         document.getElementById("deposit").value,
+        deposit:         depAmt,
         depositBase:     depPayAmount ? 0 : depAmt,
         payStatus:       depStatus,
-        payType:         depType,
-        payCode:         depCode,
-        paySS:           depSSData || "",
+        payType:         depositConfirmed ? depType : "",
+        payCode:         depositConfirmed ? depCode : "",
+        paySS:           depositConfirmed ? (depSSData || "") : "",
         payAmount:       depPayAmount,
         payDate:         depPayDate,
         note:            document.getElementById("note").value,
@@ -1201,6 +1230,8 @@
       document.getElementById("deposit").value         = receipt.deposit         || "";
       document.getElementById("payStatusSel").value    = receipt.payStatus       || "COD";
       document.getElementById("depPayType").value      = receipt.payType         || "";
+      depositConfirmed = (Number(receipt.deposit) > 0);
+      (function(){ var b=document.getElementById("depConfirmBtn"); if(b){ if(depositConfirmed){ b.classList.add("on"); b.textContent="✓ ငွေ လက်ခံရရှိပြီး"; } else { b.classList.remove("on"); b.textContent="💰 ငွေ လက်ခံရရှိပါသည် (Confirm)"; } } })();
       if (typeof toggleDepFields === "function") toggleDepFields();
       document.getElementById("depCode").value         = receipt.payCode         || "";
       depSSData = receipt.paySS || "";
