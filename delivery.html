@@ -255,6 +255,7 @@
     .sheet-opt.custom{ color:var(--brand-ink); font-weight:600; }
     .sheet-empty{ padding:20px; text-align:center; color:var(--ink-3); font-size:14px; }
 
+    html.role-staff .admin-del{ display:none !important; }
   </style>
   <script>(function(){try{if(localStorage.getItem("ssmTheme")==="dark")document.documentElement.classList.add("dark");}catch(e){}})();</script>
 </head>
@@ -437,7 +438,7 @@
                   ${sale.deliveryPhoto ? "👁 Photo" : "📷 Photo"}
                 </button>
                 <button class="btn btn-edit" onclick="editOrder(${index})">✏️ Edit</button>
-                <button class="btn btn-delete" onclick="deleteOrder(${index})">🗑️ Delete</button>
+                <button class="btn btn-delete admin-del" onclick="deleteOrder(${index})">🗑️ Delete</button>
               </div>
 
             </div>
@@ -591,6 +592,10 @@
 
     // ── Delete Order ──────────────────────────────────────────────
     function deleteOrder(index) {
+      if ((localStorage.getItem("ssm_role") || "staff") !== "admin") {
+        alert("Admin သာ ဖျက်နိုင်ပါသည်။");
+        return;
+      }
       if (!confirm("ဒီ Order ကို ဖျက်မှာလား?")) return;
       salesHistory.splice(index, 1);
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
@@ -726,7 +731,7 @@
     ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
   })();
   </script>
-  <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
+  <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';document.documentElement.classList.add('role-'+r);if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
   <script>
   /* ── Custom select → bottom sheet (native <select> picker replaced) ── */
   (function () {
