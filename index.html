@@ -616,19 +616,25 @@
           <input id="delivery" oninput="calculateNet()">
         </div>
         <div class="oppay-box">
-          <p class="oppay-head">💵 Deposit / Online Payment</p>
-          <label class="oppay-lbl">ပမာဏ (ကြိုတင်ပေးငွေ)</label>
-          <input id="deposit" oninput="calculateNet()" placeholder="0">
-          <label class="oppay-lbl">Online Payment Type</label>
-          <select id="depPayType" onchange="toggleDepFields()">
-            <option value="">— Online Payment မရှိ (COD) —</option>
-            <option value="KPay">KPay</option>
-            <option value="Wave Pay">Wave Pay</option>
-            <option value="AYA Pay">AYA Pay</option>
-            <option value="CB Pay">CB Pay</option>
-            <option value="Mobile Banking">Mobile Banking</option>
+          <p class="oppay-head">💵 Payment</p>
+          <label class="oppay-lbl">Payment အခြေအနေ <span style="font-weight:500;color:var(--ink-3);">(receipt အောက် label)</span></label>
+          <select id="payStatusSel" onchange="toggleDepFields(); calculateNet();">
+            <option value="COD">အိမ်ရောက်ငွေချေ (COD)</option>
+            <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး</option>
+            <option value="Prepaid">Deli အပါ အားလုံးရှင်းပြီး</option>
           </select>
+          <label class="oppay-lbl">ကြိုတင်ပေးငွေ ပမာဏ (Deposit)</label>
+          <input id="deposit" oninput="calculateNet(); toggleDepFields();" placeholder="0">
           <div id="depExtra" style="display:none;">
+            <label class="oppay-lbl">Online Payment Type</label>
+            <select id="depPayType">
+              <option value="">— ရွေးပါ —</option>
+              <option value="KPay">KPay</option>
+              <option value="Wave Pay">Wave Pay</option>
+              <option value="AYA Pay">AYA Pay</option>
+              <option value="CB Pay">CB Pay</option>
+              <option value="Mobile Banking">Mobile Banking</option>
+            </select>
             <input type="file" id="depSSInput" accept="image/*" style="display:none" onchange="loadDepSS(event)">
             <button type="button" class="oppay-upload" onclick="document.getElementById('depSSInput').click()">📷 ငွေလွှဲ Screenshot ထည့်ရန်</button>
             <img id="depSSPreview" class="oppay-ss-img" style="display:none;">
@@ -992,8 +998,9 @@
     // ── Deposit online-payment screenshot ──
     var depSSData = "";
     function toggleDepFields() {
-      var v = document.getElementById("depPayType").value;
-      document.getElementById("depExtra").style.display = v ? "block" : "none";
+      var v = document.getElementById("payStatusSel").value;
+      var dep = Number(document.getElementById("deposit").value) || 0;
+      document.getElementById("depExtra").style.display = ((v && v !== "COD") || dep > 0) ? "block" : "none";
     }
     function loadDepSS(event) {
       var file = event.target.files[0];
@@ -1012,13 +1019,12 @@
       let discountAmount = getDiscountAmount();
 
       // Online payment (deposit) info
+      var depStatus = document.getElementById("payStatusSel").value || "COD";
       var depType = document.getElementById("depPayType").value;
       var depAmt  = Number(document.getElementById("deposit").value) || 0;
       var depCode = (document.getElementById("depCode").value || "").trim();
-      var depFull = (Number(grandTotal)||0) - (Number(discountAmount)||0) + (Number(document.getElementById("delivery").value)||0);
-      var depStatus = "COD", depPayAmount = "", depPayDate = "";
-      if (depType && depAmt > 0) {
-        depStatus = depAmt >= depFull ? "Prepaid" : "Partial";
+      var depPayAmount = "", depPayDate = "";
+      if ((depType || depStatus !== "COD") && depAmt > 0) {
         depPayAmount = depAmt;
         depPayDate = new Date().toLocaleDateString();
       }
@@ -1062,7 +1068,7 @@
         charge:          "",
         deliveryPhoto:   "",
         deposit:         document.getElementById("deposit").value,
-        depositBase:     depType ? 0 : depAmt,
+        depositBase:     depPayAmount ? 0 : depAmt,
         payStatus:       depStatus,
         payType:         depType,
         payCode:         depCode,
@@ -1193,6 +1199,7 @@
       document.getElementById("delivery").value        = receipt.delivery        || "";
       document.getElementById("deliveryService").value = receipt.deliveryService || "";
       document.getElementById("deposit").value         = receipt.deposit         || "";
+      document.getElementById("payStatusSel").value    = receipt.payStatus       || "COD";
       document.getElementById("depPayType").value      = receipt.payType         || "";
       if (typeof toggleDepFields === "function") toggleDepFields();
       document.getElementById("depCode").value         = receipt.payCode         || "";
@@ -1623,6 +1630,8 @@
 
       var discount = num(gt('discountShow'));
       var note = gv('note');
+      var _ps = (document.getElementById('payStatusSel')||{}).value || 'COD';
+      var payLabelLive = _ps === 'Prepaid' ? 'Deli အပါ အားလုံးရှင်းပြီး' : (_ps === 'Partial' ? 'ပစ္စည်းဖိုးရှင်းပြီး' : 'အိမ်ရောက်ငွေချေ');
       var delivery = num(gv('delivery'));
       var deposit  = num(gv('deposit'));
       var net      = num(gt('netTotal'));
@@ -1647,7 +1656,7 @@
         '<div class="line"><span>Total</span><span>' + fmt(itemsSum) + '</span></div>' + discLine +
         '<div class="line"><span>Deposit</span><span>' + fmt(deposit) + '</span></div>' +
         '<div class="line"><span>Delivery Fee</span><span>' + fmt(delivery) + '</span></div>' +
-        '<div class="net-box mm">\u1021\u102D\u1019\u103A\u101B\u1031\u102C\u1000\u103A\u1004\u103D\u1031\u1001\u103B\u1031 : ' + fmt(net) + '</div>' +
+        '<div class="net-box mm">' + payLabelLive + ' : ' + fmt(net) + '</div>' +
         (note ? '<div class="rcpt-note">' + note + '</div>' : '') +
         '<div class="footer-mm">' + (S.thankYou ? S.thankYou.replace(/\n/g, '<br>') : "\u1005\u102F\u1036\u1005\u102F\u1036\u1019\u102C\u1019\u102E\u101B\u1032\u1037 \u101C\u1000\u103A\u101B\u102C\u101C\u1031\u1038\u1000\u102D\u102F \u1019\u103C\u100A\u103A\u1038\u1005\u1019\u103A\u1038\u1000\u103C\u100A\u103A\u1037\u1015\u1031\u1038\u101C\u102D\u102F\u1037 \u1000\u103B\u1031\u1038\u1007\u1030\u1038\u1010\u1004\u103A\u1015\u102B\u1010\u101A\u103A \uD83D\uDE4F<br>\u1005\u102C\u1038\u1019\u103C\u102D\u1014\u103A\u1015\u102B\u1005\u1031\u1014\u1031\u102C\u103A \uD83D\uDC9B") + '</div>';
     }
