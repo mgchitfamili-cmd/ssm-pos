@@ -191,6 +191,17 @@
     #discountNote{ font-size:12px; color:var(--brand-ink); margin:9px 2px 0; font-weight:500; }
     #discountNote:empty{ display:none; }
 
+    /* deposit / online payment box */
+    .oppay-box{ background:var(--brand-tint); border:1px solid var(--brand-line); border-radius:var(--r-sm); padding:14px; margin:0 0 12px; }
+    .oppay-head{ margin:0 0 12px; font-size:14px; font-weight:800; color:var(--brand-ink); letter-spacing:-.01em; }
+    .oppay-lbl{ display:block; font-size:12px; font-weight:600; color:var(--brand-ink); margin:0 0 6px 2px; }
+    .oppay-box #deposit, .oppay-box #depPayType{ margin:0 0 12px; }
+    .oppay-box #depCode{ margin:10px 0 0; }
+    .oppay-upload{ width:100%; padding:12px; border:1.5px dashed var(--brand-line); border-radius:var(--r-sm);
+      background:var(--surface); color:var(--brand-ink); font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
+    .oppay-upload:active{ background:var(--brand-tint); }
+    .oppay-ss-img{ display:block; max-width:150px; border-radius:10px; margin:10px 0 0; border:1px solid var(--brand-line); }
+
     /* after-save */
     #afterSaveActions{
       display:none; background:var(--green-tint); border:1px solid var(--green-line);
@@ -603,9 +614,25 @@
           <label class="lbl">Delivery Fee</label>
           <input id="delivery" oninput="calculateNet()">
         </div>
-        <div class="field">
-          <label class="lbl">Deposit</label>
-          <input id="deposit" oninput="calculateNet()">
+        <div class="oppay-box">
+          <p class="oppay-head">💵 Deposit / Online Payment</p>
+          <label class="oppay-lbl">ပမာဏ (ကြိုတင်ပေးငွေ)</label>
+          <input id="deposit" oninput="calculateNet()" placeholder="0">
+          <label class="oppay-lbl">Online Payment Type</label>
+          <select id="depPayType" onchange="toggleDepFields()">
+            <option value="">— Online Payment မရှိ (COD) —</option>
+            <option value="KPay">KPay</option>
+            <option value="Wave Pay">Wave Pay</option>
+            <option value="AYA Pay">AYA Pay</option>
+            <option value="CB Pay">CB Pay</option>
+            <option value="Mobile Banking">Mobile Banking</option>
+          </select>
+          <div id="depExtra" style="display:none;">
+            <input type="file" id="depSSInput" accept="image/*" style="display:none" onchange="loadDepSS(event)">
+            <button type="button" class="oppay-upload" onclick="document.getElementById('depSSInput').click()">📷 ငွေလွှဲ Screenshot ထည့်ရန်</button>
+            <img id="depSSPreview" class="oppay-ss-img" style="display:none;">
+            <input id="depCode" maxlength="6" placeholder="Transaction Code (နောက်ဆုံး ၆ လုံး)">
+          </div>
         </div>
         <div class="field">
           <label class="lbl">📝 Delivery မှတ်ချက် <span style="font-weight:500;color:var(--ink-3);">(receipt အောက်ခြေ)</span></label>
@@ -961,9 +988,56 @@
       return 0;
     }
 
+    // ── Deposit online-payment screenshot ──
+    var depSSData = "";
+    function toggleDepFields() {
+      var v = document.getElementById("depPayType").value;
+      document.getElementById("depExtra").style.display = v ? "block" : "none";
+    }
+    function loadDepSS(event) {
+      var file = event.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        depSSData = e.target.result;
+        var pv = document.getElementById("depSSPreview");
+        pv.src = depSSData; pv.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+    }
+
     // ── Save Receipt ──────────────────────────────────────────────
     function saveReceipt() {
       let discountAmount = getDiscountAmount();
+
+      // Online payment (deposit) info
+      var depType = document.getElementById("depPayType").value;
+      var depAmt  = Number(document.getElementById("deposit").value) || 0;
+      var depCode = (document.getElementById("depCode").value || "").trim();
+      var depFull = (Number(grandTotal)||0) - (Number(discountAmount)||0) + (Number(document.getElementById("delivery").value)||0);
+      var depStatus = "COD", depPayAmount = "", depPayDate = "";
+      if (depType && depAmt > 0) {
+        depStatus = depAmt >= depFull ? "Prepaid" : "Partial";
+        depPayAmount = depAmt;
+        depPayDate = new Date().toLocaleDateString();
+      }
+
+      // Duplicate transaction-code check (same as receipts)
+      if (depType && depCode) {
+        var _hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
+        var _dup = null;
+        _hist.forEach(function (s, i) {
+          if (editIndex != null && i === editIndex) return;
+          if (s.payCode && s.payCode === depCode) _dup = s;
+        });
+        if (_dup) {
+          var _pw = prompt("⚠️ ဒီ Code (" + depCode + ") ကို Order " + (_dup.orderNo || "-") + " မှာ သုံးပြီးသားပါ!\n\nတကယ် ဆက်သုံးချင်ရင် Owner Password ရိုက်ပါ —");
+          if (_pw !== "1234") {
+            alert("Password မှား/ပယ်ဖျက်ခဲ့ပါတယ်။ မသိမ်းပါ။");
+            return;
+          }
+        }
+      }
 
       savedData = {
         orderNo:         window.editOrderNo || ("SSM-" + String(orderNo).padStart(4, "0")),
@@ -987,6 +1061,13 @@
         charge:          "",
         deliveryPhoto:   "",
         deposit:         document.getElementById("deposit").value,
+        depositBase:     depType ? 0 : depAmt,
+        payStatus:       depStatus,
+        payType:         depType,
+        payCode:         depCode,
+        paySS:           depSSData || "",
+        payAmount:       depPayAmount,
+        payDate:         depPayDate,
         note:            document.getElementById("note").value,
         netTotal:        document.getElementById("netTotal").innerText,
         printed:         false,
@@ -1111,6 +1192,11 @@
       document.getElementById("delivery").value        = receipt.delivery        || "";
       document.getElementById("deliveryService").value = receipt.deliveryService || "";
       document.getElementById("deposit").value         = receipt.deposit         || "";
+      document.getElementById("depPayType").value      = receipt.payType         || "";
+      if (typeof toggleDepFields === "function") toggleDepFields();
+      document.getElementById("depCode").value         = receipt.payCode         || "";
+      depSSData = receipt.paySS || "";
+      (function(){ var pv = document.getElementById("depSSPreview"); if (depSSData) { pv.src = depSSData; pv.style.display = "block"; } else { pv.style.display = "none"; } })();
       document.getElementById("note").value            = receipt.note            || "";
       document.getElementById("discountType").value    = receipt.discountType    || "none";
       document.getElementById("discountValue").value   = receipt.discountValue   || "";
