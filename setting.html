@@ -249,6 +249,14 @@
         <textarea id="thankYou" oninput="updatePreview()"></textarea>
       </div>
       <div class="field">
+        <label class="lbl">ဆိုင်အချက်အလက် တည်နေရာ <span style="font-weight:500;color:var(--ink-3);">(Receipt)</span></label>
+        <select id="addrAlign" onchange="updatePreview()">
+          <option value="left">ဘယ်ဘက်</option>
+          <option value="center">အလယ်</option>
+          <option value="right">ညာဘက်</option>
+        </select>
+      </div>
+      <div class="field">
         <label class="lbl">စာလုံး အရွယ် (px)</label>
         <div class="slider-row">
           <input type="range" id="textSize" min="7" max="13" value="9" oninput="updatePreview()">
@@ -285,6 +293,7 @@
         ? s.address.replace(/<br>/g, "\n")
         : "၀/၁၂၆၊ ဗိုလ်တိုက်ချွန်းလမ်း၊ အောင်ချမ်းသာ (၃) ရပ်ကွက်၊\nသန်လျင်";
       document.getElementById("phone").value = s.phone || "09965303525, 09688199078";
+      document.getElementById("addrAlign").value = s.addrAlign || "left";
       document.getElementById("thankYou").value = s.thankYou
         ? s.thankYou.replace(/<br>/g, "\n")
         : "စုံစုံမာမီရဲ့ လက်ရာလေးကို မြည်းစမ်းကြည့်ပေးလို့ ကျေးဇူးအများကြီး တင်ပါတယ် 🙏\nစားမြိန်ပါစေနော် 💛";
@@ -387,6 +396,7 @@
         logo:     currentLogo,
         address:  document.getElementById("address").value.replace(/\n/g, "<br>"),
         phone:    document.getElementById("phone").value,
+        addrAlign: document.getElementById("addrAlign").value,
         thankYou: document.getElementById("thankYou").value.replace(/\n/g, "<br>"),
         logoSize: document.getElementById("logoSize").value,
         textSize: document.getElementById("textSize").value
