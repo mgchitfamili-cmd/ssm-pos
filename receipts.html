@@ -259,6 +259,9 @@
         <option value="Partial">ပစ္စည်းဖိုးပဲ ရှင်းပြီး (deli ခ ကျန်)</option>
       </select>
 
+      <label>ငွေ ပမာဏ (Deposit)</label>
+      <input id="payAmount" placeholder="0" type="number" oninput="togglePrepaidFields()">
+
       <div id="prepaidFields">
         <label>Payment Type</label>
         <select id="payType">
@@ -276,9 +279,6 @@
 
         <label>Transaction Code (နောက်ဆုံး ၆ လုံး)</label>
         <input id="payCode" maxlength="6" placeholder="ပုံ ထည့်ပြီးမှ ရိုက်ပါ" disabled>
-
-        <label>ငွေ ပမာဏ</label>
-        <input id="payAmount" placeholder="0" type="number">
       </div>
 
       <div class="modal-actions">
@@ -332,11 +332,11 @@
 
         // Payment info in detail
         let payInfo = "";
-        if (payStatus !== "COD") {
+        if (payStatus !== "COD" || Number(sale.payAmount) > 0 || Number(sale.deposit) > 0) {
           payInfo = `
             <div class="items-box" style="background:#ecfeff;">
               <b>💵 Payment</b>
-              <p>အခြေအနေ : ${payStatus === "Prepaid" ? "အပြည့်ရှင်းပြီး" : "ပစ္စည်းဖိုးပဲ ရှင်းပြီး"}</p>
+              <p>အခြေအနေ : ${payStatus === "Prepaid" ? "အပြည့်ရှင်းပြီး" : (payStatus === "Partial" ? "ပစ္စည်းဖိုးပဲ ရှင်းပြီး" : "Deposit (COD ကျန်)")}</p>
               <p>Type : ${sale.payType || "-"}</p>
               <p>Code : ${sale.payCode || "-"}</p>
               <p>ပမာဏ : ${sale.payAmount || "-"}</p>
@@ -427,7 +427,7 @@
       document.getElementById("payStatus").value = salesHistory[index].payStatus || "COD";
       document.getElementById("payType").value   = salesHistory[index].payType   || "";
       document.getElementById("payCode").value   = salesHistory[index].payCode   || "";
-      document.getElementById("payAmount").value = salesHistory[index].payAmount || "";
+      document.getElementById("payAmount").value = salesHistory[index].payAmount || salesHistory[index].deposit || "";
 
       // SS preview
       let ssPreview = document.getElementById("ssPreview");
@@ -453,8 +453,9 @@
     document.getElementById("payStatus").addEventListener("change", togglePrepaidFields);
     function togglePrepaidFields() {
       let status = document.getElementById("payStatus").value;
+      let amt = Number(document.getElementById("payAmount").value) || 0;
       document.getElementById("prepaidFields").style.display =
-        status === "COD" ? "none" : "block";
+        (status !== "COD" || amt > 0) ? "block" : "none";
     }
 
     // ── Load SS (ပုံ ထည့်မှ code box ဖွင့်) ───────────────────────
@@ -475,38 +476,32 @@
 
     // ── Save Payment ──────────────────────────────────────────────
     function savePayment() {
-      let status = document.getElementById("payStatus").value;
-      let sale   = salesHistory[payingIndex];
+      let status    = document.getElementById("payStatus").value;
+      let sale      = salesHistory[payingIndex];
+      let payType   = document.getElementById("payType").value;
+      let payCode   = document.getElementById("payCode").value.trim();
+      let payAmount = Number(document.getElementById("payAmount").value) || 0;
 
-      // COD ဆို ရိုးရိုး သိမ်း
-      if (status === "COD") {
+      // No deposit amount entered
+      if (payAmount <= 0) {
+        if (status !== "COD") { alert("ငွေ ပမာဏ ထည့်ပါ"); return; }
         sale.payStatus = "COD";
-        sale.payType   = "";
-        sale.payCode   = "";
-        sale.payAmount = "";
-        sale.paySS     = "";
-        if (sale.depositBase !== undefined) sale.deposit = sale.depositBase; // remove online payment from deposit
+        sale.payType = ""; sale.payCode = ""; sale.payAmount = ""; sale.paySS = "";
+        sale.deposit = 0;
         finishSave();
         return;
       }
 
-      // Prepaid / Partial — validation
-      let payType   = document.getElementById("payType").value;
-      let payCode   = document.getElementById("payCode").value.trim();
-      let payAmount = document.getElementById("payAmount").value;
-
-      if (!tempSS)            { alert("ငွေလွှဲ ပုံ ထည့်ပါ"); return; }
-      if (!payType)          { alert("Payment Type ရွေးပါ"); return; }
+      // There IS a deposit/payment → require proof (SS + type + 6-digit code)
+      if (!tempSS)              { alert("ငွေလွှဲ ပုံ ထည့်ပါ"); return; }
+      if (!payType)             { alert("Payment Type ရွေးပါ"); return; }
       if (payCode.length !== 6) { alert("Code ၆ လုံး ရိုက်ပါ"); return; }
 
       // ── Code Duplicate Check ──
       let duplicate = null;
       salesHistory.forEach(function (s, i) {
-        if (i !== payingIndex && s.payCode === payCode && s.payCode) {
-          duplicate = s;
-        }
+        if (i !== payingIndex && s.payCode === payCode && s.payCode) duplicate = s;
       });
-
       if (duplicate) {
         let pw = prompt(
           "⚠️ ဒီ Code (" + payCode + ") ကို Order " + duplicate.orderNo + " မှာ သုံးပြီးသားပါ!\n\n" +
@@ -522,9 +517,8 @@
       sale.payType   = payType;
       sale.payCode   = payCode;
       sale.payAmount = payAmount;
-      // online payment amount goes into Deposit so the net is reduced on reprint
-      if (sale.depositBase === undefined) sale.depositBase = Number(sale.deposit) || 0;
-      sale.deposit = (Number(sale.depositBase) || 0) + (Number(payAmount) || 0);
+      sale.deposit   = payAmount;   // deposit = the confirmed payment amount
+      sale.depositBase = 0;
       sale.paySS     = tempSS;
       sale.payDate   = new Date().toLocaleDateString();
       finishSave();
