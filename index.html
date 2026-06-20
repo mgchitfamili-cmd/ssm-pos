@@ -1514,7 +1514,7 @@
       var addr  = S.address || 'စုံစုံမာမီ';
       var ph    = S.phone || '';
       var lsize = S.logoSize || 115;
-      var tsize = S.textSize || 9;
+      var tsize = S.textSize || 9; var addrAlign = S.addrAlign || "left";
 
       var customer = gv('name'), phone = gv('phone'), address = gv('address'),
           township = gv('township'), staff = gv('staff'), orderApp = gv('orderapp'),
@@ -1550,7 +1550,7 @@
       box.innerHTML =
         '<div style="display:flex;align-items:center;gap:6px;">' + logoHtml +
           '<div style="flex:1;">' +
-            '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.3;">' + addr + '<br>\uD83D\uDCDE ' + ph + '</div>' +
+            '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.3;text-align:' + addrAlign + ';">' + addr + '<br>\uD83D\uDCDE ' + ph + '</div>' +
             '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.5;margin-top:4px;border-top:1px solid #000;padding-top:3px;text-align:right;">' +
               (orderNo || '') + '<br>\u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + (staff || '-') + '<br>' + (orderApp || '-') + '<br>' + (service || '-') + '</div>' +
           '</div></div><hr>' +
