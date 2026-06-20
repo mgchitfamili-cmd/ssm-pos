@@ -339,6 +339,7 @@
               <p>Type : ${sale.payType || "-"}</p>
               <p>Code : ${sale.payCode || "-"}</p>
               <p>ပမာဏ : ${sale.payAmount || "-"}</p>
+              <p>ရက်စွဲ : ${sale.payDate || "-"}</p>
               ${sale.paySS ? `<img src="${sale.paySS}" style="max-width:100%;max-height:120px;border-radius:6px;margin-top:5px;" onclick="viewSS('${index}')">` : ""}
             </div>`;
         }
@@ -398,8 +399,9 @@
 
     // ── Net number only ───────────────────────────────────────────
     function getNetNumber(sale) {
-      let num = Number(String(sale.netTotal || "").replace(/[^0-9.-]/g, ""));
-      return isNaN(num) ? 0 : num;
+      function n(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
+      // total - discount - deposit + delivery
+      return n(sale.grandTotal) - n(sale.discountAmount) - n(sale.deposit) + n(sale.delivery);
     }
 
     // ── Toggle Card ───────────────────────────────────────────────
