@@ -75,6 +75,10 @@
     .badge-Pending{ background:var(--amber-tint); color:var(--amber); border-color:var(--amber-line); }
     .badge-Delivered{ background:var(--green-tint); color:var(--green); border-color:var(--green-line); }
     .badge-RTS{ background:var(--red-tint); color:var(--red); border-color:var(--red-line); }
+    .badge-parcel{ display:inline-block; padding:3px 9px; border-radius:999px; font-size:11px;
+      font-weight:700; margin-top:5px; margin-left:6px; border:1px solid transparent; vertical-align:middle; }
+    .parcel-yes{ background:var(--green-tint); color:var(--green); border-color:var(--green-line); }
+    .parcel-no{ background:var(--bg); color:var(--ink-3); border-color:var(--line-2); }
 
     /* detail */
     .card-detail{ display:none; padding:4px 14px 14px; border-top:1px solid var(--line); }
@@ -351,7 +355,7 @@
         let received = calculateReceived(sale);
 
         // Parcel status
-        let parcelText = sale.deliveryParcel ? "Parcel ထုတ်ပြီး" : "Parcel မထုတ်ရသေး";
+        let parcelText = sale.deliveryParcel ? "📦 Parcel ထုပ်ပြီး" : "📦 Parcel မထုပ်ရသေး";
 
         html += `
           <div class="card ${status}" id="card-${index}">
@@ -362,6 +366,7 @@
                 <h3>${sale.customer || "-"}</h3>
                 <p>${sale.township || "-"}</p>
                 <span class="status-badge badge-${status}">${status}</span>
+                <span class="badge-parcel ${sale.deliveryParcel ? 'parcel-yes' : 'parcel-no'}">${sale.deliveryParcel ? '📦 ထုပ်ပြီး' : '📦 မထုပ်ရသေး'}</span>
               </div>
               <div class="summary-right">
                 <div class="net">${netNum}</div>
