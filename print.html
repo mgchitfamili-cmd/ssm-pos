@@ -105,7 +105,7 @@
     function fmt(n) { return Number(n || 0).toLocaleString(); }
 
     // ── Date ──
-    let now = new Date();
+    let now = sale.orderDate ? new Date(sale.orderDate) : new Date();
     let dateTime = now.toLocaleDateString() + "  " +
       now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
