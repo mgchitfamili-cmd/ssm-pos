@@ -113,15 +113,15 @@
     let itemHtml = "";
     sale.items.forEach(function (item) {
       let giftTag = item.isGift ? " 🎁" : "";
-      // Unit A/B ဖြုတ်၊ weight size ထား
-      let sizeLabel = "";
+      // Unit A/B ဖြုတ်၊ weight က ပိဿာ/ကျပ်သား breakdown
+      let subText = "";
       if (item.saleType === "weight") {
-        sizeLabel = (item.size || "") + " | ";
-      } else if (item.isGift) {
-        sizeLabel = "လက်ဆောင် | ";
+        subText = item.weightText ? item.weightText : ((item.size || "") + " | " + item.qty + " x " + item.price);
+      } else {
+        subText = (item.isGift ? "လက်ဆောင် | " : "") + item.qty + " x " + item.price;
       }
       itemHtml += '<div class="item-name mm">' + item.product + giftTag + '</div>';
-      itemHtml += '<div class="item-sub mm"><span>' + sizeLabel + item.qty + ' x ' + item.price + '</span><span>' + fmt(item.total) + '</span></div>';
+      itemHtml += '<div class="item-sub mm"><span>' + subText + '</span><span>' + fmt(item.total) + '</span></div>';
       if (item.remark) {
         itemHtml += '<div class="item-remark mm">→ ' + item.remark + '</div>';
       }

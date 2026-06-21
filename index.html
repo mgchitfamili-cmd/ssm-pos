@@ -756,10 +756,52 @@
       }
     }
 
+    // ── Weight (ပိဿာ/ကျပ်သား) pricing helpers ─────────────────────
+    var KYATTHA_PER_VISS = 100;   // ၁ ပိဿာ = ၁၀၀ ကျပ်သား
+    function sizeKyattha(sizeVal){
+      var m = { "5":5, "10":10, "15":15, "25":25, "50":50, "1viss":100 };
+      return m[sizeVal] || 0;
+    }
+    function fmtWeight(ky){
+      var v = Math.floor(ky / KYATTHA_PER_VISS), r = ky - v * KYATTHA_PER_VISS;
+      var parts = [];
+      if (v > 0) parts.push(v + " ပိဿာ");
+      if (r > 0) parts.push(r + " ကျပ်သား");
+      return parts.length ? parts.join(" ") : "0 ကျပ်သား";
+    }
+    // total = (ပြည့်တဲ့ ပိဿာ × price1viss) + (ကျန်ကျပ်သား × extraVissPrice)
+    //         ၁ ပိဿာ မပြည့်ရင် → size ဈေး × qty
+    function weightTotal(product, sizeVal, qty){
+      var sizePriceMap = {
+        "5": product.price5, "10": product.price10, "15": product.price15,
+        "25": product.price25, "50": product.price50, "1viss": product.price1viss
+      };
+      var totalKy = sizeKyattha(sizeVal) * qty;
+      var vissP   = Number(product.price1viss)    || 0;
+      var extraP  = Number(product.extraVissPrice) || 0;
+      var sizeP   = Number(sizePriceMap[sizeVal])  || 0;
+      var fullV   = Math.floor(totalKy / KYATTHA_PER_VISS);
+      var rem     = totalKy - fullV * KYATTHA_PER_VISS;
+      var total   = (fullV >= 1) ? (fullV * vissP + rem * extraP) : (qty * sizeP);
+      return { totalKy: totalKy, total: Math.round(total) };
+    }
+
     // ── Item Total ────────────────────────────────────────────────
     function calculateItemTotal() {
-      let price = Number(document.getElementById("price").value);
-      let qty   = Number(document.getElementById("qty").value);
+      var saleType = document.getElementById("saleType").value;
+      var qty = Number(document.getElementById("qty").value) || 0;
+
+      if (saleType === "weight" && !document.getElementById("isGift").checked) {
+        var products = JSON.parse(localStorage.getItem("products")) || [];
+        var pName = document.getElementById("product").value;
+        var product = products.find(function (p) { return p.name == pName; });
+        var sizeVal = document.getElementById("size").value;
+        var t = product ? weightTotal(product, sizeVal, qty) : { total: 0 };
+        document.getElementById("itemTotal").value = t.total;
+        return;
+      }
+
+      var price = Number(document.getElementById("price").value) || 0;
       document.getElementById("itemTotal").value = price * qty;
     }
 
@@ -850,15 +892,30 @@
         sizeLabel = "Unit " + document.getElementById("unitChoice").value;
       }
 
+      // Weight items — ပိဿာ/ကျပ်သား breakdown label
+      let weightText = "";
+      if (saleType === "weight") {
+        var _sv = document.getElementById("size").value;
+        var _ky = sizeKyattha(_sv) * qty;
+        weightText = sizeLabel + " × " + qty + " ထုပ် = " + fmtWeight(_ky);
+      }
+
       // Validation
       if (!product) { alert("Product ရွေးပါ"); return; }
       if (!qty)     { alert("Qty ထည့်ပါ");    return; }
-      if (!isGift && !price) { alert("Price မရှိပါ"); return; }
+      if (!isGift) {
+        if (saleType === "weight") {
+          if (!total) { alert("ဈေးနှုန်း သတ်မှတ်ထားခြင်း မရှိပါ"); return; }
+        } else if (!price) {
+          alert("Price မရှိပါ"); return;
+        }
+      }
 
       let item = {
         id: Date.now() + Math.random(),
         product, saleType, size: sizeLabel,
         price, qty, remark, total,
+        weightText: weightText,
         isGift: isGift
       };
 
@@ -867,12 +924,14 @@
 
       let giftTag = isGift ? " 🎁" : "";
 
-      var _lbl = saleType === "weight" ? (sizeLabel + " | ") : (isGift ? "လက်ဆောင် | " : "");
+      var _sub = (saleType === "weight")
+        ? weightText
+        : ((isGift ? "လက်ဆောင် | " : "") + qty + " x " + price);
       document.getElementById("saleTable").innerHTML += `
         <div class="rcart-item" data-id="${item.id}" data-total="${total}">
           <div class="rcart-main">
             <div class="item-name">${product}${giftTag}</div>
-            <div class="item-sub"><span>${_lbl}${qty} x ${price}</span><span>${total}</span></div>
+            <div class="item-sub"><span>${_sub}</span><span>${total}</span></div>
             ${remark ? `<div class="item-remark">→ ${remark}</div>` : ""}
           </div>
           <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">✏️</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">🗑️</button></span>
@@ -1278,12 +1337,14 @@
         grandTotal += Number(item.total);
 
         let giftTag = item.isGift ? " 🎁" : "";
-        var _lbl2 = (item.saleType === "weight") ? ((item.size || "") + " | ") : (item.isGift ? "လက်ဆောင် | " : "");
+        var _sub2 = (item.saleType === "weight")
+          ? (item.weightText ? item.weightText : ((item.size || "") + " | " + item.qty + " x " + item.price))
+          : ((item.isGift ? "လက်ဆောင် | " : "") + item.qty + " x " + item.price);
         document.getElementById("saleTable").innerHTML += `
           <div class="rcart-item" data-id="${item.id}" data-total="${item.total}">
             <div class="rcart-main">
               <div class="item-name">${item.product}${giftTag}</div>
-              <div class="item-sub"><span>${_lbl2}${item.qty} x ${item.price}</span><span>${item.total}</span></div>
+              <div class="item-sub"><span>${_sub2}</span><span>${item.total}</span></div>
               ${item.remark ? `<div class="item-remark">→ ${item.remark}</div>` : ""}
             </div>
             <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">✏️</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">🗑️</button></span>

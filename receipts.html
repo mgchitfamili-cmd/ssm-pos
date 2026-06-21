@@ -312,8 +312,10 @@
         if (sale.items) {
           sale.items.forEach(function (item) {
             let giftTag = item.isGift ? " 🎁" : "";
-            let lbl = item.saleType === "weight" ? ((item.size || "") + " | ") : (item.isGift ? "လက်ဆောင် | " : (item.size ? item.size + " | " : ""));
-            itemHtml += `<div class="ritem"><div class="ritem-name">${item.product}${giftTag}</div><div class="ritem-sub"><span>${lbl}${item.qty} x ${item.price}</span><span>${item.total}</span></div>${item.remark ? `<div class="ritem-remark">→ ${item.remark}</div>` : ""}</div>`;
+            let wsub = item.saleType === "weight"
+              ? (item.weightText ? item.weightText : ((item.size || "") + " | " + item.qty + " x " + item.price))
+              : ((item.isGift ? "လက်ဆောင် | " : (item.size ? item.size + " | " : "")) + item.qty + " x " + item.price);
+            itemHtml += `<div class="ritem"><div class="ritem-name">${item.product}${giftTag}</div><div class="ritem-sub"><span>${wsub}</span><span>${item.total}</span></div>${item.remark ? `<div class="ritem-remark">→ ${item.remark}</div>` : ""}</div>`;
           });
         }
 
