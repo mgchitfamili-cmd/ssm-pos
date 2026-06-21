@@ -4,6 +4,7 @@
   <title>Receipt History</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="receipt.js"></script>
 
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <link rel="manifest" href="manifest.json">
@@ -576,51 +577,7 @@
     }
 
 
-    // ── Build Receipt HTML (print/share) ──────────────────────────
-    function buildReceiptHTML(sale) {
-      function fmtN(n){ var x = Number(String(n==null?0:n).replace(/[^0-9.\-]/g,"")); return (isNaN(x)?0:x).toLocaleString(); }
-      var S = {};
-      try { S = JSON.parse(localStorage.getItem("shopSettings")) || {}; } catch(e){}
-      var logo = S.logo || "", addr = S.address || "Sone Sone Mommy", ph = S.phone || "";
-      var lsize = S.logoSize || 115, tsize = S.textSize || 9;
-      var addrAlign = S.addrAlign || "left";
-      var ty = (S.thankYou || "စုံစုံမာမီရဲ့ လက်ရာလေးကို မြည်းစမ်းကြည့်ပေးလို့ ကျေးဇူးအများကြီး တင်ပါတယ် 🙏<br>စားမြိန်ပါစေနော် 💛").replace(/\n/g, "<br>");
-
-      var itemHtml = "";
-      sale.items.forEach(function (item) {
-        var gift = item.isGift ? " 🎁" : "";
-        var lbl = item.saleType === "weight" ? ((item.size || "") + " | ") : (item.isGift ? "လက်ဆောင် | " : "");
-        itemHtml += '<div class="item-name mm">' + item.product + gift + '</div>';
-        itemHtml += '<div class="item-sub mm"><span>' + lbl + item.qty + ' x ' + item.price + '</span><span>' + fmtN(item.total) + '</span></div>';
-        if (item.remark) itemHtml += '<div class="item-remark mm">→ ' + item.remark + '</div>';
-      });
-
-      var payLabel = "အိမ်ရောက်ငွေချေ";
-      if (sale.payStatus === "Prepaid") payLabel = "ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး";
-      else if (sale.payStatus === "Partial") payLabel = "ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်";
-
-      var logoHtml = logo ? '<img src="' + logo + '" style="width:' + lsize + 'px;height:auto;flex-shrink:0;">' : '';
-      var d = sale.orderDate ? new Date(sale.orderDate) : new Date();
-      var dt = d.toLocaleDateString() + "  " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      var disc = Number(sale.discountAmount) || 0;
-
-      return ''
-        + '<div style="display:flex;align-items:center;gap:6px;">' + logoHtml
-        +   '<div style="flex:1;">'
-        +     '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.3;text-align:' + addrAlign + ';">' + addr + '<br>📞 ' + ph + '</div>'
-        +     '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.5;margin-top:4px;border-top:1px solid #000;padding-top:3px;text-align:right;">' + (sale.orderNo || "") + '<br>လက်ခံသူ-' + (sale.staff || "-") + '<br>' + (sale.orderApp || "-") + '<br>' + (sale.deliveryService || "-") + '</div>'
-        +   '</div></div><hr>'
-        + '<div class="line" style="align-items:baseline;"><span class="town-mid">' + (sale.township || "-") + '</span><span style="font-size:11px;">' + dt + '</span></div><hr>'
-        + '<div class="cus-mid">' + (sale.customer || "-") + '</div><div class="phone-clear">' + (sale.phone || "-") + '</div><div class="addr-mm">' + (sale.address || "-") + '</div><hr>'
-        + itemHtml + '<hr>'
-        + '<div class="line"><span>Total</span><span>' + fmtN(sale.grandTotal) + '</span></div>'
-        + (disc > 0 ? '<div class="line"><span>Discount</span><span>-' + fmtN(disc) + '</span></div>' : '')
-        + '<div class="line"><span>Deposit</span><span>' + fmtN(sale.deposit) + '</span></div>'
-        + '<div class="line"><span>Delivery Fee</span><span>' + fmtN(sale.delivery) + '</span></div>'
-        + '<div class="net-box mm">' + payLabel + ' : ' + fmtN(getNetNumber(sale)) + '</div>'
-        + (sale.note ? '<div class="delivery-note mm">' + sale.note + '</div>' : '')
-        + '<div class="footer-mm">' + ty + '</div>';
-    }
+    // Receipt template moved to shared receipt.js (ssmRenderReceipt) — single source of truth.
 
     // ── Print ─────────────────────────────────────────────────────
     function printReceipt(index) {
@@ -634,7 +591,7 @@
     function shareReceipt(index) {
       let sale = salesHistory[index];
       let box  = document.getElementById("receiptPreviewHidden");
-      box.innerHTML = buildReceiptHTML(sale);
+      window.ssmRenderReceipt(box, sale);   // print.html နဲ့ တူညီတဲ့ template
 
       html2canvas(box, { backgroundColor: "#ffffff", scale: 2, useCORS: true }).then(function (canvas) {
         canvas.toBlob(function (blob) {

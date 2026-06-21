@@ -6,6 +6,7 @@
   <title>Sone Sone Mommy POS</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="receipt.js"></script>
 
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <link rel="manifest" href="manifest.json">
@@ -1274,8 +1275,12 @@
 
     // ── Share ─────────────────────────────────────────────────────
     function shareReceipt() {
-      let preview = document.getElementById("receiptPreview");
-      html2canvas(preview).then(function (canvas) {
+      var box = document.createElement("div");
+      box.style.position = "fixed"; box.style.left = "-9999px"; box.style.top = "0";
+      document.body.appendChild(box);
+      window.ssmRenderReceipt(box, savedData);   // print.html နဲ့ တူညီတဲ့ template
+      html2canvas(box, { backgroundColor: "#ffffff", scale: 2 }).then(function (canvas) {
+        box.remove();
         canvas.toBlob(function (blob) {
           let file = new File([blob], "receipt.png", { type: "image/png" });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1288,7 +1293,7 @@
             alert("Share API မရှိပါ။ Image ကို Download လုပ်ပေးလိုက်ပါတယ်။");
           }
         });
-      });
+      }).catch(function (e) { box.remove(); alert("Share Error: " + e); });
     }
 
     // ── New Receipt ───────────────────────────────────────────────
