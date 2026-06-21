@@ -563,13 +563,14 @@
     }
 
     function deletePhoto() {
-      if (!confirm("ဒီ photo ကို ဖျက်မှာလား?")) return;
-      salesHistory[currentViewIndex].deliveryPhoto  = "";
-      salesHistory[currentViewIndex].deliveryParcel = false;
-      localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
-      closePhoto();
-      openCardIndex = currentViewIndex;
-      renderCards();  // reload အစား
+      showConfirm("ဒီ photo ကို ဖျက်မှာလား?", function () {
+        salesHistory[currentViewIndex].deliveryPhoto  = "";
+        salesHistory[currentViewIndex].deliveryParcel = false;
+        localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+        closePhoto();
+        openCardIndex = currentViewIndex;
+        renderCards();  // reload အစား
+      });
     }
 
     // ── Edit Order (Sale page သို့) ───────────────────────────────
@@ -584,11 +585,12 @@
         alert("Admin သာ ဖျက်နိုင်ပါသည်။");
         return;
       }
-      if (!confirm("ဒီ Order ကို ဖျက်မှာလား?")) return;
-      salesHistory.splice(index, 1);
-      localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
-      openCardIndex = null;
-      renderCards();
+      showConfirm("ဒီ Order ကို ဖျက်မှာလား?", function () {
+        salesHistory.splice(index, 1);
+        localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+        openCardIndex = null;
+        renderCards();
+      });
     }
 
     // ── Init ──────────────────────────────────────────────────────

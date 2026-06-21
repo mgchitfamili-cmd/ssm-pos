@@ -501,26 +501,37 @@
       salesHistory.forEach(function (s, i) {
         if (i !== payingIndex && s.payCode === payCode && s.payCode) duplicate = s;
       });
-      if (duplicate) {
-        let pw = prompt(
-          "⚠️ ဒီ Code (" + payCode + ") ကို Order " + duplicate.orderNo + " မှာ သုံးပြီးသားပါ!\n\n" +
-          "တကယ် ဆက်သုံးချင်ရင် Owner Password ရိုက်ပါ —"
-        );
-        if (pw !== OWNER_PASSWORD) {
-          alert("Password မှား/ပယ်ဖျက်ခဲ့ပါတယ်။ Code မသိမ်းပါ။");
-          return;
-        }
+
+      function commitPayment() {
+        sale.payStatus = status;
+        sale.payType   = payType;
+        sale.payCode   = payCode;
+        sale.payAmount = payAmount;
+        sale.deposit   = payAmount;   // deposit = the confirmed payment amount
+        sale.depositBase = 0;
+        sale.paySS     = tempSS;
+        sale.payDate   = new Date().toLocaleDateString();
+        finishSave();
       }
 
-      sale.payStatus = status;
-      sale.payType   = payType;
-      sale.payCode   = payCode;
-      sale.payAmount = payAmount;
-      sale.deposit   = payAmount;   // deposit = the confirmed payment amount
-      sale.depositBase = 0;
-      sale.paySS     = tempSS;
-      sale.payDate   = new Date().toLocaleDateString();
-      finishSave();
+      if (duplicate) {
+        showPrompt(
+          "⚠️ ဒီ Code (" + payCode + ") ကို Order " + duplicate.orderNo + " မှာ သုံးပြီးသားပါ!\n\n" +
+          "တကယ် ဆက်သုံးချင်ရင် Owner Password ရိုက်ပါ —",
+          function (pw) {
+            if (pw !== OWNER_PASSWORD) {
+              alert("Password မှား/ပယ်ဖျက်ခဲ့ပါတယ်။ Code မသိမ်းပါ။");
+              return;
+            }
+            commitPayment();
+          },
+          null,
+          { type: "password" }
+        );
+        return;
+      }
+
+      commitPayment();
     }
 
     function finishSave() {
@@ -540,12 +551,12 @@
     // ── Delete ────────────────────────────────────────────────────
     function deleteReceipt(index) {
       if ((localStorage.getItem('ssm_role')||'staff') !== 'admin') { alert('Admin မှ ဖျက်လို့ရပါတယ်'); return; }
-      if (confirm("ဒီ Receipt ကို ဖျက်မှာလား?")) {
+      showConfirm("ဒီ Receipt ကို ဖျက်မှာလား?", function () {
         salesHistory.splice(index, 1);
         localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
         openIndex = null;
         renderHistory();
-      }
+      });
     }
 
     // ── Edit ──────────────────────────────────────────────────────
@@ -690,6 +701,28 @@
       var yes = document.createElement("button"); yes.textContent = "ဟုတ်ကဲ့";
       yes.onclick = function(){ close(); if(onYes) onYes(); };
       actEl.appendChild(cancel); actEl.appendChild(yes); ov.classList.add("show");
+    };
+    window.showPrompt = function (message, onSubmit, onCancel, opts){
+      opts = opts || {};
+      var ov2 = document.createElement("div"); ov2.className = "popup-overlay";
+      ov2.innerHTML = '<div class="popup-card" role="dialog" aria-modal="true">' +
+        '<p class="popup-msg" style="white-space:pre-line"></p>' +
+        '<input class="popup-input" style="width:100%;margin:2px 0 14px;padding:11px 12px;font-size:15px;border:1px solid #dcdfe7;border-radius:11px;font-family:inherit;outline:none;box-sizing:border-box;background:#fff;color:#15171c;">' +
+        '<div class="popup-actions"></div></div>';
+      document.body.appendChild(ov2);
+      var m = ov2.querySelector(".popup-msg"), inp = ov2.querySelector(".popup-input"), act = ov2.querySelector(".popup-actions");
+      m.textContent = message;
+      inp.type = opts.type || "text"; if (opts.inputmode) inp.inputMode = opts.inputmode;
+      function done(){ ov2.remove(); }
+      var cancel = document.createElement("button"); cancel.className = "popup-cancel"; cancel.textContent = "မလုပ်တော့";
+      cancel.onclick = function(){ done(); if (onCancel) onCancel(); };
+      var ok = document.createElement("button"); ok.textContent = "အတည်ပြု";
+      ok.onclick = function(){ var v = inp.value; done(); if (onSubmit) onSubmit(v); };
+      act.appendChild(cancel); act.appendChild(ok);
+      ov2.addEventListener("click", function(e){ if (e.target === ov2){ done(); if (onCancel) onCancel(); } });
+      inp.addEventListener("keydown", function(e){ if (e.key === "Enter") ok.click(); });
+      ov2.classList.add("show");
+      setTimeout(function(){ inp.focus(); }, 60);
     };
     ov.addEventListener("click", function (e){ if (e.target === ov) close(); });
   })();
