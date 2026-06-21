@@ -322,8 +322,9 @@
     }
 
     function getNet(sale) {
-      let num = Number(String(sale.netTotal || "").replace(/[^0-9.-]/g, ""));
-      return isNaN(num) ? 0 : num;
+      function n(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
+      // total - discount - deposit + delivery
+      return n(sale.grandTotal) - n(sale.discountAmount) - n(sale.deposit) + n(sale.delivery);
     }
 
     // ── Set Period ────────────────────────────────────────────────

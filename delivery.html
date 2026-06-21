@@ -446,10 +446,9 @@
 
     // ── Net Total နံပါတ်ပဲ ထုတ် ──────────────────────────────────
     function getNetNumber(sale) {
-      let netText = sale.netTotal || "";
-      // "Net Total : 500" → 500
-      let num = Number(String(netText).replace(/[^0-9.-]/g, ""));
-      return isNaN(num) ? 0 : num;
+      function n(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
+      // total - discount - deposit + delivery
+      return n(sale.grandTotal) - n(sale.discountAmount) - n(sale.deposit) + n(sale.delivery);
     }
 
     // ── Toggle Card ───────────────────────────────────────────────
