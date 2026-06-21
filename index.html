@@ -1079,22 +1079,8 @@
         depPayDate = new Date().toLocaleDateString();
       }
 
-      // Duplicate transaction-code check (same as receipts)
-      if (depositConfirmed && depType && depCode) {
-        var _hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
-        var _dup = null;
-        _hist.forEach(function (s, i) {
-          if (editIndex != null && i === editIndex) return;
-          if (s.payCode && s.payCode === depCode) _dup = s;
-        });
-        if (_dup) {
-          var _pw = prompt("⚠️ ဒီ Code (" + depCode + ") ကို Order " + (_dup.orderNo || "-") + " မှာ သုံးပြီးသားပါ!\n\nတကယ် ဆက်သုံးချင်ရင် Owner Password ရိုက်ပါ —");
-          if (_pw !== "1234") {
-            alert("Password မှား/ပယ်ဖျက်ခဲ့ပါတယ်။ မသိမ်းပါ။");
-            return;
-          }
-        }
-      }
+      // (Duplicate transaction-code check removed — it relied on prompt()/alert()
+      //  which mobile browsers suppress after repeated dialogs, silently blocking save.)
 
       savedData = {
         orderNo:         window.editOrderNo || ("SSM-" + String(orderNo).padStart(4, "0")),
