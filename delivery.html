@@ -616,7 +616,6 @@
   <script>
   /* ── Delivery service filter (works with search + survives re-render) ── */
   (function () {
-    window.__delSvc = "all";
     function idxOf(card){ var m = (card.id || "").match(/card-(\d+)/); return m ? Number(m[1]) : -1; }
     function _selVal(id){ var e = document.getElementById(id); return e ? e.value : "all"; }
     function _dayStr(iso){ var d = new Date(iso); if (isNaN(d.getTime())) return ""; return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
@@ -649,12 +648,6 @@
       });
     }
     window.applyDeliveryFilters = applyDeliveryFilters;
-    window.setDeliverySvc = function (svc, btn){
-      window.__delSvc = svc;
-      document.querySelectorAll("#deliveryFilter .chip").forEach(function (c){ c.classList.remove("active"); });
-      btn.classList.add("active");
-      applyDeliveryFilters();
-    };
     // hook existing functions
     if (typeof searchDelivery === "function") { searchDelivery = function(){ applyDeliveryFilters(); }; }
     if (typeof renderCards === "function") { var _r = renderCards; renderCards = function(){ _r(); applyDeliveryFilters(); }; }
