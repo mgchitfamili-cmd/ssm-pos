@@ -10,7 +10,7 @@
       img.className = "menu-logo";
       img.src = s.logo;
       img.alt = "logo";
-      img.style.cssText = "width:54px;height:54px;border-radius:14px;object-fit:cover;display:block;margin-bottom:10px;background:#fff;";
+      img.style.cssText = "width:120px;height:120px;border-radius:20px;object-fit:cover;display:block;margin-bottom:12px;background:#fff;";
       head.insertBefore(img, head.firstChild);
     } catch (e) {}
   }
