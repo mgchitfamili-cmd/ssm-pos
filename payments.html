@@ -64,7 +64,11 @@
     #payList{ padding:0 14px; }
     .pay-card{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px;
       margin-bottom:10px; box-shadow:var(--shadow); }
-    .pay-card .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+    .pay-card .top{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; cursor:pointer; }
+    .pay-chev{ display:inline-block; transition:transform .2s ease; color:var(--ink-3); font-size:13px; margin-top:6px; }
+    .pay-card.open .pay-chev{ transform:rotate(180deg); }
+    .pay-body{ display:none; }
+    .pay-card.open .pay-body{ display:block; }
     .pay-card h3{ margin:0 0 4px; font-size:15px; font-weight:700; color:var(--ink); }
     .pay-card .sub{ font-size:12px; color:var(--ink-3); margin:2px 0; }
     .pay-amount{ font-weight:800; font-size:18px; color:var(--green); white-space:nowrap; letter-spacing:-.01em; }
@@ -326,22 +330,27 @@
 
         html += `
           <div class="pay-card${sale.verified ? ' verified' : ''}">
-            <div class="top">
+            <div class="top" onclick="togglePayCard(this)">
               <div>
                 <h3>${sale.customer || "-"}</h3>
                 <p class="sub">${sale.township || "-"} | ${sale.orderNo || ""}</p>
                 <span class="pay-type-badge">${sale.payType || "-"}</span>${statusLabel}
               </div>
-              <div class="pay-amount">${Number(sale.payAmount || 0).toLocaleString()}</div>
+              <div style="text-align:right;">
+                <div class="pay-amount">${Number(sale.payAmount || 0).toLocaleString()}</div>
+                <span class="pay-chev">▾</span>
+              </div>
             </div>
 
-            <div class="pay-detail">
-              <p><b>Code:</b> ${sale.payCode || "-"}</p>
-              <p><b>Date:</b> ${sale.payDate || "-"}</p>
-              <p><b>Phone:</b> ${sale.phone || "-"}</p>
-              ${ssImg}
+            <div class="pay-body">
+              <div class="pay-detail">
+                <p><b>Code:</b> ${sale.payCode || "-"}</p>
+                <p><b>Date:</b> ${sale.payDate || "-"}</p>
+                <p><b>Phone:</b> ${sale.phone || "-"}</p>
+                ${ssImg}
+              </div>
+              <button class="verify-btn ${sale.verified ? "on" : ""}" onclick="toggleVerified(${o.index})">${sale.verified ? "✓ ငွေလွှဲ စစ်ပြီးပြီ" : "ငွေလွှဲ ရောက်မရောက် စစ်ရန်"}</button>
             </div>
-            <button class="verify-btn ${sale.verified ? "on" : ""}" onclick="toggleVerified(${o.index})">${sale.verified ? "✓ ငွေလွှဲ စစ်ပြီးပြီ" : "ငွေလွှဲ ရောက်မရောက် စစ်ရန်"}</button>
           </div>`;
       });
 
@@ -350,6 +359,12 @@
       }
 
       document.getElementById("payList").innerHTML = html;
+    }
+
+    // ── Expand/collapse a payment card ────────────────────────────
+    function togglePayCard(el) {
+      var card = el.closest(".pay-card");
+      if (card) card.classList.toggle("open");
     }
 
     // ── Owner verify toggle (remember which transfers were checked) ──
