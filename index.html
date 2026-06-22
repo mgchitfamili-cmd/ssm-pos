@@ -1159,7 +1159,7 @@
       b.style.color = "#fff";
       b.textContent = msg + (isError ? "\n(တို့ပြီး ပိတ်ရန်)" : "");
       b.style.display = "block";
-      try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
+      if (isError) { try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {} }
       if (!isError) setTimeout(function(){ if (b) b.style.display = "none"; }, 2500);
     }
 
@@ -1259,8 +1259,10 @@
 
       document.getElementById("saveBtn").disabled  = true;
       document.getElementById("saveBtn").innerText = "✅ Saved";
-      document.getElementById("afterSaveActions").style.display = "block";
+      var _asa = document.getElementById("afterSaveActions");
+      _asa.style.display = "block";
       showSaveMsg("✅ ဘောင်ချာ သိမ်းပြီးပါပြီ — " + savedData.orderNo, false);
+      try { _asa.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
 
       try { buildReceiptPreview(savedData); }
       catch (pe) { console.error("preview error", pe); }
