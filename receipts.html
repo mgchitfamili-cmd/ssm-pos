@@ -494,19 +494,38 @@
     }
 
     // ── Load SS (ပုံ ထည့်မှ code box ဖွင့်) ───────────────────────
-    function loadSS(event) {
-      let file = event.target.files[0];
-      if (!file) return;
-      let reader = new FileReader();
+    function resizeImageFile(file, cb) {
+      var reader = new FileReader();
       reader.onload = function (e) {
-        tempSS = e.target.result;
+        var img = new Image();
+        img.onload = function () {
+          var MAX = 1000, w = img.width, h = img.height;
+          if (w > h && w > MAX)      { h = Math.round(h * MAX / w); w = MAX; }
+          else if (h >= w && h > MAX){ w = Math.round(w * MAX / h); h = MAX; }
+          var c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          cb(c.toDataURL("image/jpeg", 0.7));
+        };
+        img.onerror = function () { cb(null); };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    function loadSS(event) {
+      var input = event.target;
+      var file = input.files[0];
+      if (!file) return;
+      resizeImageFile(file, function (dataUrl) {
+        input.value = "";   // ဖိုင်တူ ပြန်ရွေးရင်ပါ onchange fire ဖို့
+        if (!dataUrl) { alert("ဓာတ်ပုံ ဖတ်လို့ မရပါ။ ပြန်ကြိုးစားပါ။"); return; }
+        tempSS = dataUrl;
         let ssPreview = document.getElementById("ssPreview");
         ssPreview.src = tempSS;
         ssPreview.style.display = "block";
         // Code box ဖွင့်
         document.getElementById("payCode").disabled = false;
-      };
-      reader.readAsDataURL(file);
+      });
     }
 
     // ── Save Payment ──────────────────────────────────────────────

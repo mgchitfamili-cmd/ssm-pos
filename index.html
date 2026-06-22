@@ -1088,17 +1088,36 @@
       if (b) { b.classList.remove("on"); b.textContent = "💰 ငွေ လက်ခံရရှိပါသည် (Confirm)"; }
       calculateNet();
     }
-    function loadDepSS(event) {
-      var file = event.target.files[0];
-      if (!file) return;
+    function resizeImageFile(file, cb) {
       var reader = new FileReader();
       reader.onload = function (e) {
-        depSSData = e.target.result;
+        var img = new Image();
+        img.onload = function () {
+          var MAX = 1000, w = img.width, h = img.height;
+          if (w > h && w > MAX)      { h = Math.round(h * MAX / w); w = MAX; }
+          else if (h >= w && h > MAX){ w = Math.round(w * MAX / h); h = MAX; }
+          var c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          cb(c.toDataURL("image/jpeg", 0.7));
+        };
+        img.onerror = function () { cb(null); };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    function loadDepSS(event) {
+      var input = event.target;
+      var file = input.files[0];
+      if (!file) return;
+      resizeImageFile(file, function (dataUrl) {
+        input.value = "";   // ဖိုင်တူ ပြန်ရွေးရင်ပါ onchange fire ဖို့
+        if (!dataUrl) { alert("ဓာတ်ပုံ ဖတ်လို့ မရပါ။ ပြန်ကြိုးစားပါ။"); return; }
+        depSSData = dataUrl;
         var pv = document.getElementById("depSSPreview");
         pv.src = depSSData; pv.style.display = "block";
         resetDepConfirm();
-      };
-      reader.readAsDataURL(file);
+      });
     }
 
     // ── On-page message banner (alert() can be suppressed on mobile) ──
