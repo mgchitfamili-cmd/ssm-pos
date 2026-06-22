@@ -1077,7 +1077,29 @@
       if (amt <= 0) { alert("Deposit ပမာဏ ထည့်ပါ။"); return; }
       if (!document.getElementById("depPayType").value) { alert("Online Payment Type ရွေးပါ။"); return; }
       if (!depSSData) { alert("ငွေလွှဲ Screenshot ထည့်ပါ။"); return; }
-      if ((document.getElementById("depCode").value || "").trim().length !== 6) { alert("Transaction Code ၆ လုံး အပြည့် ထည့်ပါ။"); return; }
+      var _dc = (document.getElementById("depCode").value || "").trim();
+      if (_dc.length !== 6) { alert("Transaction Code ၆ လုံး အပြည့် ထည့်ပါ။"); return; }
+
+      // ── Duplicate transaction-code check (confirm-time — receipts လိုပဲ) ──
+      var _hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      var _myNo = window.editOrderNo || ("SSM-" + String(orderNo).padStart(4, "0"));
+      var _dup = null;
+      for (var _i = 0; _i < _hist.length; _i++) {
+        var _h = _hist[_i];
+        if (_h && _h.payCode && String(_h.payCode).trim() === _dc && _h.orderNo !== _myNo) { _dup = _h; break; }
+      }
+      if (_dup) {
+        showConfirm(
+          "ယခုထည့်ထားသော " + _dc + " မှာ " + (_dup.orderNo || "-") + " တွင် အသုံးပြုပြီးဖြစ်ပါသည်။\n\nသေချာအောင် ပြန်လည်စစ်ဆေးပါ။",
+          function () { applyDepConfirm(); },   // သေချာပါသည် → confirm လုပ်မယ်
+          null,                                  // ပြန်စစ်ပါမည် → confirm မလုပ်ဘူး
+          { yes: "သေချာပါသည်", no: "ပြန်စစ်ပါမည်" }
+        );
+        return;
+      }
+      applyDepConfirm();
+    }
+    function applyDepConfirm() {
       depositConfirmed = true;
       var b = document.getElementById("depConfirmBtn");
       if (b) { b.classList.add("on"); b.textContent = "✓ ငွေ လက်ခံရရှိပြီး"; }
@@ -1165,31 +1187,6 @@
         showSaveMsg("⚠️ အောက်ပါတို့ ဖြည့်ပါ —\n• " + _miss.join("\n• "), true);
         return;
       }
-
-      // ── Duplicate transaction-code check (styled popup → never suppressed) ──
-      // Code တူရင် အကြိမ်တိုင်း သတိပေးပြီး Admin PIN ရိုက်မှ ဆက်သိမ်းခွင့်ပြုမည်။
-      if (!saveReceipt._dupApproved) {
-        var _dc = (document.getElementById("depCode").value || "").trim();
-        if (_dc && depositConfirmed) {
-          var _hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
-          var _myNo = window.editOrderNo || ("SSM-" + String(orderNo).padStart(4, "0"));
-          var _dup = null;
-          for (var _i = 0; _i < _hist.length; _i++) {
-            var _h = _hist[_i];
-            if (_h && _h.payCode && String(_h.payCode).trim() === _dc && _h.orderNo !== _myNo) { _dup = _h; break; }
-          }
-          if (_dup) {
-            showConfirm(
-              "ယခုထည့်ထားသော " + _dc + " မှာ " + (_dup.orderNo || "-") + " တွင် အသုံးပြုပြီးဖြစ်ပါသည်။\n\nသေချာအောင် ပြန်လည်စစ်ဆေးပါ။",
-              function () { saveReceipt._dupApproved = true; saveReceipt(); },   // သေချာပါသည် → ဆက်သိမ်း
-              null,                                                               // ပြန်စစ်ပါမည် → ရပ်
-              { yes: "သေချာပါသည်", no: "ပြန်စစ်ပါမည်" }
-            );
-            return;   // အတည်ပြုမှ သိမ်းမယ်
-          }
-        }
-      }
-      saveReceipt._dupApproved = false;   // တစ်ကြိမ်သုံးပြီး reset
 
       let discountAmount = getDiscountAmount();
 
