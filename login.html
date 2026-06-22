@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SSM POS — Login</title>
+  <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <style>
+    :root{ --bg:#f4f5f8; --surface:#fff; --line-2:#dcdfe7; --ink:#15171c; --ink-3:#8b919e; --brand:#6d28d9; }
+    html.dark{ --bg:#0f1115; --surface:#1a1d27; --line-2:#33384a; --ink:#e6e9f0; --ink-3:#8b93a7; --brand:#a78bfa; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+      background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,sans-serif; padding:20px; }
+    .box{ width:100%; max-width:340px; background:var(--surface); border:1px solid var(--line-2);
+      border-radius:18px; padding:26px 22px; box-shadow:0 8px 30px rgba(0,0,0,.08); }
+    h1{ font-size:20px; margin:0 0 4px; text-align:center; }
+    p.sub{ margin:0 0 20px; text-align:center; color:var(--ink-3); font-size:13px; }
+    label{ font-size:12px; color:var(--ink-3); display:block; margin:12px 0 4px; }
+    input{ width:100%; padding:12px 13px; border:1px solid var(--line-2); border-radius:11px;
+      background:var(--bg); color:var(--ink); font-size:15px; outline:none; }
+    button{ width:100%; margin-top:20px; padding:13px; border:none; border-radius:11px;
+      background:var(--brand); color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+    button:disabled{ opacity:.6; }
+    .msg{ margin-top:14px; font-size:13px; text-align:center; min-height:18px; }
+    .msg.err{ color:#dc2626; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Sone Sone Mommy</h1>
+    <p class="sub">POS System — Login</p>
+
+    <label>Email</label>
+    <input id="email" type="email" autocomplete="username" placeholder="you@example.com">
+
+    <label>Password</label>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="••••••••">
+
+    <button id="btn" disabled>Loading…</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <script src="firebase-init.js"></script>
+  <script>
+    var btn = document.getElementById("btn");
+    var msg = document.getElementById("msg");
+
+    function ready() {
+      btn.disabled = false;
+      btn.textContent = "ဝင်မယ်";
+      // already logged in? → go to app
+      window.fb.auth.onAuthStateChanged(function (user) {
+        if (user) location.replace("index.html");
+      });
+    }
+    if (window.fb) ready();
+    else document.addEventListener("fb-ready", ready);
+    document.addEventListener("fb-error", function () {
+      msg.textContent = "Firebase မချိတ်နိုင်ပါ — config / internet စစ်ပါ။";
+      msg.className = "msg err";
+    });
+
+    function signIn() {
+      var email = document.getElementById("email").value.trim();
+      var pw    = document.getElementById("pw").value;
+      if (!email || !pw) { msg.textContent = "Email နဲ့ Password ထည့်ပါ။"; msg.className = "msg err"; return; }
+      btn.disabled = true; btn.textContent = "ဝင်နေသည်…"; msg.textContent = ""; msg.className = "msg";
+      window.fb.login(email, pw)
+        .then(function () { location.replace("index.html"); })
+        .catch(function (err) {
+          btn.disabled = false; btn.textContent = "ဝင်မယ်";
+          msg.textContent = "ဝင်လို့မရပါ — " + (err && err.code ? err.code : "error");
+          msg.className = "msg err";
+        });
+    }
+    btn.addEventListener("click", signIn);
+    document.getElementById("pw").addEventListener("keydown", function (e) { if (e.key === "Enter") signIn(); });
+  </script>
+</body>
+</html>
