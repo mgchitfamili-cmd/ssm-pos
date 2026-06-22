@@ -46,7 +46,17 @@
       };
       // offline cache (PWA အတွက်)
       try { window.fb.db.enablePersistence({ synchronizeTabs: true }); } catch (e) {}
-      document.dispatchEvent(new Event("fb-ready"));
+
+      // ── Auth guard ──────────────────────────────────────────────
+      // login မဝင်ထားရင် login.html ကို ပို့။ Firebase ချိတ်လို့မရရင်တော့
+      // ဘာမှ မလုပ်ဘဲ app ကို ဆက်သုံးခွင့်ပေး (fail-open — app မပိတ်မိအောင်)။
+      var onLogin = /login\.html$/i.test(location.pathname);
+      window.fb.auth.onAuthStateChanged(function (user) {
+        window.fbUser = user || null;
+        if (!user && !onLogin) { location.replace("login.html"); return; }
+        if (user && onLogin)   { location.replace("index.html"); return; }
+        document.dispatchEvent(new Event("fb-ready"));
+      });
     } catch (e) {
       console.error("Firebase init error:", e);
       document.dispatchEvent(new Event("fb-error"));

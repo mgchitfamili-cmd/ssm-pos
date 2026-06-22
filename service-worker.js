@@ -1,9 +1,9 @@
 /* Sone Sone Mommy POS — service worker. Bump CACHE on each deploy to push updates. */
-const CACHE = 'ssm-pos-v11';
+const CACHE = 'ssm-pos-v12';
 const ASSETS = [
   './', 'index.html', 'receipts.html', 'products.html', 'staff.html',
   'delivery.html', 'payments.html', 'report.html', 'setting.html', 'print.html',
-  'receipt.js', 'menu-logo.js', 'manifest.json', 'icon-192.png', 'icon-512.png', 'icon-180.png'
+  'receipt.js', 'menu-logo.js', 'firebase-init.js', 'login.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'icon-180.png'
 ];
 
 self.addEventListener('install', function (e) {
@@ -21,6 +21,8 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   var req = e.request;
   if (req.method !== 'GET') return;
+  // cross-origin (Firebase SDK / Firestore / Auth) တွေကို SW မထိဘဲ network ကို တိုက်ရိုက် ပို့
+  try { if (new URL(req.url).origin !== self.location.origin) return; } catch (err) { return; }
   var isHTML = req.mode === 'navigate' || (req.headers.get('accept') || '').indexOf('text/html') >= 0;
   var isJS   = (function(){ try { return new URL(req.url).pathname.endsWith('.js'); } catch(e){ return false; } })();
   if (isHTML || isJS) {
