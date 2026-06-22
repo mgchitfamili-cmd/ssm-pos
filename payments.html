@@ -88,6 +88,18 @@
     .badge-partial{ background:var(--brand-tint); color:var(--brand-ink); border-color:var(--brand-line); }
     .badge-deposit{ background:var(--amber-tint); color:var(--amber); border-color:var(--amber-line); }
 
+    /* Duplicate-code notification (owner only) */
+    .dup-banner{ display:none; margin:0 14px 14px; padding:13px 15px; border-radius:14px;
+      background:var(--amber-tint); border:1px solid var(--amber-line); }
+    .dup-banner .dup-head{ display:flex; align-items:center; gap:8px; font-weight:800; font-size:14px; color:var(--amber); }
+    .dup-banner .dup-list{ margin:9px 0 0; display:flex; flex-direction:column; gap:6px; }
+    .dup-banner .dup-row{ font-size:13px; font-weight:600; color:var(--ink); background:var(--surface);
+      border:1px solid var(--line-2); border-radius:9px; padding:7px 10px; }
+    .dup-banner .dup-row b{ color:var(--amber); }
+    .dup-banner .dup-ack{ margin-top:10px; width:100%; padding:10px; border-radius:10px; border:none;
+      background:var(--brand); color:#fff; font-weight:800; font-size:14px; font-family:inherit; cursor:pointer;
+      -webkit-tap-highlight-color:transparent; }
+
     .pay-detail{ margin-top:12px; font-size:13px; color:var(--ink-2); border-top:1px solid var(--line); padding-top:11px; }
     .pay-detail p{ margin:5px 0; }
     .pay-detail b{ color:var(--ink); font-weight:600; }
@@ -192,6 +204,13 @@
     <span class="top-title" style="font-size:18px;font-weight:bold;">ငွေလွှဲစာရင်း</span>
   </div>
   <h1>💵 Online Payments</h1>
+
+  <!-- Duplicate-code notification (owner/admin only) -->
+  <div class="dup-banner" id="dupBanner">
+    <div class="dup-head">⚠️ <span class="dup-count">Code တူ</span></div>
+    <div class="dup-list"></div>
+    <button class="dup-ack" onclick="ackDupBanner()">✓ စစ်ဆေးပြီးပါပြီ</button>
+  </div>
 
   <!-- Summary -->
   <div class="summary-row">
@@ -388,6 +407,50 @@
       document.getElementById("pcnt-Prepaid").textContent = counts.Prepaid;
       document.getElementById("pcnt-Partial").textContent = counts.Partial;
       document.getElementById("pcnt-Deposit").textContent = counts.Deposit;
+
+      renderDupBanner();
+    }
+
+    // ── Duplicate-code notification (owner/admin only) ────────────
+    function findDupGroups() {
+      var hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      var byCode = {};
+      hist.forEach(function (s) {
+        var c = s && s.payCode ? String(s.payCode).trim() : "";
+        if (!c) return;
+        (byCode[c] = byCode[c] || []).push(s.orderNo || "-");
+      });
+      var groups = [];
+      Object.keys(byCode).forEach(function (c) {
+        if (byCode[c].length >= 2) groups.push({ code: c, orders: byCode[c] });
+      });
+      return groups;
+    }
+    function dupSignature(groups) {
+      return groups.map(function (g) { return g.code + ":" + g.orders.slice().sort().join(","); }).sort().join("|");
+    }
+    function renderDupBanner() {
+      var el = document.getElementById("dupBanner");
+      if (!el) return;
+      var role = localStorage.getItem("ssm_role") || "staff";
+      if (role !== "admin") { el.style.display = "none"; return; }            // owner only
+      var groups = findDupGroups();
+      if (!groups.length) { el.style.display = "none"; return; }
+      var sig = dupSignature(groups);
+      if (sig === (localStorage.getItem("ssm_dupAck") || "")) { el.style.display = "none"; return; }  // owner စစ်ပြီးသား
+      var total = groups.reduce(function (n, g) { return n + g.orders.length; }, 0);
+      el.querySelector(".dup-count").textContent = "Code တူ " + total + " စောင် တွေ့ရှိ — စစ်ဆေးပါ";
+      el.querySelector(".dup-list").innerHTML = groups.map(function (g) {
+        return '<div class="dup-row"><b>' + g.code + '</b> — ' + g.orders.join(", ") + '</div>';
+      }).join("");
+      el.setAttribute("data-sig", sig);
+      el.style.display = "block";
+    }
+    function ackDupBanner() {
+      var el = document.getElementById("dupBanner");
+      var sig = el ? (el.getAttribute("data-sig") || "") : "";
+      if (sig) localStorage.setItem("ssm_dupAck", sig);   // ဒီ duplicate အစုကို မှတ်ထား → ထပ်မပြ
+      if (el) el.style.display = "none";
     }
 
     // ── Expand/collapse a payment card ────────────────────────────
