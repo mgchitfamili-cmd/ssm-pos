@@ -1166,6 +1166,31 @@
         return;
       }
 
+      // ── Duplicate transaction-code check (styled popup → never suppressed) ──
+      // Code တူရင် အကြိမ်တိုင်း သတိပေးပြီး Admin PIN ရိုက်မှ ဆက်သိမ်းခွင့်ပြုမည်။
+      if (!saveReceipt._dupApproved) {
+        var _dc = (document.getElementById("depCode").value || "").trim();
+        if (_dc && depositConfirmed) {
+          var _hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
+          var _myNo = window.editOrderNo || ("SSM-" + String(orderNo).padStart(4, "0"));
+          var _dup = null;
+          for (var _i = 0; _i < _hist.length; _i++) {
+            var _h = _hist[_i];
+            if (_h && _h.payCode && String(_h.payCode).trim() === _dc && _h.orderNo !== _myNo) { _dup = _h; break; }
+          }
+          if (_dup) {
+            showConfirm(
+              "ယခုထည့်ထားသော " + _dc + " မှာ " + (_dup.orderNo || "-") + " တွင် အသုံးပြုပြီးဖြစ်ပါသည်။\n\nသေချာအောင် ပြန်လည်စစ်ဆေးပါ။",
+              function () { saveReceipt._dupApproved = true; saveReceipt(); },   // သေချာပါသည် → ဆက်သိမ်း
+              null,                                                               // ပြန်စစ်ပါမည် → ရပ်
+              { yes: "သေချာပါသည်", no: "ပြန်စစ်ပါမည်" }
+            );
+            return;   // အတည်ပြုမှ သိမ်းမယ်
+          }
+        }
+      }
+      saveReceipt._dupApproved = false;   // တစ်ကြိမ်သုံးပြီး reset
+
       let discountAmount = getDiscountAmount();
 
       // Online payment (deposit) info
@@ -1463,6 +1488,7 @@
 
     window.alert = function (message) {
       msgEl.textContent = message;
+      msgEl.style.whiteSpace = "normal";
       iconEl.textContent = pickIcon(message);
       actEl.innerHTML = "";
       var ok = document.createElement("button");
@@ -1473,20 +1499,47 @@
       ok.focus();
     };
 
-    window.showConfirm = function (message, onYes, onNo) {
+    window.showConfirm = function (message, onYes, onNo, opts) {
+      opts = opts || {};
       msgEl.textContent = message;
-      iconEl.textContent = "\u2753";
+      msgEl.style.whiteSpace = "pre-line";
+      iconEl.textContent = opts.icon || "\u2753";
       actEl.innerHTML = "";
       var cancel = document.createElement("button");
       cancel.className = "popup-cancel";
-      cancel.textContent = "\u1019\u101c\u102f\u1015\u103a\u1010\u1031\u102c\u1037";
+      cancel.textContent = opts.no || "\u1019\u101c\u102f\u1015\u103a\u1010\u1031\u102c\u1037";
       cancel.onclick = function () { close(); if (onNo) onNo(); };
       var yes = document.createElement("button");
-      yes.textContent = "\u101f\u102f\u1010\u103a\u1000\u1032\u1037";
+      yes.textContent = opts.yes || "\u101f\u102f\u1010\u103a\u1000\u1032\u1037";
       yes.onclick = function () { close(); if (onYes) onYes(); };
       actEl.appendChild(cancel);
       actEl.appendChild(yes);
       ov.classList.add("show");
+    };
+
+    // PIN / text input popup (styled — never suppressed like native prompt())
+    window.showPrompt = function (message, onSubmit, onCancel, opts) {
+      opts = opts || {};
+      var ov2 = document.createElement("div"); ov2.className = "popup-overlay";
+      ov2.innerHTML = '<div class="popup-card" role="dialog" aria-modal="true">' +
+        '<div class="popup-icon">\u26a0\ufe0f</div>' +
+        '<p class="popup-msg" style="white-space:pre-line"></p>' +
+        '<input class="popup-input" style="width:100%;margin:2px 0 14px;padding:11px 12px;font-size:15px;border:1px solid #dcdfe7;border-radius:11px;font-family:inherit;outline:none;box-sizing:border-box;background:#fff;color:#15171c;">' +
+        '<div class="popup-actions"></div></div>';
+      document.body.appendChild(ov2);
+      var m = ov2.querySelector(".popup-msg"), inp = ov2.querySelector(".popup-input"), act = ov2.querySelector(".popup-actions");
+      m.textContent = message;
+      inp.type = opts.type || "text"; if (opts.inputmode) inp.inputMode = opts.inputmode;
+      function done(){ ov2.remove(); }
+      var cancel = document.createElement("button"); cancel.className = "popup-cancel"; cancel.textContent = "\u1019\u101c\u102f\u1015\u103a\u1010\u1031\u102c\u1037";
+      cancel.onclick = function(){ done(); if (onCancel) onCancel(); };
+      var ok = document.createElement("button"); ok.textContent = "\u1021\u1010\u100a\u103a\u1015\u103c\u102f";
+      ok.onclick = function(){ var v = inp.value; done(); if (onSubmit) onSubmit(v); };
+      act.appendChild(cancel); act.appendChild(ok);
+      ov2.addEventListener("click", function(e){ if (e.target === ov2){ done(); if (onCancel) onCancel(); } });
+      inp.addEventListener("keydown", function(e){ if (e.key === "Enter") ok.click(); });
+      ov2.classList.add("show");
+      setTimeout(function(){ inp.focus(); }, 60);
     };
 
     ov.addEventListener("click", function (e) { if (e.target === ov) close(); });

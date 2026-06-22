@@ -330,7 +330,6 @@
     let openIndex    = null;
     let payingIndex  = null;
     let tempSS       = "";       // ယာယီ SS data
-    const OWNER_PASSWORD = "1234";
 
     // ── Render List ───────────────────────────────────────────────
     function renderHistory() {
@@ -575,18 +574,11 @@
       }
 
       if (duplicate) {
-        showPrompt(
-          "⚠️ ဒီ Code (" + payCode + ") ကို Order " + duplicate.orderNo + " မှာ သုံးပြီးသားပါ!\n\n" +
-          "တကယ် ဆက်သုံးချင်ရင် Owner Password ရိုက်ပါ —",
-          function (pw) {
-            if (pw !== OWNER_PASSWORD) {
-              alert("Password မှား/ပယ်ဖျက်ခဲ့ပါတယ်။ Code မသိမ်းပါ။");
-              return;
-            }
-            commitPayment();
-          },
-          null,
-          { type: "password" }
+        showConfirm(
+          "ယခုထည့်ထားသော " + payCode + " မှာ " + duplicate.orderNo + " တွင် အသုံးပြုပြီးဖြစ်ပါသည်။\n\nသေချာအောင် ပြန်လည်စစ်ဆေးပါ။",
+          function () { commitPayment(); },   // သေချာပါသည် → ဆက်သိမ်း
+          null,                                // ပြန်စစ်ပါမည် → ရပ်
+          { yes: "သေချာပါသည်", no: "ပြန်စစ်ပါမည်" }
         );
         return;
       }
@@ -743,15 +735,16 @@
       if (/⚠|မ|ပါ|error|fail/i.test(m)) return "⚠️";
       return "ℹ️"; }
     window.alert = function (message){
-      msgEl.textContent = message; iconEl.textContent = pickIcon(message); actEl.innerHTML = "";
+      msgEl.textContent = message; msgEl.style.whiteSpace = "normal"; iconEl.textContent = pickIcon(message); actEl.innerHTML = "";
       var ok = document.createElement("button"); ok.textContent = "ရပြီ"; ok.onclick = close;
       actEl.appendChild(ok); ov.classList.add("show"); ok.focus();
     };
-    window.showConfirm = function (message, onYes, onNo){
-      msgEl.textContent = message; iconEl.textContent = "❓"; actEl.innerHTML = "";
+    window.showConfirm = function (message, onYes, onNo, opts){
+      opts = opts || {};
+      msgEl.textContent = message; msgEl.style.whiteSpace = "pre-line"; iconEl.textContent = opts.icon || "❓"; actEl.innerHTML = "";
       var cancel = document.createElement("button"); cancel.className = "popup-cancel";
-      cancel.textContent = "မလုပ်တော့"; cancel.onclick = function(){ close(); if(onNo) onNo(); };
-      var yes = document.createElement("button"); yes.textContent = "ဟုတ်ကဲ့";
+      cancel.textContent = opts.no || "မလုပ်တော့"; cancel.onclick = function(){ close(); if(onNo) onNo(); };
+      var yes = document.createElement("button"); yes.textContent = opts.yes || "ဟုတ်ကဲ့";
       yes.onclick = function(){ close(); if(onYes) onYes(); };
       actEl.appendChild(cancel); actEl.appendChild(yes); ov.classList.add("show");
     };
