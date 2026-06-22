@@ -341,7 +341,11 @@
         html = `<p style="color:#9ca3af; text-align:center; margin-top:40px;">Receipt မရှိသေးပါ။</p>`;
       }
 
-      salesHistory.forEach(function (sale, index) {
+      salesHistory
+        .map(function (sale, index) { return { sale: sale, index: index }; })
+        .reverse() // အသစ်ဆုံး အပေါ်ဆုံး
+        .forEach(function (o) {
+        var sale = o.sale, index = o.index;
         let itemHtml = "";
         if (sale.items) {
           sale.items.forEach(function (item) {

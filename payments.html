@@ -251,7 +251,8 @@
           // Prepaid/Partial OR any order that has a deposit / online payment (incl. COD+deposit)
           return st === "Prepaid" || st === "Partial"
                  || (Number(o.sale.payAmount) > 0) || (Number(o.sale.deposit) > 0);
-        });
+        })
+        .reverse(); // အသစ်ဆုံး အပေါ်ဆုံး
     }
 
     // ── Summary ───────────────────────────────────────────────────

@@ -346,7 +346,11 @@
         </p>`;
       }
 
-      salesHistory.forEach(function (sale, index) {
+      salesHistory
+        .map(function (sale, index) { return { sale: sale, index: index }; })
+        .reverse() // အသစ်ဆုံး အပေါ်ဆုံး
+        .forEach(function (o) {
+        var sale = o.sale, index = o.index;
         let status = sale.deliveryStatus || "Pending";
 
         // Net total number only
