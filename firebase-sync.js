@@ -11,13 +11,12 @@
 (function () {
   var SYNC_KEYS = ["products"];          // later: shopSettings, staffList
   var COL = "appdata";
-  var RELOAD_WINDOW = 3000;              // page load ပြီး ဒီ ms အတွင်း ကွဲရင် reload
   var loadedAt = Date.now();
   var rawSet = localStorage.setItem.bind(localStorage);   // patch မလုပ်ခင် မူရင်း setItem
+  var lastPush = {};                                       // key → local save လုပ်ခဲ့တဲ့ အချိန် (race ကာကွယ်ဖို့)
 
   function refreshPage(key) {
-    // page load ပြီးခါစ ဆို reload (user မထိခင်)၊ မဟုတ်ရင် render function ခေါ်
-    if (Date.now() - loadedAt < RELOAD_WINDOW) { location.reload(); return; }
+    // reload မလုပ်တော့ဘဲ (data မပျက်အောင်) — page ရဲ့ loader ပဲ ခေါ်
     try {
       if (key === "products"   && typeof window.loadProducts === "function") window.loadProducts();
       else if (key === "shopSettings" && typeof window.loadSettings === "function") window.loadSettings();
@@ -34,7 +33,8 @@
     localStorage.setItem = function (key, val) {
       origSet(key, val);
       if (SYNC_KEYS.indexOf(key) >= 0) {
-        db.collection(COL).doc(key).set({ json: val, updatedAt: Date.now() })
+        lastPush[key] = Date.now();
+        db.collection(COL).doc(key).set({ json: val, updatedAt: lastPush[key] })
           .catch(function (e) { console.warn("[sync] push failed:", key, e); });
       }
     };
@@ -52,7 +52,16 @@
         }
         var remote = snap.data() && snap.data().json;
         if (remote == null || remote === local) return;   // တူ → ဘာမှမလုပ်
-        rawSet(key, remote);                               // local update (patch မ fire အောင် rawSet)
+
+        // လတ်တလော local save ကို remote (ဟောင်း/race) နဲ့ မဖျက်အောင် ကာကွယ်
+        var rAt = (snap.data() && snap.data().updatedAt) || 0;
+        if (lastPush[key] && rAt <= lastPush[key]) {
+          // ကျွန်တော်တို့ local က ပိုသစ် → remote ကို မယူဘဲ local ပြန်တင်
+          db.collection(COL).doc(key).set({ json: local, updatedAt: lastPush[key] }).catch(function () {});
+          return;
+        }
+
+        rawSet(key, remote);                               // remote ပိုသစ် → local update
         refreshPage(key);
       }, function (err) { console.warn("[sync] listen error:", key, err); });
     });
