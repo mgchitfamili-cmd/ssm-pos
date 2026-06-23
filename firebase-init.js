@@ -49,7 +49,7 @@
 
       // ── data sync (inlined — သီးခြား firebase-sync.js မလို) ──────────
       // page ဖွင့်ချိန် cloud ကို တစ်ခါပဲ ဆွဲ၊ ပြီးရင် local ကို ဘယ်တော့မှ မဖျက် (push-only)။
-      var SYNC_KEYS   = ["products"];          // later: "shopSettings", "staffList"
+      var SYNC_KEYS   = ["products", "shopSettings", "staffList"];   // Stage 3b: settings + staff ပါ ထည့်
       var COL         = "appdata";
       var rawSet      = localStorage.setItem.bind(localStorage);
       var lastPush    = {};
