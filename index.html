@@ -43,6 +43,13 @@
       --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 18px rgba(16,24,40,.04);
     }
     *{ box-sizing:border-box; }
+    /* Buttons/popups/chrome — text select မဖြစ်အောင် (tap လုပ်ရင် စိမ်းပြာကွက် မပေါ်စေရန်) */
+    button, .oppay-confirm, .popup-card, .popup-icon, .popup-msg, .popup-actions,
+    .csel-btn, .checkout-bar, label, h1, h2, h3 {
+      -webkit-user-select:none; -moz-user-select:none; user-select:none;
+      -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
+    }
+    input, textarea, [contenteditable]{ -webkit-user-select:text; user-select:text; }
     html,body{ margin:0; }
     body{
       font-family:system-ui,'Noto Sans Myanmar','Padauk','Myanmar Text','Segoe UI',sans-serif;
