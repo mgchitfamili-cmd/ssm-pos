@@ -9,7 +9,7 @@
    - offline edit တွေက Firestore offline queue (enablePersistence) နဲ့ ထိန်းတယ်။
    ────────────────────────────────────────────────────────────── */
 (function () {
-  var SYNC_KEYS = ["products"];          // later: shopSettings, staffList
+  var SYNC_KEYS = [];          // ⏸️ ခဏပိတ်ထား (diagnostic) — ["products"] ပြန်ထည့်ရင် sync ပြန်ဖွင့်
   var COL = "appdata";
   var loadedAt = Date.now();
   var rawSet = localStorage.setItem.bind(localStorage);   // patch မလုပ်ခင် မူရင်း setItem
@@ -26,6 +26,7 @@
 
   function start() {
     if (!window.fb || !window.fb.db || !window.fbUser) return;
+    console.log("[SSM sync] v2 (push-only) loaded");
     var db = window.fb.db;
 
     // ── PUSH: local save → Firestore ──
@@ -39,30 +40,34 @@
       }
     };
 
-    // ── PULL: Firestore → local ──
+    // ── PULL: Firestore → local (page ဖွင့်ချိန် တစ်ခါပဲ ဆွဲ၊ ပြီးရင် local ကို ဘယ်တော့မှ မဖျက်) ──
+    var initialDone = {};
     SYNC_KEYS.forEach(function (key) {
       db.collection(COL).doc(key).onSnapshot(function (snap) {
         var local = localStorage.getItem(key);
+
         if (!snap.exists) {
-          // cloud မှာ မရှိသေး → local ရှိရင် seed (local မဖျက်)
-          if (local && local !== "[]" && local !== "{}") {
+          if (local && local !== "[]" && local !== "{}") {  // cloud မရှိ → seed
             db.collection(COL).doc(key).set({ json: local, updatedAt: Date.now() }).catch(function () {});
+          }
+          initialDone[key] = true;
+          return;
+        }
+
+        var remote = snap.data() && snap.data().json;
+
+        if (!initialDone[key]) {
+          // ပထမဆုံး snapshot (page ဖွင့်ချိန်) — local save မလုပ်ရသေးရင်သာ cloud ကို ယူ
+          initialDone[key] = true;
+          if (remote != null && remote !== local && !lastPush[key]) {
+            rawSet(key, remote);
+            refreshPage(key);
           }
           return;
         }
-        var remote = snap.data() && snap.data().json;
-        if (remote == null || remote === local) return;   // တူ → ဘာမှမလုပ်
 
-        // လတ်တလော local save ကို remote (ဟောင်း/race) နဲ့ မဖျက်အောင် ကာကွယ်
-        var rAt = (snap.data() && snap.data().updatedAt) || 0;
-        if (lastPush[key] && rAt <= lastPush[key]) {
-          // ကျွန်တော်တို့ local က ပိုသစ် → remote ကို မယူဘဲ local ပြန်တင်
-          db.collection(COL).doc(key).set({ json: local, updatedAt: lastPush[key] }).catch(function () {});
-          return;
-        }
-
-        rawSet(key, remote);                               // remote ပိုသစ် → local update
-        refreshPage(key);
+        // ပထမ snapshot ပြီးနောက် — local ကို ဘယ်တော့မှ မဖျက် (push-only)။
+        // cloud ပိုသစ်ရင် နောက် page ဖွင့်မှ ရမယ်။
       }, function (err) { console.warn("[sync] listen error:", key, err); });
     });
   }
