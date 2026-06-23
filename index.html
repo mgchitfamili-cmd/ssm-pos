@@ -10,7 +10,6 @@
 
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="firebase-init.js"></script>
-  <script src="firebase-sync.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6d28d9">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -792,7 +791,14 @@
       var sizeP   = Number(sizePriceMap[sizeVal])  || 0;
       var fullV   = Math.floor(totalKy / KYATTHA_PER_VISS);
       var rem     = totalKy - fullV * KYATTHA_PER_VISS;
-      var total   = (fullV >= 1) ? (fullV * vissP + rem * extraP) : (qty * sizeP);
+      var total;
+      if (product.vissFrom50 && totalKy >= 50) {
+        total = totalKy * extraP;            // Special: 50 ကျပ်သားကနေ → ပိဿာပိုဈေး(/ကျပ်သား) × စုစုပေါင်းကျပ်သား
+      } else if (fullV >= 1) {
+        total = fullV * vissP + rem * extraP; // ပုံမှန် ၁ ပိဿာ+
+      } else {
+        total = qty * sizeP;                  // ၁ ပိဿာ မပြည့် → size ဈေး
+      }
       return { totalKy: totalKy, total: Math.round(total) };
     }
 

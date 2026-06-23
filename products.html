@@ -6,7 +6,6 @@
   <title>Products</title>
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="firebase-init.js"></script>
-  <script src="firebase-sync.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6d28d9">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -250,7 +249,11 @@
         <div class="field">
           <div class="row">
             <div><label class="lbl">ပိဿာပို ဈေး</label><input id="extraVissPrice" inputmode="numeric" placeholder="0"></div>
-            <div></div>
+            <div><label class="lbl">Special</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding-top:8px;cursor:pointer;">
+                <input type="checkbox" id="vissFrom50" style="width:18px;height:18px;flex:0 0 auto;"> 50 ကျပ်သားကနေ ပိဿာဈေး
+              </label>
+            </div>
           </div>
         </div>
       </section>
@@ -312,6 +315,7 @@
       document.getElementById("price50").value        = p.price50       || "";
       document.getElementById("price1viss").value     = p.price1viss    || "";
       document.getElementById("extraVissPrice").value = p.extraVissPrice|| "";
+      document.getElementById("vissFrom50").checked   = !!p.vissFrom50;
       document.getElementById("unitPriceA").value     = p.unitPriceA    || "";
       document.getElementById("unitPriceB").value     = p.unitPriceB    || "";
       toggleSections();
@@ -328,6 +332,7 @@
       document.getElementById("price50").value        = "";
       document.getElementById("price1viss").value     = "";
       document.getElementById("extraVissPrice").value = "";
+      document.getElementById("vissFrom50").checked   = false;
       document.getElementById("unitPriceA").value     = "";
       document.getElementById("unitPriceB").value     = "";
       toggleSections();
@@ -348,6 +353,7 @@
         price50:        document.getElementById("price50").value,
         price1viss:     document.getElementById("price1viss").value,
         extraVissPrice: document.getElementById("extraVissPrice").value,
+        vissFrom50:     document.getElementById("vissFrom50").checked,
         unitPriceA:     document.getElementById("unitPriceA").value,
         unitPriceB:     document.getElementById("unitPriceB").value
       };
