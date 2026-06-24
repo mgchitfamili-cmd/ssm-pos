@@ -219,7 +219,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card admin-only">
       <p class="eyebrow"><span class="dot"></span>📟 Device Code</p>
       <div class="field">
         <label class="lbl">ဒီ device ရဲ့ code <span style="font-weight:500;color:var(--ink-3);">(A, B, ... — device တစ်ခုစီ မတူအောင်)</span></label>
@@ -229,7 +229,7 @@
     </section>
 
     <!-- Logo -->
-    <section class="card">
+    <section class="card admin-only">
       <p class="eyebrow"><span class="dot"></span>🖼️ ဆိုင် Logo</p>
       <input type="file" id="logoInput" accept="image/*" style="display:none" onchange="uploadLogo(event)">
       <button class="btn-upload" onclick="document.getElementById('logoInput').click()">📷 Logo ပုံ ရွေးရန်</button>
@@ -245,7 +245,7 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card admin-only">
       <p class="eyebrow"><span class="dot"></span>📍 ဆိုင်အချက်အလက်</p>
       <div class="field">
         <label class="lbl">လိပ်စာ <span style="font-weight:500;color:var(--ink-3);">(Enter ခေါက်၍ စာကြောင်းဆင်း)</span></label>
@@ -276,17 +276,17 @@
       </div>
     </section>
 
-    <section class="card">
+    <section class="card admin-only">
       <p class="eyebrow"><span class="dot"></span>👀 Preview</p>
       <div id="previewBox"></div>
     </section>
 
-    <section class="card">
+    <section class="card admin-only">
       <button class="btn-save" onclick="saveSettings()">💾 Save</button>
       <button class="btn-reset" onclick="resetSettings()">↺ Default ပြန်ထား</button>
     </section>
 
-    <section class="card">
+    <section class="card admin-only">
       <button class="btn-reset" style="background:#dc2626;color:#fff;border-color:#dc2626;" onclick="ssmLogout()">🚪 Logout (ထွက်မယ်)</button>
     </section>
 
