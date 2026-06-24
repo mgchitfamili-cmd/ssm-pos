@@ -112,7 +112,21 @@
 
       // EARLY setItem patch — auth/sync မ ready ခင် save လုပ်ရင်လည်း lastPush ချက်ချင်း set။
       // (iOS မှာ SDK နှေး၍ edit save ပြီးမှ sync စလို့ merge က cloud အဟောင်းနဲ့ ပြန်ဖျက်တဲ့ bug fix)
+      var _salesSnap = {};   // orderNo -> content hash (_u မပါ) — edit ဖြစ်မဖြစ် သိရန် + _u stamp
+      function _saleHash(s) { var c = {}; for (var k in s) { if (k !== "_u" && k !== "__sid" && k !== "__synced") c[k] = s[k]; } return JSON.stringify(c); }
+      try { (JSON.parse(localStorage.getItem("salesHistory")) || []).forEach(function (s) { _salesSnap[String(s.orderNo)] = _saleHash(s); }); } catch (e) {}
+
       localStorage.setItem = function (key, val) {
+        if (key === "salesHistory") {
+          try {
+            var arr = JSON.parse(val) || [], changed = false;
+            arr.forEach(function (s) {
+              var id = String(s.orderNo), h = _saleHash(s);
+              if (_salesSnap[id] !== h) { s._u = Date.now(); _salesSnap[id] = h; changed = true; }   // ပြောင်းသွားရင် edit-time stamp
+            });
+            if (changed) val = JSON.stringify(arr);
+          } catch (e) {}
+        }
         origSet(key, val);
         if (SYNC_KEYS.indexOf(key) >= 0) {
           lastPush[key] = Date.now();
@@ -135,8 +149,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v9 (early-patch) loaded");
-        window.SSM_SYNC_VER = "v9";
+        console.log("[SSM sync] inline v10 (LWW _u) loaded");
+        window.SSM_SYNC_VER = "v10";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -258,7 +272,10 @@
           var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
           local.forEach(function (s) {
             var sid = sidOf(s);
-            if (byId[sid]) return;                               // cloud မှာ ရှိ → cloud version သုံး
+            if (byId[sid]) {                                     // cloud မှာ ရှိ
+              if ((s._u || 0) > (byId[sid]._u || 0)) { offloadImages(s, sid); byId[sid] = s; }  // local ပိုသစ် (edit push မရောက်သေး) → local ထား (revert မဖြစ်)
+              return;
+            }
             if (syncedIds[sid]) return;                          // cloud တင်ဖူးပြီး အခု ပျောက် → ဖျက်ထားတာ → ပြန်မထည့်
             offloadImages(s, sid);                               // local-only sale ပုံလည်း IDB ထဲ ရွှေ့
             byId[sid] = s;                                       // အသစ် (cloud မရောက်သေး) → ထား + seed
@@ -266,6 +283,7 @@
           var merged = Object.keys(byId).map(function (k) { return byId[k]; });
           merged.sort(function (a, b) { return String(a.orderDate || "").localeCompare(String(b.orderDate || "")); });  // အဟောင်းအရင် (page .reverse() → အသစ် အပေါ်ဆုံး)
           rawSet("salesHistory", JSON.stringify(merged));        // text-only → localStorage သေးငယ် (iOS quota fix)
+          try { _salesSnap = {}; merged.forEach(function (s) { _salesSnap[String(s.orderNo)] = _saleHash(s); }); } catch (e) {}  // _u baseline refresh
           trackedSids = {}; merged.forEach(function (s) { trackedSids[sidOf(s)] = true; });  // baseline = merged
           ssmRefreshSales();
           ssmPushSales(JSON.stringify(merged));                  // missing sales cloud ကို seed
