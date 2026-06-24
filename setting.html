@@ -200,6 +200,8 @@
       </div>
     </section>
 
+    <p id="ssmSyncVer" style="text-align:center; font-size:12px; margin:2px 0 10px; color:#9ca3af;">Sync version စစ်နေသည် …</p>
+
     <!-- Admin -->
     <section class="card">
       <p class="eyebrow"><span class="dot"></span>🔐 Admin</p>
@@ -553,5 +555,17 @@
   </script>
   <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
   <script src="menu-logo.js"></script>
+  <script>
+    (function () {
+      function updSyncVer() {
+        var el = document.getElementById("ssmSyncVer"); if (!el) return;
+        if (window.SSM_SYNC_VER) { el.textContent = "✅ Sync version: " + window.SSM_SYNC_VER; el.style.color = "#16a34a"; }
+        else { el.textContent = "⚠️ ကုဒ်အဟောင်း — update မဝင်သေး (app ပိတ်/ဖွင့်ပါ)"; el.style.color = "#dc2626"; }
+      }
+      updSyncVer();
+      document.addEventListener("fb-ready", updSyncVer);
+      setTimeout(updSyncVer, 2500); setTimeout(updSyncVer, 5000);
+    })();
+  </script>
 </body>
 </html>

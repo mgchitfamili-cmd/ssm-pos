@@ -71,6 +71,7 @@
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
         console.log("[SSM sync] inline v8 (iOS long-polling) loaded");
+        window.SSM_SYNC_VER = "v8";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
