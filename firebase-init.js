@@ -67,7 +67,7 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v6 (orderNo + newest-top) loaded");
+        console.log("[SSM sync] inline v7 (sales log) loaded");
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -152,11 +152,12 @@
             lastPush["__sales"] = Date.now();
             var doc = content;
             if (js.length > 900000) { doc = JSON.parse(js); delete doc.paySS; delete doc.deliveryPhoto; }  // 1MB guard
+            console.log("[sales] push →", sid);
             db.collection(SALES).doc(sid).set(doc).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
           });
           // delete: baseline မှာ ရှိပြီး အခု ပျောက် → cloud doc ဖျက် (device မရွေး — admin ဖျက်နိုင်)
           Object.keys(trackedSids).forEach(function (sid) {
-            if (!seen[sid]) { db.collection(SALES).doc(sid).delete().catch(function () {}); delete saleCache[sid]; }
+            if (!seen[sid]) { console.log("[sales] delete →", sid); db.collection(SALES).doc(sid).delete().catch(function () {}); delete saleCache[sid]; }
           });
           trackedSids = seen;                                    // baseline အသစ် = current local sids
         }
