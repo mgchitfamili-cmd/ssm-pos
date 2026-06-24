@@ -9,6 +9,52 @@
     လုံခြုံရေးက Firestore Rules + Auth နဲ့ ထိန်းတာပါ။)
    ────────────────────────────────────────────────────────────── */
 (function () {
+  /* ── image store (IndexedDB) ── base64 ပုံတွေ localStorage မှာ မသိမ်းဘဲ ဒီမှာ သိမ်း
+     (iOS Safari localStorage ~5MB quota ကျော်လို့ save မဝင်တဲ့ ပြဿနာ fix)။ key = orderNo+":pay" / ":del" ── */
+  var _idb = null;
+  function idbOpen() {
+    if (_idb) return _idb;
+    _idb = new Promise(function (res, rej) {
+      try {
+        var r = indexedDB.open("ssm-img", 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore("img"); };
+        r.onsuccess = function () { res(r.result); };
+        r.onerror   = function () { rej(r.error); };
+      } catch (e) { rej(e); }
+    });
+    return _idb;
+  }
+  window.ssmImg = {
+    get: function (key) {
+      return idbOpen().then(function (db) { return new Promise(function (res) {
+        try { var rq = db.transaction("img", "readonly").objectStore("img").get(key);
+          rq.onsuccess = function () { res(rq.result || ""); }; rq.onerror = function () { res(""); };
+        } catch (e) { res(""); } }); }).catch(function () { return ""; });
+    },
+    set: function (key, val) {
+      if (!val) return window.ssmImg.del(key);
+      return idbOpen().then(function (db) { return new Promise(function (res) {
+        try { var t = db.transaction("img", "readwrite"); t.objectStore("img").put(val, key);
+          t.oncomplete = function () { res(true); }; t.onerror = function () { res(false); };
+        } catch (e) { res(false); } }); }).catch(function () { return false; });
+    },
+    del: function (key) {
+      return idbOpen().then(function (db) { return new Promise(function (res) {
+        try { var t = db.transaction("img", "readwrite"); t.objectStore("img").delete(key);
+          t.oncomplete = function () { res(true); }; t.onerror = function () { res(true); };
+        } catch (e) { res(true); } }); }).catch(function () { return true; });
+    },
+    // <img data-imgkey="..."> တွေကို IDB ကနေ src ဖြည့် (render ပြီးမှ ခေါ်)
+    fill: function (root) {
+      try {
+        (root || document).querySelectorAll("img[data-imgkey]:not([data-imgfilled])").forEach(function (im) {
+          var k = im.getAttribute("data-imgkey"); im.setAttribute("data-imgfilled", "1");
+          window.ssmImg.get(k).then(function (v) { if (v) im.src = v; });
+        });
+      } catch (e) {}
+    }
+  };
+
   var firebaseConfig = {
     apiKey:            "AIzaSyBgSjtlHiW8n5mQ_emo-hMzHLWwKSLAd6k",
     authDomain:        "ssm-pos.firebaseapp.com",
@@ -52,12 +98,31 @@
 
       // ── data sync (inlined — သီးခြား firebase-sync.js မလို) ──────────
       // page ဖွင့်ချိန် cloud ကို တစ်ခါပဲ ဆွဲ၊ ပြီးရင် local ကို ဘယ်တော့မှ မဖျက် (push-only)။
-      var SYNC_KEYS   = ["products", "shopSettings", "staffList", "ssm_admin_pin"];   // + admin PIN sync
-      var COL         = "appdata";
-      var rawSet      = localStorage.setItem.bind(localStorage);
-      var lastPush    = {};
-      var initialDone = {};
-      var syncStarted = false;
+      var SYNC_KEYS    = ["products", "shopSettings", "staffList", "ssm_admin_pin"];   // + admin PIN sync
+      var COL          = "appdata";
+      var rawSet       = localStorage.setItem.bind(localStorage);
+      var origSet      = rawSet;                  // pre-patch original (recursion မဖြစ်အောင်)
+      var lastPush     = {};
+      var initialDone  = {};
+      var syncStarted  = false;
+      var _doPushKey   = null;                    // (key,val) → appdata push (sync ready မှ)
+      var _doPushSales = null;                    // (val) → sales push (sync ready မှ)
+      var _pendKeys    = {};                      // queued appdata pushes
+      var _pendSales   = null;                    // queued salesHistory val
+
+      // EARLY setItem patch — auth/sync မ ready ခင် save လုပ်ရင်လည်း lastPush ချက်ချင်း set။
+      // (iOS မှာ SDK နှေး၍ edit save ပြီးမှ sync စလို့ merge က cloud အဟောင်းနဲ့ ပြန်ဖျက်တဲ့ bug fix)
+      localStorage.setItem = function (key, val) {
+        origSet(key, val);
+        if (SYNC_KEYS.indexOf(key) >= 0) {
+          lastPush[key] = Date.now();
+          if (_doPushKey) _doPushKey(key, val); else _pendKeys[key] = val;
+        }
+        if (key === "salesHistory") {
+          lastPush["__sales"] = Date.now();
+          if (_doPushSales) _doPushSales(val); else _pendSales = val;
+        }
+      };
 
       function ssmRefresh(key) {
         try {
@@ -70,25 +135,20 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v8 (iOS long-polling) loaded");
-        window.SSM_SYNC_VER = "v8";
+        console.log("[SSM sync] inline v9 (early-patch) loaded");
+        window.SSM_SYNC_VER = "v9";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
         if (!deviceId) { deviceId = "d" + Math.random().toString(36).slice(2, 8); localStorage.setItem("ssm_deviceId", deviceId); }
         var OWN = deviceId + "__";
 
-        // PUSH: local save → Firestore
-        var origSet = localStorage.setItem.bind(localStorage);
-        localStorage.setItem = function (key, val) {
-          origSet(key, val);
-          if (SYNC_KEYS.indexOf(key) >= 0) {
-            lastPush[key] = Date.now();
-            db.collection(COL).doc(key).set({ json: val, updatedAt: lastPush[key] })
-              .catch(function (e) { console.warn("[sync] push failed:", key, e); });
-          }
-          if (key === "salesHistory") ssmPushSales(val);
+        // PUSH ready — early-patch ကို တကယ့် push function တွဲ (sync ready ပြီ)
+        _doPushKey = function (key, val) {
+          db.collection(COL).doc(key).set({ json: val, updatedAt: Date.now() })
+            .catch(function (e) { console.warn("[sync] push failed:", key, e); });
         };
+        _doPushSales = function (val) { ssmPushSales(val); };
 
         // PULL (whole-key): products / shopSettings / staffList
         SYNC_KEYS.forEach(function (key) {
@@ -126,7 +186,8 @@
           id = id.replace(/[\/\\#?%]/g, "-");                    // Firestore doc-id safe
           return id || ("no-" + deviceId + "-" + ((s && s.orderDate) || Date.now()));
         }
-        function saleContent(s) { var c = {}; for (var k in s) { if (k !== "__sid" && k !== "__synced") c[k] = s[k]; } return c; }  // hidden meta မပါ
+        // content = localStorage မှာ သိမ်းမယ့်/နှိုင်းမယ့် အပိုင်း — base64 ပုံ (paySS/deliveryPhoto) မပါ (IDB မှာ သိမ်း)
+        function saleContent(s) { var c = {}; for (var k in s) { if (k !== "__sid" && k !== "__synced" && k !== "paySS" && k !== "deliveryPhoto") c[k] = s[k]; } return c; }
 
         // syncedIds: cloud မှာ မြင်ဖူး/တင်ဖူးတဲ့ orderNo (device-local, persist) → "ဖျက်ထားတာ vs အသစ်" ခွဲဖို့
         var syncedIds; try { syncedIds = JSON.parse(localStorage.getItem("ssm_syncedIds")) || {}; } catch (e) { syncedIds = {}; }
@@ -143,6 +204,13 @@
           } catch (e) {}
         }
 
+        // local sale ကနေ base64 ပုံ ဖြုတ်ပြီး IDB ထဲ ရွှေ့ (flag hasPay/hasDel ထား)
+        function offloadImages(s, sid) {
+          if (s.paySS)         { window.ssmImg.set(sid + ":pay", s.paySS); s.hasPay = true; }
+          if (s.deliveryPhoto) { window.ssmImg.set(sid + ":del", s.deliveryPhoto); s.hasDel = true; }
+          s.paySS = ""; s.deliveryPhoto = "";
+        }
+
         function ssmPushSales(val) {
           var arr; try { arr = JSON.parse(val) || []; } catch (e) { return; }
           var seen = {};
@@ -151,22 +219,29 @@
             var content = saleContent(s);
             var js = JSON.stringify(content);
             markSynced(sid);
-            if (saleCache[sid] === js) return;                   // unchanged → skip
+            if (saleCache[sid] === js) return;                   // unchanged (ပုံ version ပါ content ထဲ) → skip
             saleCache[sid] = js;
             lastPush["__sales"] = Date.now();
-            var doc = content;
-            if (js.length > 900000) { doc = JSON.parse(js); delete doc.paySS; delete doc.deliveryPhoto; }  // 1MB guard
-            console.log("[sales] push →", sid);
-            db.collection(SALES).doc(sid).set(doc).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
+            // cloud doc = full (ပုံ IDB ကနေ ဆွဲ ပြန်တွဲ)၊ local = text-only
+            Promise.all([
+              content.hasPay ? window.ssmImg.get(sid + ":pay") : Promise.resolve(""),
+              content.hasDel ? window.ssmImg.get(sid + ":del") : Promise.resolve("")
+            ]).then(function (imgs) {
+              var doc = {}; for (var k in content) doc[k] = content[k];
+              doc.paySS = imgs[0] || ""; doc.deliveryPhoto = imgs[1] || "";
+              if (JSON.stringify(doc).length > 900000) { doc.paySS = ""; doc.deliveryPhoto = ""; }  // 1MB guard
+              console.log("[sales] push →", sid);
+              db.collection(SALES).doc(sid).set(doc).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
+            });
           });
-          // delete: baseline မှာ ရှိပြီး အခု ပျောက် → cloud doc ဖျက် (device မရွေး — admin ဖျက်နိုင်)
+          // delete: baseline မှာ ရှိပြီး အခု ပျောက် → cloud doc + IDB ပုံ ဖျက်
           Object.keys(trackedSids).forEach(function (sid) {
-            if (!seen[sid]) { console.log("[sales] delete →", sid); db.collection(SALES).doc(sid).delete().catch(function () {}); delete saleCache[sid]; }
+            if (!seen[sid]) { console.log("[sales] delete →", sid); db.collection(SALES).doc(sid).delete().catch(function () {}); delete saleCache[sid]; window.ssmImg.del(sid + ":pay"); window.ssmImg.del(sid + ":del"); }
           });
           trackedSids = seen;                                    // baseline အသစ် = current local sids
         }
 
-        // PULL: load မှာ cloud sales merge (clobber-proof), ပြီးရင် push-only
+        // PULL: load မှာ cloud sales merge (clobber-proof)၊ ပုံတွေ IDB ထဲ ရွှေ့၊ ပြီးရင် push-only
         db.collection(SALES).onSnapshot(function (snap) {
           if (salesInitialDone) return;
           salesInitialDone = true;
@@ -174,6 +249,7 @@
           snap.forEach(function (d) {
             var s = d.data(); if (s.orderNo == null) s.orderNo = d.id;
             var sid = sidOf(s);
+            offloadImages(s, sid);                                // cloud ပုံ → IDB၊ local sale ကနေ ဖြုတ်
             byId[sid] = s; markSynced(sid);
             if (d.id === sid) saleCache[sid] = JSON.stringify(saleContent(s));        // format မှန် → change-detect cache
             else db.collection(SALES).doc(d.id).delete().catch(function () {});        // format ဟောင်း → ဖျက် (push က orderNo doc ပြန်ရေးမယ်)
@@ -184,15 +260,21 @@
             var sid = sidOf(s);
             if (byId[sid]) return;                               // cloud မှာ ရှိ → cloud version သုံး
             if (syncedIds[sid]) return;                          // cloud တင်ဖူးပြီး အခု ပျောက် → ဖျက်ထားတာ → ပြန်မထည့်
+            offloadImages(s, sid);                               // local-only sale ပုံလည်း IDB ထဲ ရွှေ့
             byId[sid] = s;                                       // အသစ် (cloud မရောက်သေး) → ထား + seed
           });
           var merged = Object.keys(byId).map(function (k) { return byId[k]; });
           merged.sort(function (a, b) { return String(a.orderDate || "").localeCompare(String(b.orderDate || "")); });  // အဟောင်းအရင် (page .reverse() → အသစ် အပေါ်ဆုံး)
-          rawSet("salesHistory", JSON.stringify(merged));
+          rawSet("salesHistory", JSON.stringify(merged));        // text-only → localStorage သေးငယ် (iOS quota fix)
           trackedSids = {}; merged.forEach(function (s) { trackedSids[sidOf(s)] = true; });  // baseline = merged
           ssmRefreshSales();
           ssmPushSales(JSON.stringify(merged));                  // missing sales cloud ကို seed
         }, function (err) { console.warn("[sales] listen error:", err); });
+
+        // auth မရခင် (early-patch) queue ထားခဲ့တဲ့ save တွေ cloud တင် (iOS slow-start fix)
+        if (_pendSales != null) { ssmPushSales(_pendSales); _pendSales = null; }
+        Object.keys(_pendKeys).forEach(function (k) { _doPushKey(k, _pendKeys[k]); });
+        _pendKeys = {};
       }
 
       // ── Auth guard ──────────────────────────────────────────────
