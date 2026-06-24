@@ -724,8 +724,14 @@
     let editIndex  = null;
     let orderNo    = Number(localStorage.getItem("orderNo")) || 1;
 
+    // order number မှာ device code ထည့် (device အလိုက် unique — sync collision မဖြစ်အောင်)
+    function ssmOrderNo(n){
+      var dc = (localStorage.getItem("ssm_deviceCode") || "").trim();
+      return "SSM-" + (dc ? dc + "-" : "") + String(n).padStart(4, "0");
+    }
+
     document.getElementById("orderNo").innerHTML =
-      "Order No : SSM-" + String(orderNo).padStart(4, "0");
+      "Order No : " + ssmOrderNo(orderNo);
 
     // ── Load Staff Dropdown ───────────────────────────────────────
     function loadStaffDropdown() {
@@ -1096,7 +1102,7 @@
 
       // ── Duplicate transaction-code check (confirm-time — receipts လိုပဲ) ──
       var _hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
-      var _myNo = window.editOrderNo || ("SSM-" + String(orderNo).padStart(4, "0"));
+      var _myNo = window.editOrderNo || ssmOrderNo(orderNo);
       var _dup = null;
       for (var _i = 0; _i < _hist.length; _i++) {
         var _h = _hist[_i];
@@ -1219,7 +1225,7 @@
       //  which mobile browsers suppress after repeated dialogs, silently blocking save.)
 
       savedData = {
-        orderNo:         window.editOrderNo || ("SSM-" + String(orderNo).padStart(4, "0")),
+        orderNo:         window.editOrderNo || ssmOrderNo(orderNo),
         staff:           document.getElementById("staff").value,
         customer:        document.getElementById("name").value,
         phone:           document.getElementById("phone").value,

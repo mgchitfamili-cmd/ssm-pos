@@ -6,7 +6,6 @@
   <title>Settings</title>
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="firebase-init.js"></script>
-  <script src="firebase-sync.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6d28d9">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -220,6 +219,15 @@
       </div>
     </section>
 
+    <section class="card">
+      <p class="eyebrow"><span class="dot"></span>📟 Device Code</p>
+      <div class="field">
+        <label class="lbl">ဒီ device ရဲ့ code <span style="font-weight:500;color:var(--ink-3);">(A, B, ... — device တစ်ခုစီ မတူအောင်)</span></label>
+        <input id="deviceCode" maxlength="6" placeholder="ဥပမာ - A" style="text-transform:uppercase;">
+      </div>
+      <p class="s-sub" style="margin-top:6px;">Order number မှာ ဒီ code ပါမယ် — SSM-<b>A</b>-0001။ device အများ sync လုပ်ရင် နံပါတ် မတူအောင် (device တစ်ခုစီ မတူတဲ့ code ပေးပါ)။</p>
+    </section>
+
     <!-- Logo -->
     <section class="card">
       <p class="eyebrow"><span class="dot"></span>🖼️ ဆိုင် Logo</p>
@@ -296,6 +304,7 @@
     function loadSettings() {
       let s = JSON.parse(localStorage.getItem("shopSettings")) || {};
       currentLogo = s.logo || "";
+      document.getElementById("deviceCode").value = localStorage.getItem("ssm_deviceCode") || "";
       document.getElementById("address").value = s.address
         ? s.address.replace(/<br>/g, "\n")
         : "၀/၁၂၆၊ ဗိုလ်တိုက်ချွန်းလမ်း၊ အောင်ချမ်းသာ (၃) ရပ်ကွက်၊\nသန်လျင်";
@@ -400,6 +409,8 @@
     }
 
     function saveSettings() {
+      // device code က device-local (shopSettings ထဲ မထည့် → sync မဖြစ်စေ)
+      localStorage.setItem("ssm_deviceCode", (document.getElementById("deviceCode").value || "").trim().toUpperCase());
       let settings = {
         logo:     currentLogo,
         address:  document.getElementById("address").value.replace(/\n/g, "<br>"),
