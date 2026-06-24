@@ -67,7 +67,7 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v4 (+sales) loaded");
+        console.log("[SSM sync] inline v5 (orderNo doc-id) loaded");
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -110,15 +110,25 @@
           }, function (err) { console.warn("[sync] listen error:", key, err); });
         });
 
-        // ── salesHistory: per-sale collection ("sales") ──────────────
+        // ── salesHistory: per-sale collection ("sales") — doc id = orderNo (device code နဲ့ unique) ──
         var SALES = "sales";
-        var saleCache = {};            // sid -> JSON (change detection — push)
-        var trackedSids = {};          // local မှာ တကယ်ရှိတဲ့ sids (delete detection baseline)
+        var saleCache = {};            // orderNo -> content JSON (change detection)
+        var trackedSids = {};          // orderNo -> true (delete baseline)
         var salesInitialDone = false;
 
-        function sidOf(s) { return s.__sid || (OWN + (s.orderNo || ("x" + Date.now()))); }
+        // doc id = orderNo (SSM-A-0001 …). edit လုပ်လည်း orderNo မပြောင်း → doc တူ → ဘောင်ချာ ၂ ခု မကွဲ
+        function sidOf(s) {
+          var id = (s && s.orderNo != null) ? String(s.orderNo).trim() : "";
+          id = id.replace(/[\/\\#?%]/g, "-");                    // Firestore doc-id safe
+          return id || ("no-" + deviceId + "-" + ((s && s.orderDate) || Date.now()));
+        }
+        function saleContent(s) { var c = {}; for (var k in s) { if (k !== "__sid" && k !== "__synced") c[k] = s[k]; } return c; }  // hidden meta မပါ
 
-        // baseline ကို current local ကနေ စ (merge မဖြစ်ခင် sale save ရင် တခြား device sales မှားမဖျက်အောင်)
+        // syncedIds: cloud မှာ မြင်ဖူး/တင်ဖူးတဲ့ orderNo (device-local, persist) → "ဖျက်ထားတာ vs အသစ်" ခွဲဖို့
+        var syncedIds; try { syncedIds = JSON.parse(localStorage.getItem("ssm_syncedIds")) || {}; } catch (e) { syncedIds = {}; }
+        function markSynced(id) { if (!syncedIds[id]) { syncedIds[id] = 1; try { origSet("ssm_syncedIds", JSON.stringify(syncedIds)); } catch (e) {} } }
+
+        // delete baseline ကို current local ကနေ စ (merge မဖြစ်ခင် save ရင် တခြား sales မှားမဖျက်အောင်)
         try { (JSON.parse(localStorage.getItem("salesHistory")) || []).forEach(function (s) { trackedSids[sidOf(s)] = true; }); } catch (e) {}
 
         function ssmRefreshSales() {
@@ -133,37 +143,43 @@
           var arr; try { arr = JSON.parse(val) || []; } catch (e) { return; }
           var seen = {};
           arr.forEach(function (s) {
-            var sid = sidOf(s); s.__sid = sid; seen[sid] = true;
-            var js = JSON.stringify(s);
+            var sid = sidOf(s); seen[sid] = true;
+            var content = saleContent(s);
+            var js = JSON.stringify(content);
+            markSynced(sid);
             if (saleCache[sid] === js) return;                   // unchanged → skip
             saleCache[sid] = js;
             lastPush["__sales"] = Date.now();
-            var doc = s;
+            var doc = content;
             if (js.length > 900000) { doc = JSON.parse(js); delete doc.paySS; delete doc.deliveryPhoto; }  // 1MB guard
             db.collection(SALES).doc(sid).set(doc).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
           });
-          // delete: baseline မှာ ရှိပြီး အခု ပျောက်သွားတဲ့ sale → cloud doc ဖျက် (device မရွေး — admin ဖျက်နိုင်)
+          // delete: baseline မှာ ရှိပြီး အခု ပျောက် → cloud doc ဖျက် (device မရွေး — admin ဖျက်နိုင်)
           Object.keys(trackedSids).forEach(function (sid) {
             if (!seen[sid]) { db.collection(SALES).doc(sid).delete().catch(function () {}); delete saleCache[sid]; }
           });
           trackedSids = seen;                                    // baseline အသစ် = current local sids
-          try { origSet("salesHistory", JSON.stringify(arr)); } catch (e) {}   // __sid persist
         }
 
-        // PULL: load မှာ cloud sales တွေ merge (clobber-proof), ပြီးရင် push-only
+        // PULL: load မှာ cloud sales merge (clobber-proof), ပြီးရင် push-only
         db.collection(SALES).onSnapshot(function (snap) {
           if (salesInitialDone) return;
           salesInitialDone = true;
           var byId = {};
           snap.forEach(function (d) {
-            var s = d.data(); s.__sid = d.id; byId[d.id] = s;
-            saleCache[d.id] = JSON.stringify(s);                 // change detection (push)
+            var s = d.data(); if (s.orderNo == null) s.orderNo = d.id;
+            var sid = sidOf(s);
+            byId[sid] = s; markSynced(sid);
+            if (d.id === sid) saleCache[sid] = JSON.stringify(saleContent(s));        // format မှန် → change-detect cache
+            else db.collection(SALES).doc(d.id).delete().catch(function () {});        // format ဟောင်း → ဖျက် (push က orderNo doc ပြန်ရေးမယ်)
           });
           if (lastPush["__sales"]) return;                       // session ထဲ save ပြီးပြီ → adopt မလုပ် (clobber မဖြစ်)
           var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
           local.forEach(function (s) {
             var sid = sidOf(s);
-            if (!byId[sid]) { s.__sid = sid; byId[sid] = s; }    // cloud မှာ မပါသေးတဲ့ local sale ထား
+            if (byId[sid]) return;                               // cloud မှာ ရှိ → cloud version သုံး
+            if (syncedIds[sid]) return;                          // cloud တင်ဖူးပြီး အခု ပျောက် → ဖျက်ထားတာ → ပြန်မထည့်
+            byId[sid] = s;                                       // အသစ် (cloud မရောက်သေး) → ထား + seed
           });
           var merged = Object.keys(byId).map(function (k) { return byId[k]; });
           merged.sort(function (a, b) { return String(b.orderDate || "").localeCompare(String(a.orderDate || "")); });
