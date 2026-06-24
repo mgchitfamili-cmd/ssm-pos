@@ -67,7 +67,7 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v5 (orderNo doc-id) loaded");
+        console.log("[SSM sync] inline v6 (orderNo + newest-top) loaded");
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -182,7 +182,7 @@
             byId[sid] = s;                                       // အသစ် (cloud မရောက်သေး) → ထား + seed
           });
           var merged = Object.keys(byId).map(function (k) { return byId[k]; });
-          merged.sort(function (a, b) { return String(b.orderDate || "").localeCompare(String(a.orderDate || "")); });
+          merged.sort(function (a, b) { return String(a.orderDate || "").localeCompare(String(b.orderDate || "")); });  // အဟောင်းအရင် (page .reverse() → အသစ် အပေါ်ဆုံး)
           rawSet("salesHistory", JSON.stringify(merged));
           trackedSids = {}; merged.forEach(function (s) { trackedSids[sidOf(s)] = true; });  // baseline = merged
           ssmRefreshSales();
