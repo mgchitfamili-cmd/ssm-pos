@@ -1261,16 +1261,16 @@
       };
 
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
-      let isEditMode   = editIndex != null;
+      // orderNo ရှိပြီးသားဆို update (edit/iOS safe) — မရှိဆို အသစ်ထည့်။ "ဘောင်ချာ ၂ ထပ် / edit မဝင်" ပြဿနာ ကာကွယ်
+      var _exist = salesHistory.findIndex(function (s) { return s && String(s.orderNo) === String(savedData.orderNo); });
+      if (_exist >= 0) salesHistory[_exist] = savedData;
+      else salesHistory.push(savedData);
+      let isEditMode = (editIndex != null) || (_exist >= 0);
 
-      if (isEditMode) {
-        // positional index မဟုတ်ဘဲ orderNo နဲ့ ရှာ → merge re-sort ဖြစ်လည်း မှန်တဲ့ ဘောင်ချာကိုပဲ update (cross-device edit fix)
-        var _ono = window.editOrderNo || savedData.orderNo;
-        var ei = salesHistory.findIndex(function (s) { return s && String(s.orderNo) === String(_ono); });
-        if (ei >= 0) salesHistory[ei] = savedData;
-        else salesHistory.push(savedData);
-      } else {
-        salesHistory.push(savedData);
+      // base64 paySS ကို IDB ထဲ ရွှေ့ (localStorage သေးငယ်အောင် — iOS 5MB quota fix)
+      if (window.ssmImg) {
+        if (savedData.paySS) { window.ssmImg.set(savedData.orderNo + ":pay", savedData.paySS); savedData.hasPay = true; savedData.payV = Date.now(); savedData.paySS = ""; }
+        else { savedData.hasPay = false; }
       }
 
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
@@ -1285,6 +1285,8 @@
       var _asa = document.getElementById("afterSaveActions");
       _asa.style.display = "block";
       showSaveMsg("✅ ဘောင်ချာ သိမ်းပြီးပါပြီ — " + savedData.orderNo, false);
+      // edit ပြီးရင် identity ရှင်း → နောက် order အသစ်မှာ stale edit မဖြစ်အောင်
+      if (isEditMode) { editIndex = null; window.editOrderNo = null; window.editOrderDate = null; try { sessionStorage.removeItem("ssm_editOrderNo"); sessionStorage.removeItem("ssm_editOrderNoT"); } catch (e) {} }
       try { _asa.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
 
       try { buildReceiptPreview(savedData); }
@@ -1372,6 +1374,14 @@
     function loadEditReceipt() {
       let idx = localStorage.getItem("editReceiptIndex");
       let ono = localStorage.getItem("editReceiptOrderNo");
+      // iOS reload/auth-bounce ဖြစ်ရင် localStorage key ပျောက်တတ်လို့ — sessionStorage ကနေ ပြန်ယူ (15s အတွင်း)
+      if (ono == null) {
+        try {
+          var se = sessionStorage.getItem("ssm_editOrderNo");
+          var st = parseInt(sessionStorage.getItem("ssm_editOrderNoT") || "0", 10);
+          if (se && (Date.now() - st) < 15000) ono = se;
+        } catch (e) {}
+      }
       if (idx == null && ono == null) return;
 
       localStorage.removeItem("editReceiptIndex");
@@ -1386,6 +1396,8 @@
       editIndex = (idx != null ? idx : 0);          // isEditMode flag (save က orderNo နဲ့ update လုပ်တယ်)
       window.editOrderNo   = receipt.orderNo;
       window.editOrderDate = receipt.orderDate;
+      // edit identity ကို sessionStorage မှာ ထား → page reload/auth bounce ဖြစ်လည်း မပျောက် (iOS fix)
+      try { sessionStorage.setItem("ssm_editOrderNo", String(receipt.orderNo)); sessionStorage.setItem("ssm_editOrderNoT", String(Date.now())); } catch (e) {}
 
       document.getElementById("staff").value           = receipt.staff           || "";
       document.getElementById("name").value            = receipt.customer        || "";
@@ -1403,6 +1415,7 @@
       if (typeof toggleDepFields === "function") toggleDepFields();
       document.getElementById("depCode").value         = receipt.payCode         || "";
       depSSData = receipt.paySS || "";
+      if (!depSSData && receipt.hasPay && window.ssmImg) { window.ssmImg.get(receipt.orderNo + ":pay").then(function (v) { depSSData = v || ""; }); }
       (function(){ var pv = document.getElementById("depSSPreview"); if (depSSData) { pv.src = depSSData; pv.style.display = "block"; } else { pv.style.display = "none"; } })();
       document.getElementById("note").value            = receipt.note            || "";
       document.getElementById("discountType").value    = receipt.discountType    || "none";
