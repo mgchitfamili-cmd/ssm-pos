@@ -1284,7 +1284,8 @@
       document.getElementById("saveBtn").innerText = "✅ Saved";
       var _asa = document.getElementById("afterSaveActions");
       _asa.style.display = "block";
-      showSaveMsg("✅ ဘောင်ချာ သိမ်းပြီးပါပြီ — " + savedData.orderNo, false);
+      var _dbg = savedData.orderNo + " · " + (isEditMode ? "EDIT" : "NEW") + " · found:" + (_exist >= 0 ? "Y" : "N") + " · editId:" + (window.editOrderNo || "none") + " · items:" + (items ? items.length : 0) + " · total:" + salesHistory.length;
+      showSaveMsg("✅ သိမ်းပြီး — " + _dbg, false);
       // edit ပြီးရင် identity ရှင်း → နောက် order အသစ်မှာ stale edit မဖြစ်အောင်
       if (isEditMode) { editIndex = null; window.editOrderNo = null; window.editOrderDate = null; try { sessionStorage.removeItem("ssm_editOrderNo"); sessionStorage.removeItem("ssm_editOrderNoT"); } catch (e) {} }
       try { _asa.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
