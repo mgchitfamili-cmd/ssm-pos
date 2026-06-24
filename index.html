@@ -333,6 +333,7 @@
       backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
     }
     .sheet-overlay.show{ display:block; }
+    body.sheet-locked{ position:fixed; left:0; right:0; width:100%; overflow:hidden; }  /* sheet ဖွင့်ချိန် နောက်ခံ scroll lock */
     .sheet{
       position:fixed; left:0; right:0; bottom:0; z-index:9001;
       background:var(--surface); border:1px solid var(--line); border-bottom:none;
@@ -1265,6 +1266,11 @@
       let isEditMode   = editIndex != null;
 
       if (isEditMode) {
+        // sync identity (__sid/__synced) ကို ထိန်း → edit လုပ်ရင် doc အသစ်/ဘောင်ချာ ၂ ခု မဖြစ်အောင်
+        if (salesHistory[editIndex]) {
+          savedData.__sid    = salesHistory[editIndex].__sid;
+          savedData.__synced = salesHistory[editIndex].__synced;
+        }
         salesHistory[editIndex] = savedData;
       } else {
         salesHistory.push(savedData);
@@ -1565,6 +1571,22 @@
   })();
   </script>
   <script>
+  /* ── bottom-sheet ဖွင့်ချိန် နောက်ခံ scroll lock (mobile-safe: position:fixed + scroll restore) ── */
+  var __ssmScrollY = 0;
+  function ssmLockScroll() {
+    if (document.body.classList.contains("sheet-locked")) return;
+    __ssmScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.top = (-__ssmScrollY) + "px";
+    document.body.classList.add("sheet-locked");
+  }
+  function ssmUnlockScroll() {
+    if (document.querySelector(".sheet-overlay.show")) return;   // တခြား sheet ဖွင့်ထားသေး → ဆက်ထား
+    if (!document.body.classList.contains("sheet-locked")) return;
+    document.body.classList.remove("sheet-locked");
+    document.body.style.top = "";
+    window.scrollTo(0, __ssmScrollY);
+  }
+
   /* ── Custom select → bottom sheet (native <select> picker replaced) ── */
   (function () {
     var ov = document.createElement("div"); ov.className = "sheet-overlay";
@@ -1608,9 +1630,10 @@
         listEl.appendChild(row);
       });
       ov.classList.add("show");
+      ssmLockScroll();
       requestAnimationFrame(function () { sheet.classList.add("show"); });
     }
-    function closeSheet() { sheet.classList.remove("show"); ov.classList.remove("show"); }
+    function closeSheet() { sheet.classList.remove("show"); ov.classList.remove("show"); ssmUnlockScroll(); }
     ov.addEventListener("click", closeSheet);
 
     var pairs = [];
@@ -1780,10 +1803,11 @@
     function open(inp) {
       target = inp; search.value = ""; render();
       ov.classList.add("show");
+      ssmLockScroll();
       requestAnimationFrame(function () { sheet.classList.add("show"); });
       setTimeout(function () { search.focus(); }, 280);
     }
-    function close() { sheet.classList.remove("show"); ov.classList.remove("show"); }
+    function close() { sheet.classList.remove("show"); ov.classList.remove("show"); ssmUnlockScroll(); }
     ov.addEventListener("click", close);
     search.addEventListener("input", render);
 
