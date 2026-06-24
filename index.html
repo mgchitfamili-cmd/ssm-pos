@@ -1257,21 +1257,18 @@
         note:            document.getElementById("note").value,
         netTotal:        document.getElementById("netTotal").innerText,
         printed:         false,
-        orderDate:       (editIndex != null && JSON.parse(localStorage.getItem("salesHistory"))[editIndex] && JSON.parse(localStorage.getItem("salesHistory"))[editIndex].orderDate)
-                           ? JSON.parse(localStorage.getItem("salesHistory"))[editIndex].orderDate
-                           : new Date().toISOString()
+        orderDate:       (editIndex != null && window.editOrderDate) ? window.editOrderDate : new Date().toISOString()
       };
 
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
       let isEditMode   = editIndex != null;
 
       if (isEditMode) {
-        // sync identity (__sid/__synced) ကို ထိန်း → edit လုပ်ရင် doc အသစ်/ဘောင်ချာ ၂ ခု မဖြစ်အောင်
-        if (salesHistory[editIndex]) {
-          savedData.__sid    = salesHistory[editIndex].__sid;
-          savedData.__synced = salesHistory[editIndex].__synced;
-        }
-        salesHistory[editIndex] = savedData;
+        // positional index မဟုတ်ဘဲ orderNo နဲ့ ရှာ → merge re-sort ဖြစ်လည်း မှန်တဲ့ ဘောင်ချာကိုပဲ update (cross-device edit fix)
+        var _ono = window.editOrderNo || savedData.orderNo;
+        var ei = salesHistory.findIndex(function (s) { return s && String(s.orderNo) === String(_ono); });
+        if (ei >= 0) salesHistory[ei] = savedData;
+        else salesHistory.push(savedData);
       } else {
         salesHistory.push(savedData);
       }
@@ -1374,16 +1371,21 @@
     // ── Load Edit Receipt ─────────────────────────────────────────
     function loadEditReceipt() {
       let idx = localStorage.getItem("editReceiptIndex");
-      if (idx == null) return;
+      let ono = localStorage.getItem("editReceiptOrderNo");
+      if (idx == null && ono == null) return;
 
       localStorage.removeItem("editReceiptIndex");
+      localStorage.removeItem("editReceiptOrderNo");
 
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
-      let receipt      = salesHistory[idx];
+      let receipt = null;
+      if (ono != null) receipt = salesHistory.find(function (s) { return s && String(s.orderNo) === String(ono); });   // orderNo နဲ့ ရှာ (index ရွှေ့မှု safe)
+      if (!receipt && idx != null) receipt = salesHistory[idx];
       if (!receipt) return;
 
-      editIndex = idx;
-      window.editOrderNo = receipt.orderNo;
+      editIndex = (idx != null ? idx : 0);          // isEditMode flag (save က orderNo နဲ့ update လုပ်တယ်)
+      window.editOrderNo   = receipt.orderNo;
+      window.editOrderDate = receipt.orderDate;
 
       document.getElementById("staff").value           = receipt.staff           || "";
       document.getElementById("name").value            = receipt.customer        || "";
