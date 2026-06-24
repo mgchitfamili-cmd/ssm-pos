@@ -49,7 +49,7 @@
 
       // ── data sync (inlined — သီးခြား firebase-sync.js မလို) ──────────
       // page ဖွင့်ချိန် cloud ကို တစ်ခါပဲ ဆွဲ၊ ပြီးရင် local ကို ဘယ်တော့မှ မဖျက် (push-only)။
-      var SYNC_KEYS   = ["products", "shopSettings", "staffList"];   // Stage 3b: settings + staff ပါ ထည့်
+      var SYNC_KEYS   = ["products", "shopSettings", "staffList", "ssm_admin_pin"];   // + admin PIN sync
       var COL         = "appdata";
       var rawSet      = localStorage.setItem.bind(localStorage);
       var lastPush    = {};
@@ -67,7 +67,12 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v3 loaded");
+        console.log("[SSM sync] inline v4 (+sales) loaded");
+
+        // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
+        var deviceId = localStorage.getItem("ssm_deviceId");
+        if (!deviceId) { deviceId = "d" + Math.random().toString(36).slice(2, 8); localStorage.setItem("ssm_deviceId", deviceId); }
+        var OWN = deviceId + "__";
 
         // PUSH: local save → Firestore
         var origSet = localStorage.setItem.bind(localStorage);
@@ -78,9 +83,10 @@
             db.collection(COL).doc(key).set({ json: val, updatedAt: lastPush[key] })
               .catch(function (e) { console.warn("[sync] push failed:", key, e); });
           }
+          if (key === "salesHistory") ssmPushSales(val);
         };
 
-        // PULL: page ဖွင့်ချိန် တစ်ခါပဲ ဆွဲ၊ ပြီးရင် local မဖျက် (clobber လုံးဝ မဖြစ်)
+        // PULL (whole-key): products / shopSettings / staffList
         SYNC_KEYS.forEach(function (key) {
           db.collection(COL).doc(key).onSnapshot(function (snap) {
             var local = localStorage.getItem(key);
@@ -94,7 +100,7 @@
             var remote = snap.data() && snap.data().json;
             if (!initialDone[key]) {
               initialDone[key] = true;
-              if (remote != null && remote !== local && !lastPush[key]) {  // local save မလုပ်ရသေးမှသာ cloud ယူ
+              if (remote != null && remote !== local && !lastPush[key]) {
                 rawSet(key, remote);
                 ssmRefresh(key);
               }
@@ -103,6 +109,69 @@
             // ပထမ snapshot ပြီးနောက် — push-only (local ကို ဘယ်တော့မှ မဖျက်)
           }, function (err) { console.warn("[sync] listen error:", key, err); });
         });
+
+        // ── salesHistory: per-sale collection ("sales") ──────────────
+        var SALES = "sales";
+        var saleCache = {};            // sid -> JSON (change detection — push)
+        var trackedSids = {};          // local မှာ တကယ်ရှိတဲ့ sids (delete detection baseline)
+        var salesInitialDone = false;
+
+        function sidOf(s) { return s.__sid || (OWN + (s.orderNo || ("x" + Date.now()))); }
+
+        // baseline ကို current local ကနေ စ (merge မဖြစ်ခင် sale save ရင် တခြား device sales မှားမဖျက်အောင်)
+        try { (JSON.parse(localStorage.getItem("salesHistory")) || []).forEach(function (s) { trackedSids[sidOf(s)] = true; }); } catch (e) {}
+
+        function ssmRefreshSales() {
+          try {
+            if (typeof window.renderHistory === "function") window.renderHistory();
+            else if (typeof window.renderCards === "function") window.renderCards();
+            else if (typeof window.render === "function") window.render();
+          } catch (e) {}
+        }
+
+        function ssmPushSales(val) {
+          var arr; try { arr = JSON.parse(val) || []; } catch (e) { return; }
+          var seen = {};
+          arr.forEach(function (s) {
+            var sid = sidOf(s); s.__sid = sid; seen[sid] = true;
+            var js = JSON.stringify(s);
+            if (saleCache[sid] === js) return;                   // unchanged → skip
+            saleCache[sid] = js;
+            lastPush["__sales"] = Date.now();
+            var doc = s;
+            if (js.length > 900000) { doc = JSON.parse(js); delete doc.paySS; delete doc.deliveryPhoto; }  // 1MB guard
+            db.collection(SALES).doc(sid).set(doc).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
+          });
+          // delete: baseline မှာ ရှိပြီး အခု ပျောက်သွားတဲ့ sale → cloud doc ဖျက် (device မရွေး — admin ဖျက်နိုင်)
+          Object.keys(trackedSids).forEach(function (sid) {
+            if (!seen[sid]) { db.collection(SALES).doc(sid).delete().catch(function () {}); delete saleCache[sid]; }
+          });
+          trackedSids = seen;                                    // baseline အသစ် = current local sids
+          try { origSet("salesHistory", JSON.stringify(arr)); } catch (e) {}   // __sid persist
+        }
+
+        // PULL: load မှာ cloud sales တွေ merge (clobber-proof), ပြီးရင် push-only
+        db.collection(SALES).onSnapshot(function (snap) {
+          if (salesInitialDone) return;
+          salesInitialDone = true;
+          var byId = {};
+          snap.forEach(function (d) {
+            var s = d.data(); s.__sid = d.id; byId[d.id] = s;
+            saleCache[d.id] = JSON.stringify(s);                 // change detection (push)
+          });
+          if (lastPush["__sales"]) return;                       // session ထဲ save ပြီးပြီ → adopt မလုပ် (clobber မဖြစ်)
+          var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
+          local.forEach(function (s) {
+            var sid = sidOf(s);
+            if (!byId[sid]) { s.__sid = sid; byId[sid] = s; }    // cloud မှာ မပါသေးတဲ့ local sale ထား
+          });
+          var merged = Object.keys(byId).map(function (k) { return byId[k]; });
+          merged.sort(function (a, b) { return String(b.orderDate || "").localeCompare(String(a.orderDate || "")); });
+          rawSet("salesHistory", JSON.stringify(merged));
+          trackedSids = {}; merged.forEach(function (s) { trackedSids[sidOf(s)] = true; });  // baseline = merged
+          ssmRefreshSales();
+          ssmPushSales(JSON.stringify(merged));                  // missing sales cloud ကို seed
+        }, function (err) { console.warn("[sales] listen error:", err); });
       }
 
       // ── Auth guard ──────────────────────────────────────────────
