@@ -38,14 +38,17 @@
   loadSeq(0, function () {
     try {
       firebase.initializeApp(firebaseConfig);
+      var _db = firebase.firestore();
+      // iOS/Safari မှာ Firestore realtime connection (WebChannel) မချိတ်တတ်လို့ long-polling သုံး (settings ကို db သုံးမသုံးခင် ခေါ်ရမယ်)
+      try { _db.settings({ experimentalForceLongPolling: true, merge: true }); } catch (e) { console.warn("[fb] settings:", e); }
       window.fb = {
         auth: firebase.auth(),
-        db:   firebase.firestore(),
+        db:   _db,
         login:  function (email, pw) { return window.fb.auth.signInWithEmailAndPassword(email, pw); },
         logout: function () { return window.fb.auth.signOut(); }
       };
       // offline cache (PWA အတွက်)
-      try { window.fb.db.enablePersistence({ synchronizeTabs: true }); } catch (e) {}
+      try { window.fb.db.enablePersistence({ synchronizeTabs: true }).catch(function () {}); } catch (e) {}
 
       // ── data sync (inlined — သီးခြား firebase-sync.js မလို) ──────────
       // page ဖွင့်ချိန် cloud ကို တစ်ခါပဲ ဆွဲ၊ ပြီးရင် local ကို ဘယ်တော့မှ မဖျက် (push-only)။
@@ -67,7 +70,7 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v7 (sales log) loaded");
+        console.log("[SSM sync] inline v8 (iOS long-polling) loaded");
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
