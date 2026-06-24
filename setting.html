@@ -557,14 +557,18 @@
   <script src="menu-logo.js"></script>
   <script>
     (function () {
-      function updSyncVer() {
-        var el = document.getElementById("ssmSyncVer"); if (!el) return;
-        if (window.SSM_SYNC_VER) { el.textContent = "✅ Sync version: " + window.SSM_SYNC_VER; el.style.color = "#16a34a"; }
-        else { el.textContent = "⚠️ ကုဒ်အဟောင်း — update မဝင်သေး (app ပိတ်/ဖွင့်ပါ)"; el.style.color = "#dc2626"; }
+      var el = document.getElementById("ssmSyncVer");
+      var waited = 0;
+      function tick() {
+        if (!el) return;
+        if (window.SSM_SYNC_VER) { el.textContent = "✅ Sync version: " + window.SSM_SYNC_VER; el.style.color = "#16a34a"; return; }
+        waited += 1000;
+        if (waited >= 12000) { el.textContent = "⚠️ ကုဒ်အဟောင်း — update မဝင်သေး (app ပိတ်/ဖွင့်ပါ)"; el.style.color = "#dc2626"; return; }
+        el.textContent = "Sync version စစ်နေသည် …"; el.style.color = "#9ca3af";
+        setTimeout(tick, 1000);
       }
-      updSyncVer();
-      document.addEventListener("fb-ready", updSyncVer);
-      setTimeout(updSyncVer, 2500); setTimeout(updSyncVer, 5000);
+      tick();
+      document.addEventListener("fb-ready", tick);
     })();
   </script>
 </body>
