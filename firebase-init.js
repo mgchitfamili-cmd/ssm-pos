@@ -160,8 +160,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v14 (img-preserve+recover) loaded");
-        window.SSM_SYNC_VER = "v14";
+        console.log("[SSM sync] inline v15 (push-dbg) loaded");
+        window.SSM_SYNC_VER = "v15";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -260,6 +260,7 @@
               if (!omitDel) doc.deliveryPhoto = imgs[1] || "";
               if (JSON.stringify(doc).length > 900000) { doc.paySS = ""; doc.deliveryPhoto = ""; omitPay = false; omitDel = false; }  // 1MB guard
               console.log("[sales] push →", sid, (omitPay || omitDel) ? "(img-preserve)" : "");
+              if (content.hasPay || content.hasDel) ssmDbg("PUSH " + sid + " pay=" + (imgs[0] ? Math.round(imgs[0].length / 1024) + "k" : "none") + " del=" + (imgs[1] ? Math.round(imgs[1].length / 1024) + "k" : "none") + " doc=" + Math.round(JSON.stringify(doc).length / 1024) + "k" + ((omitPay || omitDel) ? " OMIT" : " set"));   // TEMP
               var ref = db.collection(SALES).doc(sid);
               ((omitPay || omitDel) ? ref.set(doc, { merge: true }) : ref.set(doc)).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
             });
