@@ -174,8 +174,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v20 (fill-retry) loaded");
-        window.SSM_SYNC_VER = "v20";
+        console.log("[SSM sync] inline v21 (sticky-flag) loaded");
+        window.SSM_SYNC_VER = "v21";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -336,7 +336,10 @@
           local.forEach(function (s) {
             var sid = sidOf(s);
             if (byId[sid]) {                                     // cloud မှာ ရှိ
-              if ((s._u || 0) > (byId[sid]._u || 0)) { offloadImages(s, sid); byId[sid] = s; }  // local ပိုသစ် (edit push မရောက်သေး) → local ထား (revert မဖြစ်)
+              var hadPay = byId[sid].hasPay, hadDel = byId[sid].hasDel;
+              if ((s._u || 0) > (byId[sid]._u || 0)) { offloadImages(s, sid); byId[sid] = s; }  // local ပိုသစ် → local ထား (revert မဖြစ်)
+              if (hadPay || s.hasPay) byId[sid].hasPay = true;   // ပုံ flag sticky — တစ်ဖက်ဖက်မှာ ပုံ ရှိခဲ့ရင် true ဆက်ထား (LWW က hasPay=false နဲ့ ပုံ မဖျက်အောင်)
+              if (hadDel || s.hasDel) byId[sid].hasDel = true;
               return;
             }
             if (syncedIds[sid]) return;                          // cloud တင်ဖူးပြီး အခု ပျောက် → ဖျက်ထားတာ → ပြန်မထည့်
