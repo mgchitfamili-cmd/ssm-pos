@@ -48,11 +48,16 @@
     fill: function (root) {
       try {
         var els = (root || document).querySelectorAll("img[data-imgkey]:not([data-imgfilled])");
-        var n = els.length, got = 0, done = 0;
-        if (!n) { if (window.ssmDbg) window.ssmDbg("FILL n=0 (img element မရှိ — hasPay false?)"); return; }   // TEMP
+        if (window.ssmDbg) window.ssmDbg("FILL n=" + els.length);   // TEMP
         els.forEach(function (im) {
           var k = im.getAttribute("data-imgkey"); im.setAttribute("data-imgfilled", "1");
-          window.ssmImg.get(k).then(function (v) { done++; if (v) { im.src = v; got++; } if (done === n && window.ssmDbg) window.ssmDbg("FILL n=" + n + " got=" + got + " (IDB)"); });   // TEMP
+          var tries = 6;
+          (function tryGet() {
+            window.ssmImg.get(k).then(function (v) {
+              if (v) { im.src = v; }                                 // ရပြီ
+              else if (--tries > 0) { setTimeout(tryGet, 300); }     // IDB ရေးမပြီးသေး (merge offload async) → retry
+            });
+          })();
         });
       } catch (e) {}
     }
@@ -169,8 +174,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v19 (central-offload) loaded");
-        window.SSM_SYNC_VER = "v19";
+        console.log("[SSM sync] inline v20 (fill-retry) loaded");
+        window.SSM_SYNC_VER = "v20";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
