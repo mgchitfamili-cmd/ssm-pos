@@ -48,7 +48,6 @@
     fill: function (root) {
       try {
         var els = (root || document).querySelectorAll("img[data-imgkey]:not([data-imgfilled])");
-        if (window.ssmDbg) window.ssmDbg("FILL n=" + els.length);   // TEMP
         els.forEach(function (im) {
           var k = im.getAttribute("data-imgkey"); im.setAttribute("data-imgfilled", "1");
           var tries = 6;
@@ -119,16 +118,6 @@
       var _pendKeys    = {};                      // queued appdata pushes
       var _pendSales   = null;                    // queued salesHistory val
 
-      function ssmDbg(m) {
-        try {
-          var d = document.getElementById("__ssmdbg");
-          if (!d) { d = document.createElement("div"); d.id = "__ssmdbg"; d.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:rgba(0,0,0,.85);color:#0f0;font:11px/1.3 monospace;padding:5px 7px;white-space:pre-wrap"; (document.body || document.documentElement).appendChild(d); d._log = []; }
-          d._log = d._log || []; d._log.push(m); if (d._log.length > 3) d._log.shift();
-          d.textContent = "[dbg] " + d._log.join("\n[dbg] ");
-        } catch (e) {}
-      }
-      window.ssmDbg = ssmDbg;
-
       // EARLY setItem patch — auth/sync မ ready ခင် save လုပ်ရင်လည်း lastPush ချက်ချင်း set။
       // (iOS မှာ SDK နှေး၍ edit save ပြီးမှ sync စလို့ merge က cloud အဟောင်းနဲ့ ပြန်ဖျက်တဲ့ bug fix)
       var _salesSnap = {};   // orderNo -> content hash (_u မပါ) — edit ဖြစ်မဖြစ် သိရန် + _u stamp
@@ -139,18 +128,17 @@
         if (this !== localStorage) { return _protoSet.call(this, key, val); }   // sessionStorage → မထိ
         if (key === "salesHistory") {
           try {
-            var arr = JSON.parse(val) || [], changed = false, _st = [], _im = [];
+            var arr = JSON.parse(val) || [], changed = false;
             arr.forEach(function (s) {
               var id = String(s.orderNo);
               // inline ပုံ ရှိရင် (page က offload မလုပ်ခဲ့ရင်) → IDB ရွှေ့ + flag + strip (localStorage quota + push အတွက်)
-              if (s.paySS) { try { window.ssmImg.set(id + ":pay", s.paySS); } catch (e) {} s.hasPay = true; if (!s.payV) s.payV = Date.now(); s.paySS = ""; changed = true; _im.push(id + ":pay"); }
-              if (s.deliveryPhoto) { try { window.ssmImg.set(id + ":del", s.deliveryPhoto); } catch (e) {} s.hasDel = true; if (!s.delV) s.delV = Date.now(); s.deliveryPhoto = ""; changed = true; _im.push(id + ":del"); }
+              if (s.paySS) { try { window.ssmImg.set(id + ":pay", s.paySS); } catch (e) {} s.hasPay = true; if (!s.payV) s.payV = Date.now(); s.paySS = ""; changed = true; }
+              if (s.deliveryPhoto) { try { window.ssmImg.set(id + ":del", s.deliveryPhoto); } catch (e) {} s.hasDel = true; if (!s.delV) s.delV = Date.now(); s.deliveryPhoto = ""; changed = true; }
               var h = _saleHash(s);
-              if (_salesSnap[id] !== h) { s._u = Date.now(); _salesSnap[id] = h; changed = true; _st.push(id + ":i" + ((s.items && s.items.length) || 0)); }   // ပြောင်းသွားရင် edit-time stamp
+              if (_salesSnap[id] !== h) { s._u = Date.now(); _salesSnap[id] = h; changed = true; }   // ပြောင်းသွားရင် edit-time stamp (LWW)
             });
             if (changed) val = JSON.stringify(arr);
-            ssmDbg("SAVE stamp=" + (_st.join(",") || "NONE") + (_im.length ? " IMG→IDB:" + _im.join(",") : "") + " total=" + arr.length);   // TEMP
-          } catch (e) { ssmDbg("SAVE err " + e); }
+          } catch (e) {}
         }
         _protoSet.call(this, key, val);
         if (SYNC_KEYS.indexOf(key) >= 0) {
@@ -174,8 +162,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v23 (edit-diag) loaded");
-        window.SSM_SYNC_VER = "v23";
+        console.log("[SSM sync] inline v24 (clean) loaded");
+        window.SSM_SYNC_VER = "v24";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -282,7 +270,6 @@
               if (!omitDel) doc.deliveryPhoto = imgs[1] || "";
               if (JSON.stringify(doc).length > 900000) { doc.paySS = ""; doc.deliveryPhoto = ""; omitPay = false; omitDel = false; }  // 1MB guard
               console.log("[sales] push →", sid, (omitPay || omitDel) ? "(img-preserve)" : "");
-              if (content.hasPay || content.hasDel) ssmDbg("PUSH " + sid + " pay=" + (imgs[0] ? Math.round(imgs[0].length / 1024) + "k" : "none") + " del=" + (imgs[1] ? Math.round(imgs[1].length / 1024) + "k" : "none") + " doc=" + Math.round(JSON.stringify(doc).length / 1024) + "k" + ((omitPay || omitDel) ? " OMIT" : " set"));   // TEMP
               var ref = db.collection(SALES).doc(sid);
               ((omitPay || omitDel) ? ref.set(doc, { merge: true }) : ref.set(doc)).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
             });
@@ -319,29 +306,15 @@
           if (salesInitialDone) return;
           salesInitialDone = true;
           var byId = {};
-          var _cloudImg = 0, _cloudPay = 0, _cloudDel = 0;
           snap.forEach(function (d) {
             var s = d.data(); if (s.orderNo == null) s.orderNo = d.id;
             var sid = sidOf(s);
-            if (s.paySS) { _cloudImg++; _cloudPay++; }                // TEMP: cloud ပုံ ရှိမရှိ ရေတွက် (strip မဖြစ်ခင်)
-            if (s.deliveryPhoto) { _cloudImg++; _cloudDel++; }
             offloadImages(s, sid);                                // cloud ပုံ → IDB၊ local sale ကနေ ဖြုတ်
             byId[sid] = s; markSynced(sid);
             if (d.id === sid) saleCache[sid] = JSON.stringify(saleContent(s));        // format မှန် → change-detect cache
             else db.collection(SALES).doc(d.id).delete().catch(function () {});        // format ဟောင်း → ဖျက် (push က orderNo doc ပြန်ရေးမယ်)
           });
-          ssmDbg("IMG cloud: pay=" + _cloudPay + " del=" + _cloudDel + " | cloud=" + Object.keys(byId).length);   // TEMP
-          try {   // TEMP edit-revert diag
-            var _dl; try { _dl = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { _dl = []; }
-            var _r = _dl.filter(function (s) { return s._u && (Date.now() - s._u) < 180000; }).sort(function (a, b) { return (b._u || 0) - (a._u || 0); })[0];
-            if (_r) {
-              var _rs = sidOf(_r), _c = byId[_rs];
-              ssmDbg("EDIT " + _rs + " | L u" + Math.round((Date.now() - _r._u) / 1000) + "s i" + ((_r.items && _r.items.length) || 0)
-                + " | C " + (_c ? ("u" + (_c._u ? Math.round((Date.now() - _c._u) / 1000) + "s" : "NONE") + " i" + ((_c.items && _c.items.length) || 0)) : "MISS")
-                + " | " + (lastPush["__sales"] ? "SKIP(keep-local)" : "merge"));
-            }
-          } catch (e) {}
-          try { if (!localStorage.getItem("ssm_imgfix2")) { ssmRepushImages(); origSet("ssm_imgfix2", "1"); } } catch (e) {}   // one-time: local ပုံ → cloud ပြန်တင်
+          try { if (!localStorage.getItem("ssm_imgfix2")) { ssmRepushImages(); origSet("ssm_imgfix2", "1"); } } catch (e) {}   // one-time: local IDB ပုံ → cloud ပြန်တင် (wipe ဖြစ်ခဲ့တာ ပြန်ရ)
           if (lastPush["__sales"]) return;                       // session ထဲ save ပြီးပြီ → adopt မလုပ် (clobber မဖြစ်)
           var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
           local.forEach(function (s) {
