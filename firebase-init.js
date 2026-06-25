@@ -100,7 +100,8 @@
       // page ဖွင့်ချိန် cloud ကို တစ်ခါပဲ ဆွဲ၊ ပြီးရင် local ကို ဘယ်တော့မှ မဖျက် (push-only)။
       var SYNC_KEYS    = ["products", "shopSettings", "staffList", "ssm_admin_pin"];   // + admin PIN sync
       var COL          = "appdata";
-      var rawSet       = localStorage.setItem.bind(localStorage);
+      var _protoSet    = Storage.prototype.setItem;                 // original (iOS Safari မှာ instance override အလုပ်မလုပ်လို့ prototype သုံး)
+      var rawSet       = function (k, v) { _protoSet.call(localStorage, k, v); };
       var origSet      = rawSet;                  // pre-patch original (recursion မဖြစ်အောင်)
       var lastPush     = {};
       var initialDone  = {};
@@ -124,7 +125,8 @@
       function _saleHash(s) { var c = {}; for (var k in s) { if (k !== "_u" && k !== "__sid" && k !== "__synced") c[k] = s[k]; } return JSON.stringify(c); }
       try { (JSON.parse(localStorage.getItem("salesHistory")) || []).forEach(function (s) { _salesSnap[String(s.orderNo)] = _saleHash(s); }); } catch (e) {}
 
-      localStorage.setItem = function (key, val) {
+      Storage.prototype.setItem = function (key, val) {
+        if (this !== localStorage) { return _protoSet.call(this, key, val); }   // sessionStorage → မထိ
         if (key === "salesHistory") {
           try {
             var arr = JSON.parse(val) || [], changed = false, _st = [];
@@ -136,7 +138,7 @@
             ssmDbg("SAVE stamp=" + (_st.join(",") || "NONE") + " total=" + arr.length);   // TEMP
           } catch (e) { ssmDbg("SAVE err " + e); }
         }
-        origSet(key, val);
+        _protoSet.call(this, key, val);
         if (SYNC_KEYS.indexOf(key) >= 0) {
           lastPush[key] = Date.now();
           if (_doPushKey) _doPushKey(key, val); else _pendKeys[key] = val;
@@ -158,8 +160,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v12 (dbg2) loaded");
-        window.SSM_SYNC_VER = "v12";
+        console.log("[SSM sync] inline v13 (proto-setItem) loaded");
+        window.SSM_SYNC_VER = "v13";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
