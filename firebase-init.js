@@ -134,13 +134,17 @@
         if (this !== localStorage) { return _protoSet.call(this, key, val); }   // sessionStorage → မထိ
         if (key === "salesHistory") {
           try {
-            var arr = JSON.parse(val) || [], changed = false, _st = [];
+            var arr = JSON.parse(val) || [], changed = false, _st = [], _im = [];
             arr.forEach(function (s) {
-              var id = String(s.orderNo), h = _saleHash(s);
+              var id = String(s.orderNo);
+              // inline ပုံ ရှိရင် (page က offload မလုပ်ခဲ့ရင်) → IDB ရွှေ့ + flag + strip (localStorage quota + push အတွက်)
+              if (s.paySS) { try { window.ssmImg.set(id + ":pay", s.paySS); } catch (e) {} s.hasPay = true; if (!s.payV) s.payV = Date.now(); s.paySS = ""; changed = true; _im.push(id + ":pay"); }
+              if (s.deliveryPhoto) { try { window.ssmImg.set(id + ":del", s.deliveryPhoto); } catch (e) {} s.hasDel = true; if (!s.delV) s.delV = Date.now(); s.deliveryPhoto = ""; changed = true; _im.push(id + ":del"); }
+              var h = _saleHash(s);
               if (_salesSnap[id] !== h) { s._u = Date.now(); _salesSnap[id] = h; changed = true; _st.push(id + ":i" + ((s.items && s.items.length) || 0)); }   // ပြောင်းသွားရင် edit-time stamp
             });
             if (changed) val = JSON.stringify(arr);
-            ssmDbg("SAVE stamp=" + (_st.join(",") || "NONE") + " total=" + arr.length);   // TEMP
+            ssmDbg("SAVE stamp=" + (_st.join(",") || "NONE") + (_im.length ? " IMG→IDB:" + _im.join(",") : "") + " total=" + arr.length);   // TEMP
           } catch (e) { ssmDbg("SAVE err " + e); }
         }
         _protoSet.call(this, key, val);
@@ -165,8 +169,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v18 (idb-retry) loaded");
-        window.SSM_SYNC_VER = "v18";
+        console.log("[SSM sync] inline v19 (central-offload) loaded");
+        window.SSM_SYNC_VER = "v19";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
