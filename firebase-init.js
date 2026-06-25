@@ -160,8 +160,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v13 (proto-setItem) loaded");
-        window.SSM_SYNC_VER = "v13";
+        console.log("[SSM sync] inline v14 (img-preserve+recover) loaded");
+        window.SSM_SYNC_VER = "v14";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -249,14 +249,19 @@
             lastPush["__sales"] = Date.now();
             // cloud doc = full (ပုံ IDB ကနေ ဆွဲ ပြန်တွဲ)၊ local = text-only
             Promise.all([
-              content.hasPay ? window.ssmImg.get(sid + ":pay") : Promise.resolve(""),
-              content.hasDel ? window.ssmImg.get(sid + ":del") : Promise.resolve("")
+              content.hasPay ? window.ssmImg.get(sid + ":pay") : Promise.resolve(null),
+              content.hasDel ? window.ssmImg.get(sid + ":del") : Promise.resolve(null)
             ]).then(function (imgs) {
               var doc = {}; for (var k in content) doc[k] = content[k];
-              doc.paySS = imgs[0] || ""; doc.deliveryPhoto = imgs[1] || "";
-              if (JSON.stringify(doc).length > 900000) { doc.paySS = ""; doc.deliveryPhoto = ""; }  // 1MB guard
-              console.log("[sales] push →", sid);
-              db.collection(SALES).doc(sid).set(doc).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
+              // hasPay/hasDel ဖြစ်ပြီး local IDB မှာ ပုံ bytes မရှိရင် → cloud ပုံ မဖျက် (omit + merge)၊ ရှိမှ ထည့်
+              var omitPay = content.hasPay && !imgs[0];
+              var omitDel = content.hasDel && !imgs[1];
+              if (!omitPay) doc.paySS = imgs[0] || "";
+              if (!omitDel) doc.deliveryPhoto = imgs[1] || "";
+              if (JSON.stringify(doc).length > 900000) { doc.paySS = ""; doc.deliveryPhoto = ""; omitPay = false; omitDel = false; }  // 1MB guard
+              console.log("[sales] push →", sid, (omitPay || omitDel) ? "(img-preserve)" : "");
+              var ref = db.collection(SALES).doc(sid);
+              ((omitPay || omitDel) ? ref.set(doc, { merge: true }) : ref.set(doc)).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
             });
           });
           // delete: baseline မှာ ရှိပြီး အခု ပျောက် → cloud doc + IDB ပုံ ဖျက်
@@ -266,31 +271,43 @@
           trackedSids = seen;                                    // baseline အသစ် = current local sids
         }
 
+        // RECOVERY (one-time/device): local IDB မှာ ပုံ ကျန်ရင် cloud ကို ပြန်တင် (wipe ဖြစ်သွားတဲ့ ပုံတွေ ပြန်ရ)
+        // flag (hasPay/hasDel) မှားပြီး false ဖြစ်နေနိုင်လို့ IDB ကို တိုက်ရိုက် probe (ပုံ တွေ့ရင် flag ပါ ပြန်ပြင်)
+        function ssmRepushImages() {
+          var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { return; }
+          local.forEach(function (s) {
+            var sid = sidOf(s);
+            Promise.all([window.ssmImg.get(sid + ":pay"), window.ssmImg.get(sid + ":del")]).then(function (imgs) {
+              if (!imgs[0] && !imgs[1]) return;                  // IDB မှာ ပုံ မရှိ → ပြန်တင်စရာ မရှိ
+              var patch = {};
+              if (imgs[0]) { patch.paySS = imgs[0]; patch.hasPay = true; }
+              if (imgs[1]) { patch.deliveryPhoto = imgs[1]; patch.hasDel = true; }
+              patch._u = Date.now();                             // LWW နိုင်အောင် (တခြား device က hasPay=false အဟောင်း မကိုင်အောင်)
+              if (JSON.stringify(patch).length > 900000) return;
+              db.collection(SALES).doc(sid).set(patch, { merge: true })
+                .then(function () { console.log("[sales] img restored →", sid); }).catch(function () {});
+            });
+          });
+        }
+
         // PULL: load မှာ cloud sales merge (clobber-proof)၊ ပုံတွေ IDB ထဲ ရွှေ့၊ ပြီးရင် push-only
         db.collection(SALES).onSnapshot(function (snap) {
           if (salesInitialDone) return;
           salesInitialDone = true;
           var byId = {};
+          var _cloudImg = 0, _cloudPay = 0, _cloudDel = 0;
           snap.forEach(function (d) {
             var s = d.data(); if (s.orderNo == null) s.orderNo = d.id;
             var sid = sidOf(s);
+            if (s.paySS) { _cloudImg++; _cloudPay++; }                // TEMP: cloud ပုံ ရှိမရှိ ရေတွက် (strip မဖြစ်ခင်)
+            if (s.deliveryPhoto) { _cloudImg++; _cloudDel++; }
             offloadImages(s, sid);                                // cloud ပုံ → IDB၊ local sale ကနေ ဖြုတ်
             byId[sid] = s; markSynced(sid);
             if (d.id === sid) saleCache[sid] = JSON.stringify(saleContent(s));        // format မှန် → change-detect cache
             else db.collection(SALES).doc(d.id).delete().catch(function () {});        // format ဟောင်း → ဖျက် (push က orderNo doc ပြန်ရေးမယ်)
           });
-          // ── TEMP DEBUG: edited sale local vs cloud ──
-          try {
-            var _dl; try { _dl = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { _dl = []; }
-            var _r = _dl.filter(function (s) { return s._u && (Date.now() - s._u) < 180000; }).sort(function (a, b) { return (b._u || 0) - (a._u || 0); })[0];
-            if (_r) {
-              var _rs = sidOf(_r), _c = byId[_rs];
-              ssmDbg(_rs + " | LOCAL u" + Math.round((Date.now() - _r._u) / 1000) + "s i" + ((_r.items && _r.items.length) || 0)
-                + " | CLOUD " + (_c ? ((_c._u ? "u" + Math.round((Date.now() - _c._u) / 1000) + "s" : "uNONE") + " i" + ((_c.items && _c.items.length) || 0)) : "MISSING")
-                + " | " + (lastPush["__sales"] ? "SKIP-guard" : "merge"));
-            } else { ssmDbg("no recent edit | cloud=" + Object.keys(byId).length + " | " + (lastPush["__sales"] ? "SKIP-guard" : "merge")); }
-          } catch (e) {}
-          // ── /DEBUG ──
+          ssmDbg("IMG cloud: pay=" + _cloudPay + " del=" + _cloudDel + " | cloud=" + Object.keys(byId).length);   // TEMP
+          try { if (!localStorage.getItem("ssm_imgfix1")) { ssmRepushImages(); origSet("ssm_imgfix1", "1"); } } catch (e) {}   // one-time: local ပုံ → cloud ပြန်တင်
           if (lastPush["__sales"]) return;                       // session ထဲ save ပြီးပြီ → adopt မလုပ် (clobber မဖြစ်)
           var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
           local.forEach(function (s) {
