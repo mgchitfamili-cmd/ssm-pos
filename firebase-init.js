@@ -174,8 +174,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v21 (sticky-flag) loaded");
-        window.SSM_SYNC_VER = "v21";
+        console.log("[SSM sync] inline v23 (edit-diag) loaded");
+        window.SSM_SYNC_VER = "v23";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -305,7 +305,8 @@
               var patch = {};
               if (imgs[0]) { patch.paySS = imgs[0]; patch.hasPay = true; }
               if (imgs[1]) { patch.deliveryPhoto = imgs[1]; patch.hasDel = true; }
-              patch._u = Date.now();                             // LWW နိုင်အောင် (တခြား device က hasPay=false အဟောင်း မကိုင်အောင်)
+              // NOTE: _u bump မလုပ်တော့ — items မပါတဲ့ patch က _u အသစ်နဲ့ cloud ကို ဖိပြီး edit (items အသစ်) ကို revert ဖြစ်စေလို့။
+              //       ပုံ flag က merge sticky နဲ့ ထိန်းပြီးသား။
               if (JSON.stringify(patch).length > 900000) return;
               db.collection(SALES).doc(sid).set(patch, { merge: true })
                 .then(function () { console.log("[sales] img restored →", sid); }).catch(function () {});
@@ -330,6 +331,16 @@
             else db.collection(SALES).doc(d.id).delete().catch(function () {});        // format ဟောင်း → ဖျက် (push က orderNo doc ပြန်ရေးမယ်)
           });
           ssmDbg("IMG cloud: pay=" + _cloudPay + " del=" + _cloudDel + " | cloud=" + Object.keys(byId).length);   // TEMP
+          try {   // TEMP edit-revert diag
+            var _dl; try { _dl = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { _dl = []; }
+            var _r = _dl.filter(function (s) { return s._u && (Date.now() - s._u) < 180000; }).sort(function (a, b) { return (b._u || 0) - (a._u || 0); })[0];
+            if (_r) {
+              var _rs = sidOf(_r), _c = byId[_rs];
+              ssmDbg("EDIT " + _rs + " | L u" + Math.round((Date.now() - _r._u) / 1000) + "s i" + ((_r.items && _r.items.length) || 0)
+                + " | C " + (_c ? ("u" + (_c._u ? Math.round((Date.now() - _c._u) / 1000) + "s" : "NONE") + " i" + ((_c.items && _c.items.length) || 0)) : "MISS")
+                + " | " + (lastPush["__sales"] ? "SKIP(keep-local)" : "merge"));
+            }
+          } catch (e) {}
           try { if (!localStorage.getItem("ssm_imgfix2")) { ssmRepushImages(); origSet("ssm_imgfix2", "1"); } } catch (e) {}   // one-time: local ပုံ → cloud ပြန်တင်
           if (lastPush["__sales"]) return;                       // session ထဲ save ပြီးပြီ → adopt မလုပ် (clobber မဖြစ်)
           var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
