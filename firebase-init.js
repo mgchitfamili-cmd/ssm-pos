@@ -110,6 +110,14 @@
       var _pendKeys    = {};                      // queued appdata pushes
       var _pendSales   = null;                    // queued salesHistory val
 
+      function ssmDbg(m) {
+        try {
+          var d = document.getElementById("__ssmdbg");
+          if (!d) { d = document.createElement("div"); d.id = "__ssmdbg"; d.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:rgba(0,0,0,.85);color:#0f0;font:11px/1.3 monospace;padding:5px 7px;white-space:pre-wrap"; (document.body || document.documentElement).appendChild(d); }
+          d.textContent = "[dbg] " + m;
+        } catch (e) {}
+      }
+
       // EARLY setItem patch — auth/sync မ ready ခင် save လုပ်ရင်လည်း lastPush ချက်ချင်း set။
       // (iOS မှာ SDK နှေး၍ edit save ပြီးမှ sync စလို့ merge က cloud အဟောင်းနဲ့ ပြန်ဖျက်တဲ့ bug fix)
       var _salesSnap = {};   // orderNo -> content hash (_u မပါ) — edit ဖြစ်မဖြစ် သိရန် + _u stamp
@@ -119,13 +127,14 @@
       localStorage.setItem = function (key, val) {
         if (key === "salesHistory") {
           try {
-            var arr = JSON.parse(val) || [], changed = false;
+            var arr = JSON.parse(val) || [], changed = false, _st = [];
             arr.forEach(function (s) {
               var id = String(s.orderNo), h = _saleHash(s);
-              if (_salesSnap[id] !== h) { s._u = Date.now(); _salesSnap[id] = h; changed = true; }   // ပြောင်းသွားရင် edit-time stamp
+              if (_salesSnap[id] !== h) { s._u = Date.now(); _salesSnap[id] = h; changed = true; _st.push(id + ":i" + ((s.items && s.items.length) || 0)); }   // ပြောင်းသွားရင် edit-time stamp
             });
             if (changed) val = JSON.stringify(arr);
-          } catch (e) {}
+            ssmDbg("SAVE stamp=" + (_st.join(",") || "NONE") + " total=" + arr.length);   // TEMP
+          } catch (e) { ssmDbg("SAVE err " + e); }
         }
         origSet(key, val);
         if (SYNC_KEYS.indexOf(key) >= 0) {
@@ -149,8 +158,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v11 (dbg) loaded");
-        window.SSM_SYNC_VER = "v11";
+        console.log("[SSM sync] inline v12 (dbg2) loaded");
+        window.SSM_SYNC_VER = "v12";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -215,14 +224,6 @@
             if (typeof window.renderHistory === "function") window.renderHistory();
             else if (typeof window.renderCards === "function") window.renderCards();
             else if (typeof window.render === "function") window.render();
-          } catch (e) {}
-        }
-
-        function ssmDbg(m) {
-          try {
-            var d = document.getElementById("__ssmdbg");
-            if (!d) { d = document.createElement("div"); d.id = "__ssmdbg"; d.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:rgba(0,0,0,.85);color:#0f0;font:11px/1.3 monospace;padding:5px 7px;white-space:pre-wrap"; (document.body || document.documentElement).appendChild(d); }
-            d.textContent = "[dbg] " + m;
           } catch (e) {}
         }
 
