@@ -149,8 +149,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v10 (LWW _u) loaded");
-        window.SSM_SYNC_VER = "v10";
+        console.log("[SSM sync] inline v11 (dbg) loaded");
+        window.SSM_SYNC_VER = "v11";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -218,6 +218,14 @@
           } catch (e) {}
         }
 
+        function ssmDbg(m) {
+          try {
+            var d = document.getElementById("__ssmdbg");
+            if (!d) { d = document.createElement("div"); d.id = "__ssmdbg"; d.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:rgba(0,0,0,.85);color:#0f0;font:11px/1.3 monospace;padding:5px 7px;white-space:pre-wrap"; (document.body || document.documentElement).appendChild(d); }
+            d.textContent = "[dbg] " + m;
+          } catch (e) {}
+        }
+
         // local sale ကနေ base64 ပုံ ဖြုတ်ပြီး IDB ထဲ ရွှေ့ (flag hasPay/hasDel ထား)
         function offloadImages(s, sid) {
           if (s.paySS)         { window.ssmImg.set(sid + ":pay", s.paySS); s.hasPay = true; }
@@ -268,6 +276,18 @@
             if (d.id === sid) saleCache[sid] = JSON.stringify(saleContent(s));        // format မှန် → change-detect cache
             else db.collection(SALES).doc(d.id).delete().catch(function () {});        // format ဟောင်း → ဖျက် (push က orderNo doc ပြန်ရေးမယ်)
           });
+          // ── TEMP DEBUG: edited sale local vs cloud ──
+          try {
+            var _dl; try { _dl = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { _dl = []; }
+            var _r = _dl.filter(function (s) { return s._u && (Date.now() - s._u) < 180000; }).sort(function (a, b) { return (b._u || 0) - (a._u || 0); })[0];
+            if (_r) {
+              var _rs = sidOf(_r), _c = byId[_rs];
+              ssmDbg(_rs + " | LOCAL u" + Math.round((Date.now() - _r._u) / 1000) + "s i" + ((_r.items && _r.items.length) || 0)
+                + " | CLOUD " + (_c ? ((_c._u ? "u" + Math.round((Date.now() - _c._u) / 1000) + "s" : "uNONE") + " i" + ((_c.items && _c.items.length) || 0)) : "MISSING")
+                + " | " + (lastPush["__sales"] ? "SKIP-guard" : "merge"));
+            } else { ssmDbg("no recent edit | cloud=" + Object.keys(byId).length + " | " + (lastPush["__sales"] ? "SKIP-guard" : "merge")); }
+          } catch (e) {}
+          // ── /DEBUG ──
           if (lastPush["__sales"]) return;                       // session ထဲ save ပြီးပြီ → adopt မလုပ် (clobber မဖြစ်)
           var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
           local.forEach(function (s) {
