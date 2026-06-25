@@ -117,8 +117,9 @@
       function ssmDbg(m) {
         try {
           var d = document.getElementById("__ssmdbg");
-          if (!d) { d = document.createElement("div"); d.id = "__ssmdbg"; d.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:rgba(0,0,0,.85);color:#0f0;font:11px/1.3 monospace;padding:5px 7px;white-space:pre-wrap"; (document.body || document.documentElement).appendChild(d); }
-          d.textContent = "[dbg] " + m;
+          if (!d) { d = document.createElement("div"); d.id = "__ssmdbg"; d.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:rgba(0,0,0,.85);color:#0f0;font:11px/1.3 monospace;padding:5px 7px;white-space:pre-wrap"; (document.body || document.documentElement).appendChild(d); d._log = []; }
+          d._log = d._log || []; d._log.push(m); if (d._log.length > 3) d._log.shift();
+          d.textContent = "[dbg] " + d._log.join("\n[dbg] ");
         } catch (e) {}
       }
       window.ssmDbg = ssmDbg;
@@ -164,8 +165,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v16 (fill-dbg) loaded");
-        window.SSM_SYNC_VER = "v16";
+        console.log("[SSM sync] inline v17 (dbg-multiline) loaded");
+        window.SSM_SYNC_VER = "v17";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
