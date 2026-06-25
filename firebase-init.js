@@ -165,8 +165,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v17 (dbg-multiline) loaded");
-        window.SSM_SYNC_VER = "v17";
+        console.log("[SSM sync] inline v18 (idb-retry) loaded");
+        window.SSM_SYNC_VER = "v18";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -241,6 +241,14 @@
           s.paySS = ""; s.deliveryPhoto = "";
         }
 
+        // IDB get — ပုံ မတွေ့သေးရင် (set async မပြီးသေး = race) ခဏစောင့် retry
+        function _getImgRetry(key, tries) {
+          return window.ssmImg.get(key).then(function (v) {
+            if (v || tries <= 0) return v;
+            return new Promise(function (r) { setTimeout(r, 200); }).then(function () { return _getImgRetry(key, tries - 1); });
+          });
+        }
+
         function ssmPushSales(val) {
           var arr; try { arr = JSON.parse(val) || []; } catch (e) { return; }
           var seen = {};
@@ -254,8 +262,8 @@
             lastPush["__sales"] = Date.now();
             // cloud doc = full (ပုံ IDB ကနေ ဆွဲ ပြန်တွဲ)၊ local = text-only
             Promise.all([
-              content.hasPay ? window.ssmImg.get(sid + ":pay") : Promise.resolve(null),
-              content.hasDel ? window.ssmImg.get(sid + ":del") : Promise.resolve(null)
+              content.hasPay ? _getImgRetry(sid + ":pay", 4) : Promise.resolve(null),
+              content.hasDel ? _getImgRetry(sid + ":del", 4) : Promise.resolve(null)
             ]).then(function (imgs) {
               var doc = {}; for (var k in content) doc[k] = content[k];
               // hasPay/hasDel ဖြစ်ပြီး local IDB မှာ ပုံ bytes မရှိရင် → cloud ပုံ မဖျက် (omit + merge)၊ ရှိမှ ထည့်
@@ -313,7 +321,7 @@
             else db.collection(SALES).doc(d.id).delete().catch(function () {});        // format ဟောင်း → ဖျက် (push က orderNo doc ပြန်ရေးမယ်)
           });
           ssmDbg("IMG cloud: pay=" + _cloudPay + " del=" + _cloudDel + " | cloud=" + Object.keys(byId).length);   // TEMP
-          try { if (!localStorage.getItem("ssm_imgfix1")) { ssmRepushImages(); origSet("ssm_imgfix1", "1"); } } catch (e) {}   // one-time: local ပုံ → cloud ပြန်တင်
+          try { if (!localStorage.getItem("ssm_imgfix2")) { ssmRepushImages(); origSet("ssm_imgfix2", "1"); } } catch (e) {}   // one-time: local ပုံ → cloud ပြန်တင်
           if (lastPush["__sales"]) return;                       // session ထဲ save ပြီးပြီ → adopt မလုပ် (clobber မဖြစ်)
           var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
           local.forEach(function (s) {
