@@ -1263,6 +1263,7 @@
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
       // orderNo ရှိပြီးသားဆို update (edit/iOS safe) — မရှိဆို အသစ်ထည့်။ "ဘောင်ချာ ၂ ထပ် / edit မဝင်" ပြဿနာ ကာကွယ်
       var _exist = salesHistory.findIndex(function (s) { return s && String(s.orderNo) === String(savedData.orderNo); });
+      var _prevSale = (_exist >= 0) ? salesHistory[_exist] : null;   // edit မှာ ပုံ reference ထိန်းရန်
       if (_exist >= 0) salesHistory[_exist] = savedData;
       else salesHistory.push(savedData);
       let isEditMode = (editIndex != null) || (_exist >= 0);
@@ -1270,8 +1271,11 @@
       // base64 paySS ကို IDB ထဲ ရွှေ့ (localStorage သေးငယ်အောင် — iOS 5MB quota fix)
       if (window.ssmImg) {
         if (savedData.paySS) { window.ssmImg.set(savedData.orderNo + ":pay", savedData.paySS); savedData.hasPay = true; savedData.payV = Date.now(); savedData.paySS = ""; }
+        else if (_prevSale && _prevSale.hasPay) { savedData.hasPay = true; savedData.payV = _prevSale.payV; savedData.paySS = ""; }   // edit — ပုံအသစ်မထည့် → အရင် pay ပုံ ထိန်း
         else { savedData.hasPay = false; }
       }
+      // delivery ပုံ — index.html က မကိုင်လို့ edit မှာ အရင် reference ဆက်ထား (မပျောက်အောင်)
+      if (!savedData.deliveryPhoto && _prevSale && _prevSale.hasDel) { savedData.hasDel = true; savedData.deliveryPhoto = ""; if (_prevSale.delV) savedData.delV = _prevSale.delV; }
 
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
 
