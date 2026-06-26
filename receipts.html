@@ -8,6 +8,7 @@
 
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="firebase-init.js"></script>
+  <script src="firebase-sync.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6d28d9">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -329,7 +330,6 @@
     let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
     let openIndex    = null;
     let payingIndex  = null;
-    let payingOrderNo = null;
     let tempSS       = "";       // ယာယီ SS data
 
     // ── Render List ───────────────────────────────────────────────
@@ -402,6 +402,7 @@
             <div class="card-detail" id="detail-${index}">
               <p class="info-line"><b>Phone:</b> ${sale.phone || "-"}</p>
               <p class="info-line"><b>Address:</b> ${sale.address || "-"}</p>
+              ${(sale.customer2 || sale.phone2 || sale.address2) ? `<p class="info-line"><b>Customer 2:</b> ${sale.customer2 || "-"}</p><p class="info-line"><b>Phone 2:</b> ${sale.phone2 || "-"}</p><p class="info-line"><b>Address 2:</b> ${sale.address2 || "-"}</p>` : ""}
               <p class="info-line"><b>Order App:</b> ${sale.orderApp || "-"}</p>
               <p class="info-line"><b>Delivery Service:</b> ${sale.deliveryService || "-"}</p>
               <p class="info-line"><b>Staff:</b> ${sale.staff || "-"}</p>
@@ -461,7 +462,6 @@
     // ── Payment Modal ─────────────────────────────────────────────
     function openPayModal(index) {
       payingIndex = index;
-      payingOrderNo = salesHistory[index] ? salesHistory[index].orderNo : null;
       tempSS = salesHistory[index].paySS || "";
 
       // ရှိပြီးသား data ဖြည့်
@@ -536,15 +536,8 @@
 
     // ── Save Payment ──────────────────────────────────────────────
     function savePayment() {
-      // index ရွှေ့သွားနိုင်လို့ (merge re-sort / multi-device) salesHistory ကို fresh ဖတ်ပြီး orderNo နဲ့ ပြန်ရှာ
-      salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
-      if (payingOrderNo != null) {
-        var _pi = salesHistory.findIndex(function (s) { return s && String(s.orderNo) === String(payingOrderNo); });
-        if (_pi >= 0) payingIndex = _pi;
-      }
       let status    = document.getElementById("payStatus").value;
       let sale      = salesHistory[payingIndex];
-      if (!sale) { alert("ဘောင်ချာ ရှာမတွေ့ပါ"); return; }
       let payType   = document.getElementById("payType").value;
       let payCode   = document.getElementById("payCode").value.trim();
       let payAmount = Number(document.getElementById("payAmount").value) || 0;
@@ -612,11 +605,8 @@
     // ── Delete ────────────────────────────────────────────────────
     function deleteReceipt(index) {
       if ((localStorage.getItem('ssm_role')||'staff') !== 'admin') { alert('Admin မှ ဖျက်လို့ရပါတယ်'); return; }
-      var ono = salesHistory[index] ? salesHistory[index].orderNo : null;
       showConfirm("ဒီ Receipt ကို ဖျက်မှာလား?", function () {
-        salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];   // fresh (index ရွှေ့မှု safe)
-        var di = (ono != null) ? salesHistory.findIndex(function (s) { return s && String(s.orderNo) === String(ono); }) : index;
-        if (di >= 0) salesHistory.splice(di, 1);
+        salesHistory.splice(index, 1);
         localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
         openIndex = null;
         renderHistory();
@@ -626,7 +616,6 @@
     // ── Edit ──────────────────────────────────────────────────────
     function editReceipt(index) {
       localStorage.setItem("editReceiptIndex", index);
-      if (salesHistory[index]) localStorage.setItem("editReceiptOrderNo", salesHistory[index].orderNo);   // orderNo နဲ့ index.html မှာ ပြန်ရှာ
       location.href = "index.html";
     }
 
