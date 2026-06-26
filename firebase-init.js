@@ -107,8 +107,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v26 (inline-img) loaded");
-        window.SSM_SYNC_VER = "v26";
+        console.log("[SSM sync] inline v27 (inline-img+prune50) loaded");
+        window.SSM_SYNC_VER = "v27";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -176,11 +176,34 @@
           } catch (e) {}
         }
 
+        // ── PRUNE: ၅၀ ရက်ကျော် ဘောင်ချာဟောင်းကို cloud ကနေသာ ဖယ် (storage/read free-tier ထဲ နေအောင်)။ local + device အားလုံးမှာ အပြည့် ကျန် ──
+        var PRUNE_DAYS = 50;
+        function isOldSale(s) {
+          try {
+            var t = (s && s.orderDate) ? new Date(s.orderDate).getTime() : NaN;
+            if (!t || isNaN(t)) return false;                    // date မရှိ/မဖတ်နိုင် → ဘယ်တော့မှ prune မလုပ် (safe)
+            return (Date.now() - t) > PRUNE_DAYS * 86400000;
+          } catch (e) { return false; }
+        }
+        function ssmPruneOldSales(cloudIds) {
+          try { var last = +(localStorage.getItem("ssm_lastPrune") || 0); if (Date.now() - last < 12 * 3600000) return; } catch (e) {}  // device တစ်လုံးကို ၁၂ နာရီ တစ်ခါပဲ
+          var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { return; }
+          local.forEach(function (s) {
+            var sid = sidOf(s);
+            if (isOldSale(s) && cloudIds[sid]) {                 // ဟောင်း + cloud မှာ ရှိသေး → cloud ကနေသာ ဖျက် (local မထိ)
+              db.collection(SALES).doc(sid).delete().catch(function () {});
+              delete saleCache[sid];
+            }
+          });
+          try { origSet("ssm_lastPrune", String(Date.now())); } catch (e) {}
+        }
+
         function ssmPushSales(val) {
           var arr; try { arr = JSON.parse(val) || []; } catch (e) { return; }
           var seen = {};
           arr.forEach(function (s) {
             var sid = sidOf(s); seen[sid] = true;
+            if (isOldSale(s)) return;                              // ၅၀ ရက်ကျော် → cloud ကို မ push (prune ထားတာ ပြန်မတင်); local မှာ ကျန်
             var content = saleContent(s);                          // ပုံ inline ပါ
             var js = JSON.stringify(content);
             markSynced(sid);
@@ -213,6 +236,7 @@
             if (d.id === sid) saleCache[sid] = JSON.stringify(saleContent(s));        // format မှန် → change-detect cache
             else db.collection(SALES).doc(d.id).delete().catch(function () {});        // format ဟောင်း → ဖျက်
           });
+          ssmPruneOldSales(byId);                                // ၅၀ ရက်ကျော် ဘောင်ချာ cloud ကနေ ဖယ် (local + device အားလုံးမှာ ကျန်)
           if (lastPush["__sales"]) return;                       // session ထဲ save ပြီးပြီ → adopt မလုပ် (clobber မဖြစ်)
           var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
           // ── ORDER-PRESERVING merge (positional editIndex မပျက်အောင် local အစီအစဉ် ထိန်း) ──
@@ -225,9 +249,12 @@
               for (var k2 in c) { s[k2] = c[k2]; }
             }
           });
-          local = local.filter(function (s) {                    // 2) cloud တင်ဖူးပြီး အခု cloud မှာ ပျောက် → တခြား device က ဖျက်ထား → local ကနေ ဖယ်
+          local = local.filter(function (s) {                    // 2) cloud မှာ ပျောက်တာ → recent ဆို တခြား device ဖျက်တာ (ဖယ်)၊ ဟောင်း (၅၀ ရက်ကျော်) ဆို prune လုပ်တာ (local မှာ ထား)
             var sid = sidOf(s);
-            return !(syncedIds[sid] && !byId[sid]);
+            if (byId[sid]) return true;                          // cloud မှာ ရှိ → ထား
+            if (!syncedIds[sid]) return true;                    // တင်ဖူးတာ မဟုတ် (local အသစ်) → ထား
+            if (isOldSale(s)) return true;                       // ဟောင်း + cloud ပျောက် → prune ထားတာ → local မှာ ဆက်ထား
+            return false;                                        // recent + တင်ဖူး + cloud ပျောက် → တခြား device ဖျက် → ဖယ်
           });
           var extras = [];                                       // 3) cloud-only (တခြား device က အသစ်) → local အဆုံးမှာ ဆက် (orderDate အလိုက် စီ)
           Object.keys(byId).forEach(function (sid) { if (!seenL[sid]) extras.push(byId[sid]); });
