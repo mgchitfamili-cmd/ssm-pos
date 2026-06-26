@@ -107,8 +107,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v25 (inline-img) loaded");
-        window.SSM_SYNC_VER = "v25";
+        console.log("[SSM sync] inline v26 (inline-img) loaded");
+        window.SSM_SYNC_VER = "v26";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
