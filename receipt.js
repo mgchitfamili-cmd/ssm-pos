@@ -77,12 +77,6 @@
       '<div class="cus-mid">' + (sale.customer || "-") + '</div>' +
       '<div class="phone-clear">' + (sale.phone || "-") + '</div>' +
       '<div class="addr-mm">' + (sale.address || "-") + '</div>' +
-      ((sale.customer2 || sale.phone2 || sale.address2)
-        ? '<hr style="border-top:1px dashed #000;">' +
-          '<div class="cus-mid">' + (sale.customer2 || "-") + '</div>' +
-          '<div class="phone-clear">' + (sale.phone2 || "-") + '</div>' +
-          '<div class="addr-mm">' + (sale.address2 || "-") + '</div>'
-        : '') +
       '<hr>' +
       itemHtml +
       '<hr>' +

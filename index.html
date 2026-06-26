@@ -333,6 +333,7 @@
       backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
     }
     .sheet-overlay.show{ display:block; }
+    body.sheet-locked{ position:fixed; left:0; right:0; width:100%; overflow:hidden; }  /* sheet ဖွင့်ချိန် နောက်ခံ scroll lock */
     .sheet{
       position:fixed; left:0; right:0; bottom:0; z-index:9001;
       background:var(--surface); border:1px solid var(--line); border-bottom:none;
@@ -488,24 +489,6 @@
           <label class="lbl">လိပ်စာ</label>
           <input id="address" placeholder="Address">
         </div>
-
-        <button type="button" id="cust2Toggle" class="add-btn" style="background:transparent;color:var(--brand-ink);border:1px dashed var(--brand);font-size:13px;font-weight:600;padding:9px;margin:0 0 12px;" onclick="toggleCust2()">➕ ဒုတိယ Customer (နာမည်/ဖုန်း/လိပ်စာ) ထည့်ရန်</button>
-
-        <div id="cust2Box" style="display:none;">
-          <div class="field">
-            <label class="lbl">Customer အမည် (၂)</label>
-            <input id="name2" placeholder="Customer Name 2">
-          </div>
-          <div class="field">
-            <label class="lbl">ဖုန်း (၂)</label>
-            <input id="phone2" placeholder="Phone 2">
-          </div>
-          <div class="field">
-            <label class="lbl">လိပ်စာ (၂)</label>
-            <input id="address2" placeholder="Address 2">
-          </div>
-        </div>
-
         <div class="field">
           <div class="row">
             <div>
@@ -720,9 +703,6 @@
     <p id="rp-customer"></p>
     <p id="rp-phone"></p>
     <p id="rp-address"></p>
-    <p id="rp-customer2"></p>
-    <p id="rp-phone2"></p>
-    <p id="rp-address2"></p>
     <p id="rp-township"></p>
     <p id="rp-orderApp"></p>
     <p id="rp-deliveryService"></p>
@@ -1251,9 +1231,6 @@
         customer:        document.getElementById("name").value,
         phone:           document.getElementById("phone").value,
         address:         document.getElementById("address").value,
-        customer2:       document.getElementById("name2").value,
-        phone2:          document.getElementById("phone2").value,
-        address2:        document.getElementById("address2").value,
         township:        document.getElementById("township").value,
         orderApp:        document.getElementById("orderapp").value,
         items:           items,
@@ -1280,19 +1257,25 @@
         note:            document.getElementById("note").value,
         netTotal:        document.getElementById("netTotal").innerText,
         printed:         false,
-        orderDate:       (editIndex != null && JSON.parse(localStorage.getItem("salesHistory"))[editIndex] && JSON.parse(localStorage.getItem("salesHistory"))[editIndex].orderDate)
-                           ? JSON.parse(localStorage.getItem("salesHistory"))[editIndex].orderDate
-                           : new Date().toISOString()
+        orderDate:       (editIndex != null && window.editOrderDate) ? window.editOrderDate : new Date().toISOString()
       };
 
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
-      let isEditMode   = editIndex != null;
+      // orderNo ရှိပြီးသားဆို update (edit/iOS safe) — မရှိဆို အသစ်ထည့်။ "ဘောင်ချာ ၂ ထပ် / edit မဝင်" ပြဿနာ ကာကွယ်
+      var _exist = salesHistory.findIndex(function (s) { return s && String(s.orderNo) === String(savedData.orderNo); });
+      var _prevSale = (_exist >= 0) ? salesHistory[_exist] : null;   // edit မှာ ပုံ reference ထိန်းရန်
+      if (_exist >= 0) salesHistory[_exist] = savedData;
+      else salesHistory.push(savedData);
+      let isEditMode = (editIndex != null) || (_exist >= 0);
 
-      if (isEditMode) {
-        salesHistory[editIndex] = savedData;
-      } else {
-        salesHistory.push(savedData);
+      // base64 paySS ကို IDB ထဲ ရွှေ့ (localStorage သေးငယ်အောင် — iOS 5MB quota fix)
+      if (window.ssmImg) {
+        if (savedData.paySS) { window.ssmImg.set(savedData.orderNo + ":pay", savedData.paySS); savedData.hasPay = true; savedData.payV = Date.now(); savedData.paySS = ""; }
+        else if (_prevSale && _prevSale.hasPay) { savedData.hasPay = true; savedData.payV = _prevSale.payV; savedData.paySS = ""; }   // edit — ပုံအသစ်မထည့် → အရင် pay ပုံ ထိန်း
+        else { savedData.hasPay = false; }
       }
+      // delivery ပုံ — index.html က မကိုင်လို့ edit မှာ အရင် reference ဆက်ထား (မပျောက်အောင်)
+      if (!savedData.deliveryPhoto && _prevSale && _prevSale.hasDel) { savedData.hasDel = true; savedData.deliveryPhoto = ""; if (_prevSale.delV) savedData.delV = _prevSale.delV; }
 
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
 
@@ -1306,6 +1289,8 @@
       var _asa = document.getElementById("afterSaveActions");
       _asa.style.display = "block";
       showSaveMsg("✅ ဘောင်ချာ သိမ်းပြီးပါပြီ — " + savedData.orderNo, false);
+      // edit ပြီးရင် identity ရှင်း → နောက် order အသစ်မှာ stale edit မဖြစ်အောင်
+      if (isEditMode) { editIndex = null; window.editOrderNo = null; window.editOrderDate = null; try { sessionStorage.removeItem("ssm_editOrderNo"); sessionStorage.removeItem("ssm_editOrderNoT"); } catch (e) {} }
       try { _asa.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
 
       try { buildReceiptPreview(savedData); }
@@ -1323,13 +1308,6 @@
       document.getElementById("rp-customer").innerText        = "Customer : " + data.customer;
       document.getElementById("rp-phone").innerText           = "Phone : " + data.phone;
       document.getElementById("rp-address").innerText         = "Address : " + data.address;
-      (function(){
-        var c2=document.getElementById("rp-customer2"),p2=document.getElementById("rp-phone2"),a2=document.getElementById("rp-address2");
-        if (data.customer2 || data.phone2 || data.address2) {
-          c2.innerText="Customer 2 : "+(data.customer2||"-"); p2.innerText="Phone 2 : "+(data.phone2||"-"); a2.innerText="Address 2 : "+(data.address2||"-");
-          c2.style.display=p2.style.display=a2.style.display="block";
-        } else { c2.style.display=p2.style.display=a2.style.display="none"; }
-      })();
       document.getElementById("rp-township").innerText        = "Township : " + data.township;
       document.getElementById("rp-orderApp").innerText        = "Order App : " + data.orderApp;
       document.getElementById("rp-deliveryService").innerText = "Delivery : " + data.deliveryService;
@@ -1396,41 +1374,39 @@
       location.href = "index.html";
     }
 
-    function toggleCust2() {
-      var box = document.getElementById("cust2Box");
-      var btn = document.getElementById("cust2Toggle");
-      var show = box.style.display === "none";
-      box.style.display = show ? "block" : "none";
-      if (btn) btn.innerText = show ? "➖ ဒုတိယ Customer ဖျောက်ရန်" : "➕ ဒုတိယ Customer (နာမည်/ဖုန်း/လိပ်စာ) ထည့်ရန်";
-    }
-    window.toggleCust2 = toggleCust2;
-
     // ── Load Edit Receipt ─────────────────────────────────────────
     function loadEditReceipt() {
       let idx = localStorage.getItem("editReceiptIndex");
-      if (idx == null) return;
+      let ono = localStorage.getItem("editReceiptOrderNo");
+      // iOS reload/auth-bounce ဖြစ်ရင် localStorage key ပျောက်တတ်လို့ — sessionStorage ကနေ ပြန်ယူ (15s အတွင်း)
+      if (ono == null) {
+        try {
+          var se = sessionStorage.getItem("ssm_editOrderNo");
+          var st = parseInt(sessionStorage.getItem("ssm_editOrderNoT") || "0", 10);
+          if (se && (Date.now() - st) < 15000) ono = se;
+        } catch (e) {}
+      }
+      if (idx == null && ono == null) return;
 
       localStorage.removeItem("editReceiptIndex");
+      localStorage.removeItem("editReceiptOrderNo");
 
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
-      let receipt      = salesHistory[idx];
+      let receipt = null;
+      if (ono != null) receipt = salesHistory.find(function (s) { return s && String(s.orderNo) === String(ono); });   // orderNo နဲ့ ရှာ (index ရွှေ့မှု safe)
+      if (!receipt && idx != null) receipt = salesHistory[idx];
       if (!receipt) return;
 
-      editIndex = idx;
-      window.editOrderNo = receipt.orderNo;
+      editIndex = (idx != null ? idx : 0);          // isEditMode flag (save က orderNo နဲ့ update လုပ်တယ်)
+      window.editOrderNo   = receipt.orderNo;
+      window.editOrderDate = receipt.orderDate;
+      // edit identity ကို sessionStorage မှာ ထား → page reload/auth bounce ဖြစ်လည်း မပျောက် (iOS fix)
+      try { sessionStorage.setItem("ssm_editOrderNo", String(receipt.orderNo)); sessionStorage.setItem("ssm_editOrderNoT", String(Date.now())); } catch (e) {}
 
       document.getElementById("staff").value           = receipt.staff           || "";
       document.getElementById("name").value            = receipt.customer        || "";
       document.getElementById("phone").value           = receipt.phone           || "";
       document.getElementById("address").value         = receipt.address         || "";
-      document.getElementById("name2").value           = receipt.customer2       || "";
-      document.getElementById("phone2").value          = receipt.phone2          || "";
-      document.getElementById("address2").value        = receipt.address2        || "";
-      if (receipt.customer2 || receipt.phone2 || receipt.address2) {
-        var _b=document.getElementById("cust2Box"), _bt=document.getElementById("cust2Toggle");
-        if (_b) _b.style.display="block";
-        if (_bt) _bt.innerText="➖ ဒုတိယ Customer ဖျောက်ရန်";
-      }
       document.getElementById("township").value        = receipt.township        || "";
       document.getElementById("orderapp").value        = receipt.orderApp        || "";
       document.getElementById("delivery").value        = receipt.delivery        || "";
@@ -1443,6 +1419,7 @@
       if (typeof toggleDepFields === "function") toggleDepFields();
       document.getElementById("depCode").value         = receipt.payCode         || "";
       depSSData = receipt.paySS || "";
+      if (!depSSData && receipt.hasPay && window.ssmImg) { window.ssmImg.get(receipt.orderNo + ":pay").then(function (v) { depSSData = v || ""; }); }
       (function(){ var pv = document.getElementById("depSSPreview"); if (depSSData) { pv.src = depSSData; pv.style.display = "block"; } else { pv.style.display = "none"; } })();
       document.getElementById("note").value            = receipt.note            || "";
       document.getElementById("discountType").value    = receipt.discountType    || "none";
@@ -1613,6 +1590,22 @@
   })();
   </script>
   <script>
+  /* ── bottom-sheet ဖွင့်ချိန် နောက်ခံ scroll lock (mobile-safe: position:fixed + scroll restore) ── */
+  var __ssmScrollY = 0;
+  function ssmLockScroll() {
+    if (document.body.classList.contains("sheet-locked")) return;
+    __ssmScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.top = (-__ssmScrollY) + "px";
+    document.body.classList.add("sheet-locked");
+  }
+  function ssmUnlockScroll() {
+    if (document.querySelector(".sheet-overlay.show")) return;   // တခြား sheet ဖွင့်ထားသေး → ဆက်ထား
+    if (!document.body.classList.contains("sheet-locked")) return;
+    document.body.classList.remove("sheet-locked");
+    document.body.style.top = "";
+    window.scrollTo(0, __ssmScrollY);
+  }
+
   /* ── Custom select → bottom sheet (native <select> picker replaced) ── */
   (function () {
     var ov = document.createElement("div"); ov.className = "sheet-overlay";
@@ -1656,9 +1649,10 @@
         listEl.appendChild(row);
       });
       ov.classList.add("show");
+      ssmLockScroll();
       requestAnimationFrame(function () { sheet.classList.add("show"); });
     }
-    function closeSheet() { sheet.classList.remove("show"); ov.classList.remove("show"); }
+    function closeSheet() { sheet.classList.remove("show"); ov.classList.remove("show"); ssmUnlockScroll(); }
     ov.addEventListener("click", closeSheet);
 
     var pairs = [];
@@ -1828,10 +1822,11 @@
     function open(inp) {
       target = inp; search.value = ""; render();
       ov.classList.add("show");
+      ssmLockScroll();
       requestAnimationFrame(function () { sheet.classList.add("show"); });
       setTimeout(function () { search.focus(); }, 280);
     }
-    function close() { sheet.classList.remove("show"); ov.classList.remove("show"); }
+    function close() { sheet.classList.remove("show"); ov.classList.remove("show"); ssmUnlockScroll(); }
     ov.addEventListener("click", close);
     search.addEventListener("input", render);
 
