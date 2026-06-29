@@ -1138,13 +1138,13 @@
       reader.onload = function (e) {
         var img = new Image();
         img.onload = function () {
-          var MAX = 1000, w = img.width, h = img.height;
+          var MAX = 800, w = img.width, h = img.height;
           if (w > h && w > MAX)      { h = Math.round(h * MAX / w); w = MAX; }
           else if (h >= w && h > MAX){ w = Math.round(w * MAX / h); h = MAX; }
           var c = document.createElement("canvas");
           c.width = w; c.height = h;
           c.getContext("2d").drawImage(img, 0, 0, w, h);
-          cb(c.toDataURL("image/jpeg", 0.7));
+          cb(c.toDataURL("image/jpeg", 0.5));
         };
         img.onerror = function () { cb(null); };
         img.src = e.target.result;
