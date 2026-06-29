@@ -176,6 +176,7 @@
     <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
     <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
     <div class="menu-item" data-page="setting.html"  onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html#backup'"><span class="ic">💾</span> Backup</div>
   </div>
 
   <div class="top-bar">
@@ -286,6 +287,16 @@
     <section class="card admin-only">
       <button class="btn-save" onclick="saveSettings()">💾 Save</button>
       <button class="btn-reset" onclick="resetSettings()">↺ Default ပြန်ထား</button>
+    </section>
+
+    <section class="card" id="backupCard">
+      <p class="eyebrow"><span class="dot"></span>💾 Data သိမ်းဆည်းမှု (Backup)</p>
+      <p class="s-sub" style="margin:0 0 12px;">ဘောင်ချာ + ပုံ + settings အကုန် ဖိုင်တစ်ခုထဲ သိမ်း။ ပုံမှန် ယူထားရင် ဘာမှ မပျောက်ပါ။</p>
+      <button class="btn-save" onclick="ssmBackupExport()">💾 Backup ထုတ်မယ်</button>
+      <p id="ssmLastBackup" style="text-align:center;font-size:12px;color:#9ca3af;margin:8px 0 14px;"></p>
+      <input type="file" id="ssmBackupFile" accept="application/json,.json" style="display:none" onchange="ssmBackupOpen(event)">
+      <button class="btn-upload" onclick="document.getElementById('ssmBackupFile').value='';document.getElementById('ssmBackupFile').click()">📂 Backup ဖွင့်ကြည့် (Viewer)</button>
+      <p class="s-sub" style="margin:8px 0 0;">Viewer က backup ဖိုင်ကို memory မှာပဲ ဖတ်ပြ — ဖုန်း space (localStorage) မထိ၊ ဟောင်းတဲ့ ဘောင်ချာ ပုံပါ မူရင်း design အတိုင်း ကြည့်/print လို့ရ။</p>
     </section>
 
     <section class="card admin-only">
@@ -555,6 +566,7 @@
   </script>
   <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
   <script src="menu-logo.js"></script>
+  <script src="receipt.js"></script>
   <script>
     (function () {
       var el = document.getElementById("ssmSyncVer");
@@ -569,6 +581,148 @@
       }
       tick();
       document.addEventListener("fb-ready", tick);
+    })();
+  </script>
+  <style>
+    #ssmViewer{ display:none; position:fixed; inset:0; z-index:99999; background:var(--bg,#0f1116); flex-direction:column; }
+    #ssmViewer.open{ display:flex; }
+    .vw-head{ display:flex; justify-content:space-between; align-items:center; padding:12px 14px; border-bottom:1px solid var(--line,#252a33); background:var(--surface,#181b22); }
+    .vw-head button{ width:auto; padding:8px 14px; background:#6b7280; color:#fff; border:none; border-radius:8px; font-size:14px; }
+    .vw-body{ flex:1; overflow:auto; -webkit-overflow-scrolling:touch; }
+    .vw-list{ padding:12px; }
+    #ssmViewerSearch{ width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--line,#333a46); background:var(--surface,#181b22); color:inherit; font-size:14px; margin-bottom:8px; box-sizing:border-box; }
+    .vw-meta{ font-size:12px; color:#9ca3af; margin:4px 2px 10px; }
+    .vw-row{ padding:11px 12px; border:1px solid var(--line,#252a33); border-radius:10px; margin-bottom:8px; cursor:pointer; background:var(--surface,#181b22); }
+    .vw-row b{ font-size:14px; }
+    .vw-row .sub{ font-size:12px; color:#9ca3af; margin-top:3px; }
+    .vw-detail{ padding:12px; }
+    .vw-back, .vw-actions button{ width:auto; padding:9px 14px; border:none; border-radius:8px; font-size:14px; color:#fff; }
+    .vw-back{ background:#6b7280; margin-bottom:10px; }
+    .vw-actions{ margin-bottom:12px; }
+    .vw-actions button{ background:var(--brand,#6d28d9); }
+    #ssmViewerReceipt{ background:#fff; border-radius:10px; padding:6px; max-width:420px; margin:0 auto; color:#000; }
+    @media print {
+      body > *:not(#ssmViewer){ display:none !important; }
+      #ssmViewer{ position:static; background:#fff; display:block; }
+      .vw-head, .vw-list, .vw-back, .vw-actions{ display:none !important; }
+    }
+  </style>
+
+  <!-- Backup Viewer -->
+  <div id="ssmViewer">
+    <div class="vw-head">
+      <strong>📂 Backup Viewer</strong>
+      <button onclick="ssmViewerClose()">✕ ပိတ်</button>
+    </div>
+    <div class="vw-body">
+      <div id="ssmViewerList" class="vw-list">
+        <input id="ssmViewerSearch" placeholder="🔍 ရှာရန် (orderNo / customer / ဖုန်း)" oninput="ssmViewerFilter()">
+        <p id="ssmViewerMeta" class="vw-meta"></p>
+        <div id="ssmViewerItems"></div>
+      </div>
+      <div id="ssmViewerDetail" class="vw-detail" style="display:none;">
+        <button class="vw-back" onclick="ssmViewerBack()">← စာရင်း ပြန်သွား</button>
+        <div class="vw-actions"><button onclick="ssmViewerPrint()">🖨️ Print</button></div>
+        <div id="ssmViewerReceipt"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      var BK = null, LIST = [];
+      function fmtDate(s){ try{ var d=new Date(s); if(isNaN(d)) return s||""; return d.toLocaleString(); }catch(e){ return s||""; } }
+
+      window.ssmBackupExport = function(){
+        try{
+          var backup = {
+            _app:"SSM-POS", _type:"backup", _ver:1, _date:new Date().toISOString(),
+            salesHistory: localStorage.getItem("salesHistory") || "[]",
+            products:     localStorage.getItem("products")     || "[]",
+            shopSettings: localStorage.getItem("shopSettings") || "{}",
+            staffList:    localStorage.getItem("staffList")    || "[]",
+            orderNo:      localStorage.getItem("orderNo")      || "1"
+          };
+          var ds = new Date(), p2=function(n){return String(n).padStart(2,"0");};
+          var name = "ssm-backup-" + ds.getFullYear() + "-" + p2(ds.getMonth()+1) + "-" + p2(ds.getDate()) + "_" + p2(ds.getHours()) + p2(ds.getMinutes()) + ".json";
+          var blob = new Blob([JSON.stringify(backup)], {type:"application/json"});
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a"); a.href=url; a.download=name;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+          try{ localStorage.setItem("ssm_lastBackup", String(Date.now())); }catch(e){}
+          ssmShowLastBackup();
+          var cnt=0; try{ cnt=(JSON.parse(backup.salesHistory)||[]).length; }catch(e){}
+          alert("✅ Backup ထုတ်ပြီး — ဘောင်ချာ " + cnt + " ခု\nဖိုင်ကို Files / Drive မှာ သိမ်းထားပါ။");
+        }catch(e){ alert("Backup error: " + e); }
+      };
+
+      window.ssmBackupOpen = function(ev){
+        var f = ev.target.files && ev.target.files[0]; if(!f) return;
+        var rd = new FileReader();
+        rd.onload = function(){
+          try{
+            var obj = JSON.parse(rd.result);
+            if(!obj || (obj._app && obj._app!=="SSM-POS")){ alert("ဒီဖိုင်က SSM backup မဟုတ်ပါ"); return; }
+            BK = obj;
+            var sh = obj.salesHistory;
+            LIST = (typeof sh==="string") ? (JSON.parse(sh||"[]")||[]) : (Array.isArray(sh)? sh : []);
+            LIST = LIST.slice().reverse();
+            document.getElementById("ssmViewerSearch").value = "";
+            ssmViewerRender(LIST);
+            document.getElementById("ssmViewerDetail").style.display="none";
+            document.getElementById("ssmViewerList").style.display="block";
+            document.getElementById("ssmViewer").classList.add("open");
+          }catch(e){ alert("ဖိုင် ဖတ်မရ — backup မှန်/မမှန် စစ်ပါ ("+e+")"); }
+        };
+        rd.readAsText(f);
+      };
+
+      function ssmViewerRender(arr){
+        document.getElementById("ssmViewerMeta").textContent = "ဘောင်ချာ " + arr.length + " ခု" + (BK && BK._date ? " · backup: " + fmtDate(BK._date) : "");
+        var box = document.getElementById("ssmViewerItems");
+        if(!arr.length){ box.innerHTML = '<p class="vw-meta">ဘောင်ချာ မရှိပါ</p>'; window._vwArr=arr; return; }
+        var h = "";
+        arr.forEach(function(s, i){
+          var img = (s.paySS || s.deliveryPhoto) ? " 📷" : "";
+          var sub = fmtDate(s.orderDate) + " · " + (s.customer||"-") + (s.note? " · " + String(s.note).slice(0,26) : "");
+          h += '<div class="vw-row" onclick="ssmViewerShow('+i+')"><b>'+(s.orderNo||"-")+'</b>'+img+'<div class="sub">'+sub+'</div></div>';
+        });
+        box.innerHTML = h; window._vwArr = arr;
+      }
+      window.ssmViewerFilter = function(){
+        var q = (document.getElementById("ssmViewerSearch").value||"").toLowerCase().trim();
+        if(!q){ ssmViewerRender(LIST); return; }
+        ssmViewerRender(LIST.filter(function(s){ return ((s.orderNo||"")+" "+(s.customer||"")+" "+(s.phone||"")).toLowerCase().indexOf(q)>=0; }));
+      };
+      window.ssmViewerShow = function(i){
+        var s = window._vwArr[i]; if(!s) return;
+        var el = document.getElementById("ssmViewerReceipt"); el.innerHTML="";
+        try{ if(window.ssmRenderReceipt){ window.ssmRenderReceipt(el, s); } else { el.textContent="receipt.js မ load ဖြစ်သေး"; } }
+        catch(e){ el.textContent="render error: " + e; }
+        document.getElementById("ssmViewerList").style.display="none";
+        document.getElementById("ssmViewerDetail").style.display="block";
+        try{ document.querySelector(".vw-body").scrollTop = 0; }catch(e){}
+      };
+      window.ssmViewerBack = function(){ document.getElementById("ssmViewerDetail").style.display="none"; document.getElementById("ssmViewerList").style.display="block"; };
+      window.ssmViewerClose = function(){ document.getElementById("ssmViewer").classList.remove("open"); };
+      window.ssmViewerPrint = function(){ window.print(); };
+
+      window.ssmShowLastBackup = function(){
+        var el = document.getElementById("ssmLastBackup"); if(!el) return;
+        var t=0; try{ t=+(localStorage.getItem("ssm_lastBackup")||0); }catch(e){}
+        if(!t){ el.textContent="⚠️ Backup မယူရသေးပါ"; el.style.color="#dc2626"; return; }
+        var days = Math.floor((Date.now()-t)/86400000);
+        el.textContent = "နောက်ဆုံး backup — " + fmtDate(t) + " (" + (days<=0?"ယနေ့":days+" ရက်က") + ")";
+        el.style.color = days>=7 ? "#dc2626" : "#9ca3af";
+      };
+      ssmShowLastBackup();
+      try{
+        if(location.hash==="#backup"){
+          var c=document.getElementById("backupCard");
+          if(c){ setTimeout(function(){ c.scrollIntoView({behavior:"smooth",block:"start"}); c.style.transition="box-shadow .3s"; c.style.boxShadow="0 0 0 2px var(--brand,#6d28d9)"; setTimeout(function(){ c.style.boxShadow=""; },1600); },350); }
+        }
+      }catch(e){}
     })();
   </script>
 </body>
