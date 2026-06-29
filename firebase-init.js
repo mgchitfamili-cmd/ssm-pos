@@ -63,6 +63,7 @@
       var syncStarted  = false;
       var _doPushKey   = null;                    // (key,val) → appdata push (sync ready မှ)
       var _doPushSales = null;                    // (val) → sales push (sync ready မှ)
+      var _doLocalPrune = null;                   // (val?) → local image prune (quota ပြည့်ရင်)
       var _pendKeys    = {};                      // queued appdata pushes
       var _pendSales   = null;                    // queued salesHistory val
 
@@ -85,7 +86,19 @@
             if (changed) val = JSON.stringify(arr);
           } catch (e) {}
         }
-        _protoSet.call(this, key, val);
+        try { _protoSet.call(this, key, val); }
+        catch (qe) {
+          if (key === "salesHistory" && _doLocalPrune && qe && (qe.name === "QuotaExceededError" || /quota|exceeded/i.test("" + (qe.name || "") + (qe.message || "")))) {
+            try {
+              var pv = _doLocalPrune(val);                 // ပုံအဟောင်း (backup ထဲ ရှိပြီးသား) ဖယ်ပြီး space လွတ်
+              _protoSet.call(this, key, pv);               // pruned ကို ပြန်သိမ်း
+              val = pv;                                    // push လည်း pruned သုံး (stripped sale → guard နဲ့ skip၊ cloud ပုံ မထိ)
+            } catch (qe2) {
+              try { alert("💾 ဖုန်း space ပြည့်နေပြီ။\nSettings → Backup ယူပြီးမှ ပြန်ကြိုးစားပါ\n(backup ထဲ ရှိပြီးသား ပုံအဟောင်းကိုသာ space လွတ်ဖို့ ဖယ်မှာမို့ — backup အရင် ယူဖို့ လို)"); } catch (_) {}
+              throw qe2;
+            }
+          } else { throw qe; }
+        }
         if (SYNC_KEYS.indexOf(key) >= 0) {
           lastPush[key] = Date.now();
           if (_doPushKey) _doPushKey(key, val); else _pendKeys[key] = val;
@@ -107,8 +120,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v27 (inline-img+prune50) loaded");
-        window.SSM_SYNC_VER = "v27";
+        console.log("[SSM sync] inline v28 (img-prune+localguard) loaded");
+        window.SSM_SYNC_VER = "v28";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -198,11 +211,38 @@
           try { origSet("ssm_lastPrune", String(Date.now())); } catch (e) {}
         }
 
+        // ── LOCAL image prune (size-based, backup-safe) ──
+        // localStorage (iOS ~5MB) ပြည့်ခါနီးရင် — backup ထဲ ရှိပြီးသား (backup ရက်ထက် အရင်) ပုံအဟောင်းကိုသာ ဖယ်။
+        // စာ/ဂဏန်း အကုန် ကျန်။ stripped sale → ssmPushSales မှာ skip (cloud ပုံ မထိ)။
+        var LS_LIMIT = 3500000;   // ~3.5MB (chars)
+        function ssmLocalImagePrune(incomingVal) {
+          var raw = (incomingVal != null) ? incomingVal : (localStorage.getItem("salesHistory") || "[]");
+          var arr; try { arr = JSON.parse(raw) || []; } catch (e) { return raw; }
+          if (JSON.stringify(arr).length < LS_LIMIT) return JSON.stringify(arr);     // space လုံလောက် → ဘာမှ မဖယ်
+          var lastBk = 0; try { lastBk = +(localStorage.getItem("ssm_lastBackup") || 0); } catch (e) {}
+          var imgs = arr.filter(function (s) { return s.paySS || s.deliveryPhoto; })
+                        .sort(function (a, b) { return (new Date(a.orderDate || 0)) - (new Date(b.orderDate || 0)); });  // အဟောင်းဆုံး အရင်
+          var n = 0;
+          for (var k = 0; k < imgs.length; k++) {
+            if (JSON.stringify(arr).length < LS_LIMIT) break;                        // လုံလောက်ပြီ
+            var s = imgs[k];
+            var t = (new Date(s.orderDate || 0)).getTime() || 0;
+            if (!(lastBk && t < lastBk)) continue;                                   // backup guard — backup ထဲ ရှိပြီးသား ပုံကိုသာ
+            s.paySS = ""; s.deliveryPhoto = ""; s._imgStripped = true; n++;
+            var sid = sidOf(s); try { saleCache[sid] = JSON.stringify(saleContent(s)); } catch (e) {}   // re-push မဖြစ်အောင်
+          }
+          var out = JSON.stringify(arr);
+          if (n) { console.log("[sales] local image prune: stripped " + n); if (incomingVal == null) { try { rawSet("salesHistory", out); } catch (e) {} } }
+          return out;
+        }
+        _doLocalPrune = ssmLocalImagePrune;
+
         function ssmPushSales(val) {
           var arr; try { arr = JSON.parse(val) || []; } catch (e) { return; }
           var seen = {};
           arr.forEach(function (s) {
             var sid = sidOf(s); seen[sid] = true;
+            if (s._imgStripped) return;                            // local ပုံ ဖယ်ထားတဲ့ sale → cloud ကို re-push မလုပ် (cloud ပုံ ထိန်း); seen ထဲ ရှိလို့ baseline-delete မဖြစ်
             if (isOldSale(s)) return;                              // ၅၀ ရက်ကျော် → cloud ကို မ push (prune ထားတာ ပြန်မတင်); local မှာ ကျန်
             var content = saleContent(s);                          // ပုံ inline ပါ
             var js = JSON.stringify(content);
