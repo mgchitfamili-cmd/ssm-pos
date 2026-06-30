@@ -147,12 +147,14 @@
     .btn-block{ width:100%; }
     .add-btn{ width:100%; margin-top:2px; }
 
-    /* gift checkbox */
+    /* gift checkbox + remark inline row */
+    .gift-row{ display:flex; align-items:center; gap:10px; margin:0 0 10px 0; }
     .gift-label{
-      display:flex; align-items:center; gap:11px; font-size:14px; font-weight:500;
-      color:var(--ink); cursor:pointer; padding:11px 12px; margin:0 0 12px 0;
+      display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500;
+      color:var(--ink); cursor:pointer; padding:10px 12px; margin:0; white-space:nowrap; flex:none;
       background:var(--brand-tint); border:1px solid var(--brand-line); border-radius:var(--r-sm);
     }
+    .gift-remark{ flex:1; min-width:0; }
     .gift-label input{ width:19px; height:19px; accent-color:var(--brand); margin:0; flex:none; }
 
     /* ── Sale list (cart) ── */
@@ -383,7 +385,7 @@
     html.dark input:not([type=range]):not([type=checkbox]),
     html.dark select, html.dark textarea,
     html.dark .field input, html.dark .field select,
-    html.dark .modal-box input, html.dark .modal-box select,
+    html.dark .modal-box input, html.dark .modal-box select, html.dark .gift-remark,
     html.dark #searchBox, html.dark .csel-btn{ background-color:#1e222a; }
     html.dark select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23aeb6c2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; }
     html.dark .csel-btn{ background-color:#1e222a; }
@@ -543,11 +545,6 @@
           </select>
         </div>
 
-        <label class="gift-label">
-          <input type="checkbox" id="isGift" onchange="giftChanged()">
-          🎁 လက်ဆောင် item (ဈေးနှုန်း မပါ)
-        </label>
-
         <div class="field">
           <div class="row">
             <div id="sizeBox">
@@ -588,9 +585,12 @@
           </div>
         </div>
 
-        <div class="field">
-          <label class="lbl">Remark</label>
-          <input id="remark" placeholder="Remark">
+        <div class="gift-row">
+          <label class="gift-label">
+            <input type="checkbox" id="isGift" onchange="giftChanged()">
+            <span>ဈေးနှုန်း (0 Ks)</span>
+          </label>
+          <input id="remark" placeholder="Remark" class="gift-remark">
         </div>
 
         <button class="add-btn" onclick="addItem()">＋ Add Item</button>
