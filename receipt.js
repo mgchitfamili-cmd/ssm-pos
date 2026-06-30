@@ -108,7 +108,7 @@
       '</div>' +
       '<hr>' +
       '<div class="dlv-grid">' +
-        '<div class="dlv-col"><div class="dlv-lbl">\u1015\u102D\u102F\u1037\u101B\u1014\u103A\u1019\u103C\u102D\u102F\u1037- <b>' + (sale.township || "-") + '</b></div></div>' +
+        '<div class="dlv-col"><div class="dlv-lbl"><b>' + (sale.township || "-") + '</b></div></div>' +
         '<div class="dlv-col"><div class="dlv-date">' + ssmDateMM(now) + '</div></div>' +
       '</div>' +
       '<hr>' +
@@ -132,7 +132,6 @@
       '<div class="net-box mm">' + payLabel + ' : ' + fmt(netNum) + '</div>' +
       // 8. Online shop info (12px)
       '<div class="shop-info">' +
-        shopAddress + '<br>' + shopPhone + '<br>' +
         (sale.orderNo || "") + ' | \u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + (sale.staff || "-") + '<br>' +
         (sale.orderApp || "-") + ' | ' + (sale.deliveryService || "-") +
       '</div>' +
