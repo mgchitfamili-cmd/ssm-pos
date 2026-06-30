@@ -83,6 +83,11 @@
       discountLine = '<div class="line"><span>Discount</span><span>-' + fmt(sale.discountAmount) + '</span></div>';
     }
 
+    var depositLine = "";
+    if (num(sale.deposit) > 0) {
+      depositLine = '<div class="line"><span>Deposit</span><span>' + fmt(sale.deposit) + '</span></div>';
+    }
+
     var payLabel = "\u1021\u102D\u1019\u103A\u101B\u1031\u102C\u1000\u103A\u1004\u103D\u1031\u1001\u103B\u1031";
     if (sale.payStatus === "Prepaid") payLabel = "\u1015\u1005\u1039\u1005\u100A\u103A\u1038\u1016\u102D\u102F\u1038+\u1015\u102D\u102F\u1037\u1001 \u1021\u102C\u1038\u101C\u102F\u1036\u1038\u101B\u103E\u1004\u103A\u1038\u1015\u103C\u102E\u1038";
     else if (sale.payStatus === "Partial") payLabel = "\u1015\u1005\u1039\u1005\u100A\u103A\u1038\u1016\u102D\u102F\u1038\u101B\u103E\u1004\u103A\u1038\u1015\u103C\u102E\u1038 \u1015\u102D\u102F\u1037\u1001 \u101E\u102C\u1000\u1031\u102C\u1000\u103A\u101B\u1014\u103A";
@@ -126,7 +131,7 @@
       // 6. totals
       '<div class="line"><span>Total</span><span>' + fmt(sale.grandTotal) + '</span></div>' +
       discountLine +
-      '<div class="line"><span>Deposit</span><span>' + fmt(sale.deposit) + '</span></div>' +
+      depositLine +
       '<div class="line"><span>Delivery Fee</span><span>' + fmt(sale.delivery) + '</span></div>' +
       // 7. net-box (အိမ်ရောက်ငွေချေ)
       '<div class="net-box mm">' + payLabel + ' : ' + fmt(netNum) + '</div>' +
