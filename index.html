@@ -476,32 +476,26 @@
         <p class="eyebrow"><span class="dot"></span>အော်ဒါ အချက်အလက်</p>
 
         <div class="field">
-          <label class="lbl">Order လက်ခံသူ (Staff)</label>
           <select id="staff">
-            <option value="">Select Staff</option>
+            <option value="">Order လက်ခံသူ (Staff)</option>
           </select>
         </div>
 
         <div class="field">
-          <label class="lbl">Customer အမည်</label>
-          <input id="name" placeholder="Customer Name">
+          <input id="name" placeholder="Customer အမည်">
         </div>
         <div class="field">
-          <label class="lbl">ဖုန်း</label>
-          <input id="phone" placeholder="Phone">
+          <input id="phone" placeholder="ဖုန်း">
         </div>
         <div class="field">
-          <label class="lbl">လိပ်စာ</label>
-          <input id="address" placeholder="Address">
+          <input id="address" placeholder="လိပ်စာ">
         </div>
         <div class="field">
           <div class="row">
             <div>
-              <label class="lbl">Township</label>
               <input id="township" placeholder="Township ရွေးပါ">
             </div>
             <div>
-              <label class="lbl">Order App</label>
               <select id="orderapp">
                 <option value="">Order App ရွေးပါ</option>
                 <option value="Facebook">Facebook</option>
@@ -516,9 +510,8 @@
         </div>
 
         <div class="field">
-          <label class="lbl">Delivery Service</label>
           <select id="deliveryService">
-            <option value="">Select Delivery</option>
+            <option value="">Delivery Service ရွေးပါ</option>
             <option value="Royal">Royal</option>
             <option value="Ko Nyein Chan Aung">Ko Nyein Chan Aung</option>
             <option value="Ninja Van">Ninja Van</option>
@@ -533,12 +526,10 @@
         <p class="eyebrow"><span class="dot"></span>ပစ္စည်း ထည့်ရန်</p>
 
         <div class="field">
-          <label class="lbl">ပစ္စည်း</label>
           <select id="product" onchange="productChanged()"></select>
         </div>
 
         <div class="field">
-          <label class="lbl">Sale Type</label>
           <select id="saleType" onchange="saleTypeChanged()">
             <option value="weight">Weight</option>
             <option value="unit">Unit</option>
@@ -548,7 +539,6 @@
         <div class="field">
           <div class="row">
             <div id="sizeBox">
-              <label class="lbl">Size</label>
               <select id="size" onchange="fillPrice()">
                 <option value="5">5 ကျပ်သား</option>
                 <option value="10">10 ကျပ်သား</option>
@@ -559,15 +549,13 @@
               </select>
             </div>
             <div id="unitBox" style="display:none;">
-              <label class="lbl">Unit ဈေး</label>
               <select id="unitChoice" onchange="fillPrice()">
                 <option value="A">Unit A</option>
                 <option value="B">Unit B</option>
               </select>
             </div>
             <div>
-              <label class="lbl">ဈေးနှုန်း</label>
-              <input id="price" placeholder="Price" oninput="calculateItemTotal()" readonly>
+              <input id="price" placeholder="ဈေးနှုန်း" oninput="calculateItemTotal()" readonly>
             </div>
           </div>
         </div>
@@ -575,12 +563,10 @@
         <div class="field">
           <div class="row">
             <div>
-              <label class="lbl">အရေအတွက်</label>
-              <input id="qty" placeholder="Qty" oninput="calculateItemTotal()">
+              <input id="qty" placeholder="အရေအတွက်" oninput="calculateItemTotal()">
             </div>
             <div>
-              <label class="lbl">Total</label>
-              <input id="itemTotal" readonly>
+              <input id="itemTotal" placeholder="Total" readonly>
             </div>
           </div>
         </div>
@@ -611,8 +597,7 @@
         <p class="eyebrow"><span class="dot"></span>လျှော့ဈေး & ပေးချေမှု</p>
 
         <div class="field">
-          <label class="lbl">Delivery Fee</label>
-          <input id="delivery" oninput="calculateNet()">
+          <input id="delivery" placeholder="Delivery Fee" oninput="calculateNet()">
         </div>
         <div class="oppay-box">
           <p class="oppay-head">💵 Payment</p>
@@ -645,7 +630,6 @@
         <div class="disc-box">
           <div class="row">
             <div>
-              <label class="lbl">💸 Discount</label>
               <select id="discountType" onchange="calculateNet()">
                 <option value="none">Discount မရှိ</option>
                 <option value="amount">Amount (ငွေပမာဏ)</option>
@@ -653,15 +637,13 @@
               </select>
             </div>
             <div>
-              <label class="lbl">ပမာဏ</label>
-              <input id="discountValue" placeholder="0" oninput="calculateNet()">
+              <input id="discountValue" placeholder="ပမာဏ" oninput="calculateNet()">
             </div>
           </div>
           <p id="discountNote"></p>
         </div>
         <div class="field">
-          <label class="lbl">📝 Delivery မှတ်ချက် <span style="font-weight:500;color:var(--ink-3);">(receipt အောက်ခြေ)</span></label>
-          <textarea id="note" placeholder="မှတ်ချက် ရေးရန်..."></textarea>
+          <textarea id="note" placeholder="📝 Delivery မှတ်ချက် (receipt အောက်ခြေ)"></textarea>
         </div>
 
         <h3 id="discountShow"></h3>
@@ -740,7 +722,7 @@
     // ── Load Staff Dropdown ───────────────────────────────────────
     function loadStaffDropdown() {
       let staffList = JSON.parse(localStorage.getItem("staffList")) || [];
-      let html = '<option value="">Select Staff</option>';
+      let html = '<option value="">Order လက်ခံသူ (Staff)</option>';
       staffList.forEach(function (s) {
         html += `<option value="${s.name}">${s.name}</option>`;
       });
@@ -750,7 +732,7 @@
     // ── Load Product Dropdown ─────────────────────────────────────
     function loadProductsDropdown() {
       let products = JSON.parse(localStorage.getItem("products")) || [];
-      let html = '<option value="">Select Product</option>';
+      let html = '<option value="">ပစ္စည်း ရွေးပါ</option>';
       products.forEach(function (p) {
         html += '<option value="' + p.name + '">' + p.name + '</option>';
       });
