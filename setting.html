@@ -249,15 +249,7 @@
     </section>
 
     <section class="card admin-only">
-      <p class="eyebrow"><span class="dot"></span>📍 ဆိုင်အချက်အလက်</p>
-      <div class="field">
-        <label class="lbl">လိပ်စာ <span style="font-weight:500;color:var(--ink-3);">(Enter ခေါက်၍ စာကြောင်းဆင်း)</span></label>
-        <textarea id="address" oninput="updatePreview()"></textarea>
-      </div>
-      <div class="field">
-        <label class="lbl">ဖုန်းနံပါတ်</label>
-        <input id="phone" oninput="updatePreview()">
-      </div>
+      <p class="eyebrow"><span class="dot"></span>📝 ကျေးဇူးတင်စာ (Receipt)</p>
       <div class="field">
         <label class="lbl">ကျေးဇူးတင်စာ <span style="font-weight:500;color:var(--ink-3);">(Receipt အောက်ခြေ · Enter ခေါက်၍ စာကြောင်းဆင်း)</span></label>
         <textarea id="thankYou" oninput="updatePreview()"></textarea>
@@ -298,10 +290,6 @@
       let s = JSON.parse(localStorage.getItem("shopSettings")) || {};
       currentLogo = s.logo || "";
       document.getElementById("deviceCode").value = localStorage.getItem("ssm_deviceCode") || "";
-      document.getElementById("address").value = s.address
-        ? s.address.replace(/<br>/g, "\n")
-        : "၀/၁၂၆၊ ဗိုလ်တိုက်ချွန်းလမ်း၊ အောင်ချမ်းသာ (၃) ရပ်ကွက်၊\nသန်လျင်";
-      document.getElementById("phone").value = s.phone || "09965303525, 09688199078";
       document.getElementById("thankYou").value = s.thankYou
         ? s.thankYou.replace(/<br>/g, "\n")
         : "စုံစုံမာမီရဲ့ လက်ရာလေးကို မြည်းစမ်းကြည့်ပေးလို့ ကျေးဇူးအများကြီး တင်ပါတယ် 🙏\nစားမြိန်ပါစေနော် 💛";
@@ -383,8 +371,6 @@
       localStorage.setItem("ssm_deviceCode", (document.getElementById("deviceCode").value || "").trim().toUpperCase());
       let settings = {
         logo:     currentLogo,
-        address:  document.getElementById("address").value.replace(/\n/g, "<br>"),
-        phone:    document.getElementById("phone").value,
         thankYou: document.getElementById("thankYou").value.replace(/\n/g, "<br>"),
         logoSize: document.getElementById("logoSize").value
       };
