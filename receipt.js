@@ -135,12 +135,7 @@
       '<div class="line"><span>Delivery Fee</span><span>' + fmt(sale.delivery) + '</span></div>' +
       // 7. net-box (အိမ်ရောက်ငွေချေ)
       '<div class="net-box mm">' + payLabel + ' : ' + fmt(netNum) + '</div>' +
-      // 8. Online shop info (12px)
-      '<div class="shop-info">' +
-        (sale.orderNo || "") + ' | \u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + (sale.staff || "-") + '<br>' +
-        (sale.orderApp || "-") + ' | ' + (sale.deliveryService || "-") +
-      '</div>' +
-      // 9. footer (ကျေးဇူးတင်စကား)
+      // footer (ကျေးဇူးတင်စကား) — ထားမယ်
       '<div class="footer-mm">' + footerMsg + '</div>' +
       '<div style="height:22px"></div>';
   }

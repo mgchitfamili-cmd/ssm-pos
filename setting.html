@@ -262,26 +262,6 @@
         <label class="lbl">ကျေးဇူးတင်စာ <span style="font-weight:500;color:var(--ink-3);">(Receipt အောက်ခြေ · Enter ခေါက်၍ စာကြောင်းဆင်း)</span></label>
         <textarea id="thankYou" oninput="updatePreview()"></textarea>
       </div>
-      <div class="field">
-        <label class="lbl">ဆိုင်အချက်အလက် တည်နေရာ <span style="font-weight:500;color:var(--ink-3);">(Receipt)</span></label>
-        <select id="addrAlign" onchange="updatePreview()">
-          <option value="left">ဘယ်ဘက်</option>
-          <option value="center">အလယ်</option>
-          <option value="right">ညာဘက်</option>
-        </select>
-      </div>
-      <div class="field">
-        <label class="lbl">စာလုံး အရွယ် (px)</label>
-        <div class="slider-row">
-          <input type="range" id="textSize" min="7" max="13" value="9" oninput="updatePreview()">
-          <span class="slider-val" id="textSizeVal">9px</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="card admin-only">
-      <p class="eyebrow"><span class="dot"></span>👀 Preview</p>
-      <div id="previewBox"></div>
     </section>
 
     <section class="card admin-only">
@@ -322,12 +302,10 @@
         ? s.address.replace(/<br>/g, "\n")
         : "၀/၁၂၆၊ ဗိုလ်တိုက်ချွန်းလမ်း၊ အောင်ချမ်းသာ (၃) ရပ်ကွက်၊\nသန်လျင်";
       document.getElementById("phone").value = s.phone || "09965303525, 09688199078";
-      document.getElementById("addrAlign").value = s.addrAlign || "left";
       document.getElementById("thankYou").value = s.thankYou
         ? s.thankYou.replace(/<br>/g, "\n")
         : "စုံစုံမာမီရဲ့ လက်ရာလေးကို မြည်းစမ်းကြည့်ပေးလို့ ကျေးဇူးအများကြီး တင်ပါတယ် 🙏\nစားမြိန်ပါစေနော် 💛";
       document.getElementById("logoSize").value = s.logoSize || 115;
-      document.getElementById("textSize").value = s.textSize || 9;
       if (currentLogo) {
         let p = document.getElementById("logoPreview");
         p.src = currentLogo;
@@ -396,29 +374,8 @@
     }
 
     function updatePreview() {
-      let logoSize = document.getElementById("logoSize").value;
-      let textSize = document.getElementById("textSize").value;
-      let addrAlign = document.getElementById("addrAlign").value || "left";
-      document.getElementById("logoSizeVal").innerText = logoSize + "px";
-      document.getElementById("textSizeVal").innerText = textSize + "px";
-      let address = document.getElementById("address").value.replace(/\n/g, "<br>");
-      let phone = document.getElementById("phone").value;
-      let logoSrc = currentLogo || "";
-      let logoHtml = logoSrc
-        ? '<img src="' + logoSrc + '" style="width:' + logoSize + 'px; height:auto; flex-shrink:0;">'
-        : '<div style="width:' + logoSize + 'px; height:60px; background:#eee; display:flex; align-items:center; justify-content:center; font-size:10px; color:#999;">No Logo</div>';
-      document.getElementById("previewBox").innerHTML = `
-        <div style="display:flex; align-items:center; gap:6px;">
-          ${logoHtml}
-          <div style="flex:1; font-family:Arial;">
-            <div style="font-size:${textSize}px; line-height:1.3; text-align:${addrAlign};">
-              ${address}<br>📞 ${phone}
-            </div>
-            <div style="font-size:${textSize}px; line-height:1.5; margin-top:4px; border-top:1px solid #000; padding-top:3px; text-align:right;">
-              SSM-0001<br>လက်ခံသူ-မောင်ချစ်<br>Viber<br>Royal
-            </div>
-          </div>
-        </div>`;
+      var el = document.getElementById("logoSizeVal");
+      if (el) el.innerText = document.getElementById("logoSize").value + "px";
     }
 
     function saveSettings() {
@@ -428,10 +385,8 @@
         logo:     currentLogo,
         address:  document.getElementById("address").value.replace(/\n/g, "<br>"),
         phone:    document.getElementById("phone").value,
-        addrAlign: document.getElementById("addrAlign").value,
         thankYou: document.getElementById("thankYou").value.replace(/\n/g, "<br>"),
-        logoSize: document.getElementById("logoSize").value,
-        textSize: document.getElementById("textSize").value
+        logoSize: document.getElementById("logoSize").value
       };
       localStorage.setItem("shopSettings", JSON.stringify(settings));
       alert("Settings သိမ်းပြီးပါပြီ ✅");
