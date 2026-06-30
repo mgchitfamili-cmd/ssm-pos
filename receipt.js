@@ -117,9 +117,8 @@
         '<div class="dlv-col"><div class="dlv-date">' + ssmDateMM(now) + '</div></div>' +
       '</div>' +
       '<hr>' +
-      // 3. Delivery Note
-      '<div class="delivery-note mm">' + (sale.note ? sale.note : "-") + '</div>' +
-      '<hr>' +
+      // 3. Delivery Note (note ရှိမှသာ — မရှိရင် အကွက်/dash မပေါ်)
+      (sale.note ? '<div class="delivery-note mm">' + sale.note + '</div><hr>' : '') +
       // 4. customer / phone / address
       '<div class="cus-mid">' + (sale.customer || "-") + '</div>' +
       '<div class="phone-clear">' + (sale.phone || "-") + '</div>' +
@@ -135,6 +134,11 @@
       '<div class="line"><span>Delivery Fee</span><span>' + fmt(sale.delivery) + '</span></div>' +
       // 7. net-box (အိမ်ရောက်ငွေချေ)
       '<div class="net-box mm">' + payLabel + ' : ' + fmt(netNum) + '</div>' +
+      // ဘောင်ချာ နံပါတ် / လက်ခံသူ / order app / delivery service
+      '<div class="shop-info">' +
+        (sale.orderNo || "") + ' | \u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + (sale.staff || "-") + '<br>' +
+        (sale.orderApp || "-") + ' | ' + (sale.deliveryService || "-") +
+      '</div>' +
       // footer (ကျေးဇူးတင်စကား) — ထားမယ်
       '<div class="footer-mm">' + footerMsg + '</div>' +
       '<div style="height:22px"></div>';
