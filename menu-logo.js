@@ -1,7 +1,8 @@
 /* Sone Sone Mommy POS — slide-menu logo + polished menu styling (injected on every page). */
 (function () {
   var MENU_CSS =
-    "#sideMenu .menu-item{margin:4px 10px;padding:11px 12px;border-radius:14px;" +
+    "#sideMenu,#sideMenu *{-webkit-tap-highlight-color:transparent;}" +
+    "#sideMenu .menu-item{margin:4px 10px;padding:11px 12px;border-radius:14px;outline:none;-webkit-tap-highlight-color:transparent;" +
       "transition:background .18s ease,transform .12s ease,box-shadow .18s ease;}" +
     "#sideMenu .menu-item:active{transform:scale(.97);}" +
     "#sideMenu .menu-item.active{background:linear-gradient(135deg,var(--brand-tint),rgba(109,40,217,.16));" +
