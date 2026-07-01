@@ -120,8 +120,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v29 (silent-prune+cloud-view) loaded");
-        window.SSM_SYNC_VER = "v29";
+        console.log("[SSM sync] inline v30 (silent-prune 2M + cloud-view) loaded");
+        window.SSM_SYNC_VER = "v30";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -214,7 +214,7 @@
         // ── LOCAL image prune (size-based, backup-safe) ──
         // localStorage (iOS ~5MB) ပြည့်ခါနီးရင် — backup ထဲ ရှိပြီးသား (backup ရက်ထက် အရင်) ပုံအဟောင်းကိုသာ ဖယ်။
         // စာ/ဂဏန်း အကုန် ကျန်။ stripped sale → ssmPushSales မှာ skip (cloud ပုံ မထိ)။
-        var LS_LIMIT = 3500000;   // ~3.5MB (chars)
+        var LS_LIMIT = 2000000;   // ~2M chars — iOS (UTF-16, 2B/char = ~5MB→2.5M chars) quota အောက် သေချာ နေအောင်
         function ssmLocalImagePrune(incomingVal) {
           var raw = (incomingVal != null) ? incomingVal : (localStorage.getItem("salesHistory") || "[]");
           var arr; try { arr = JSON.parse(raw) || []; } catch (e) { return raw; }
