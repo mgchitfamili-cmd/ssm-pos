@@ -435,7 +435,7 @@
               <!-- Actions -->
               <div class="detail-actions">
                 <button class="btn btn-photo" onclick="uploadPhoto(${index})">
-                  ${sale.deliveryPhoto ? "👁 Photo" : "📷 Photo"}
+                  ${sale.deliveryPhoto ? "👁 Photo" : sale._hadDelivery ? "☁️ Photo" : "📷 Photo"}
                 </button>
                 <button class="btn btn-edit" onclick="editOrder(${index})">✏️ Edit</button>
                 <button class="btn btn-delete admin-del" onclick="deleteOrder(${index})">🗑️ Delete</button>
@@ -540,7 +540,7 @@
 
     // ── Photo Upload ──────────────────────────────────────────────
     function uploadPhoto(index) {
-      if (salesHistory[index].deliveryPhoto) {
+      if (salesHistory[index].deliveryPhoto || salesHistory[index]._hadDelivery) {
         viewPhoto(index);
         return;
       }
@@ -595,8 +595,26 @@
 
     function viewPhoto(index) {
       currentViewIndex = index;
-      document.getElementById("modalImage").src = salesHistory[index].deliveryPhoto;
-      document.getElementById("photoModal").style.display = "flex";
+      var sale = salesHistory[index];
+      var imgEl = document.getElementById("modalImage");
+      var modal = document.getElementById("photoModal");
+      if (sale.deliveryPhoto) {
+        imgEl.src = sale.deliveryPhoto;
+        modal.style.display = "flex";
+        return;
+      }
+      // local မှာ silent ဖယ်ထားရင် — cloud ကနေ ဆွဲ
+      imgEl.removeAttribute("src");
+      imgEl.alt = "☁️ cloud ကနေ ဆွဲနေသည် ...";
+      modal.style.display = "flex";
+      if (window.ssmGetCloudImages) {
+        window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
+          if (imgs && imgs.deliveryPhoto) imgEl.src = imgs.deliveryPhoto;
+          else imgEl.alt = "ပုံ မတွေ့ပါ — cloud ၅၀ ရက် ကျော်နိုင် (Backup မှာ ကြည့်ပါ)";
+        });
+      } else {
+        imgEl.alt = "cloud sync မရနိုင်ပါ";
+      }
     }
 
     function closePhoto() {
