@@ -370,7 +370,9 @@
 
         let ssImg = sale.paySS
           ? `<img class="pay-ss" src="${sale.paySS}" onclick="viewSS(${o.index})">`
-          : `<p style="font-size:12px;color:#ef4444;">⚠️ SS မရှိ</p>`;
+          : sale._hadPay
+            ? `<p style="font-size:12px;color:#8b5cf6;cursor:pointer;font-weight:600;" onclick="viewSS(${o.index})">☁️ SS ကြည့်ရန် (cloud)</p>`
+            : `<p style="font-size:12px;color:#ef4444;">⚠️ SS မရှိ</p>`;
 
         html += `
           <div class="pay-card${sale.verified ? ' verified' : ''}">
@@ -469,8 +471,26 @@
 
     // ── View SS ───────────────────────────────────────────────────
     function viewSS(index) {
-      document.getElementById("ssModalImg").src = salesHistory[index].paySS;
-      document.getElementById("ssModal").style.display = "flex";
+      var sale = salesHistory[index];
+      var modal = document.getElementById("ssModal");
+      var imgEl = document.getElementById("ssModalImg");
+      if (sale.paySS) {
+        imgEl.src = sale.paySS;
+        modal.style.display = "flex";
+        return;
+      }
+      // local မှာ silent ဖယ်ထားရင် — cloud ကနေ ဆွဲ
+      imgEl.removeAttribute("src");
+      imgEl.alt = "☁️ cloud ကနေ ဆွဲနေသည် ...";
+      modal.style.display = "flex";
+      if (window.ssmGetCloudImages) {
+        window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
+          if (imgs && imgs.paySS) imgEl.src = imgs.paySS;
+          else imgEl.alt = "ပုံ မတွေ့ပါ — cloud ၅၀ ရက် ကျော်နိုင် (Backup မှာ ကြည့်ပါ)";
+        });
+      } else {
+        imgEl.alt = "cloud sync မရနိုင်ပါ";
+      }
     }
 
     function closeSS() {

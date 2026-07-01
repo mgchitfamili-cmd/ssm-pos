@@ -94,7 +94,7 @@
               _protoSet.call(this, key, pv);               // pruned ကို ပြန်သိမ်း
               val = pv;                                    // push လည်း pruned သုံး (stripped sale → guard နဲ့ skip၊ cloud ပုံ မထိ)
             } catch (qe2) {
-              try { alert("💾 ဖုန်း space ပြည့်နေပြီ။\nSettings → Backup ယူပြီးမှ ပြန်ကြိုးစားပါ\n(backup ထဲ ရှိပြီးသား ပုံအဟောင်းကိုသာ space လွတ်ဖို့ ဖယ်မှာမို့ — backup အရင် ယူဖို့ လို)"); } catch (_) {}
+              console.warn("[sales] local full — could not free enough space silently");
               throw qe2;
             }
           } else { throw qe; }
@@ -120,8 +120,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v28 (img-prune+localguard) loaded");
-        window.SSM_SYNC_VER = "v28";
+        console.log("[SSM sync] inline v29 (silent-prune+cloud-view) loaded");
+        window.SSM_SYNC_VER = "v29";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -226,8 +226,9 @@
           for (var k = 0; k < imgs.length; k++) {
             if (JSON.stringify(arr).length < LS_LIMIT) break;                        // လုံလောက်ပြီ
             var s = imgs[k];
-            var t = (new Date(s.orderDate || 0)).getTime() || 0;
-            if (!(lastBk && t < lastBk)) continue;                                   // backup guard — backup ထဲ ရှိပြီးသား ပုံကိုသာ
+            // silent auto-ဖယ် (အဟောင်းဆုံး အရင်)။ cloud (၅၀ရက်) ကနေ ပြန်ဆွဲကြည့်လို့ရ — _had* flag နဲ့ မှတ်
+            if (s.paySS) s._hadPay = true;
+            if (s.deliveryPhoto) s._hadDelivery = true;
             s.paySS = ""; s.deliveryPhoto = ""; s._imgStripped = true; n++;
             var sid = sidOf(s); try { saleCache[sid] = JSON.stringify(saleContent(s)); } catch (e) {}   // re-push မဖြစ်အောင်
           }
@@ -263,6 +264,21 @@
           });
           trackedSids = seen;
         }
+
+        // ── Cloud ကနေ ပုံ ပြန်ဆွဲ (local မှာ silent ဖယ်ထားရင် — ဘောင်ချာ ကြည့်ချိန် cloud ကနေ) ──
+        window.ssmGetCloudImages = function (orderNo) {
+          return new Promise(function (resolve) {
+            try {
+              var id = String(orderNo == null ? "" : orderNo).trim().replace(/[\/\\#?%]/g, "-");
+              if (!id || !db) { resolve(null); return; }
+              db.collection(SALES).doc(id).get().then(function (snap) {
+                if (!snap || !snap.exists) { resolve(null); return; }
+                var d = snap.data() || {};
+                resolve({ paySS: d.paySS || "", deliveryPhoto: d.deliveryPhoto || "" });
+              }).catch(function () { resolve(null); });
+            } catch (e) { resolve(null); }
+          });
+        };
 
         // PULL: load မှာ cloud sales merge (clobber-proof, ပုံ inline)၊ ပြီးရင် push-only
         db.collection(SALES).onSnapshot(function (snap) {
