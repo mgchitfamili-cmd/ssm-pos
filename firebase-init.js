@@ -120,8 +120,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v30 (silent-prune 2M + cloud-view) loaded");
-        window.SSM_SYNC_VER = "v30";
+        console.log("[SSM sync] inline v31 (Blaze: cloud prune 365d) loaded");
+        window.SSM_SYNC_VER = "v31";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -189,8 +189,8 @@
           } catch (e) {}
         }
 
-        // ── PRUNE: ၅၀ ရက်ကျော် ဘောင်ချာဟောင်းကို cloud ကနေသာ ဖယ် (storage/read free-tier ထဲ နေအောင်)။ local + device အားလုံးမှာ အပြည့် ကျန် ──
-        var PRUNE_DAYS = 50;
+        // ── PRUNE: ၃၆၅ ရက်ကျော် ဘောင်ချာဟောင်းကို cloud ကနေသာ ဖယ် (Blaze plan — တစ်နှစ်စာ cloud မှာ ထား)။ local + device အားလုံးမှာ အပြည့် ကျန် ──
+        var PRUNE_DAYS = 365;
         function isOldSale(s) {
           try {
             var t = (s && s.orderDate) ? new Date(s.orderDate).getTime() : NaN;
