@@ -286,7 +286,6 @@
           var raw = (incomingVal != null) ? incomingVal : (localStorage.getItem("salesHistory") || "[]");
           var arr; try { arr = JSON.parse(raw) || []; } catch (e) { return raw; }
           if (JSON.stringify(arr).length < LS_LIMIT) return JSON.stringify(arr);     // space လုံလောက် → ဘာမှ မဖယ်
-          var lastBk = 0; try { lastBk = +(localStorage.getItem("ssm_lastBackup") || 0); } catch (e) {}
           var imgs = arr.filter(function (s) { return s.paySS || s.deliveryPhoto; })
                         .sort(function (a, b) { return (new Date(a.orderDate || 0)) - (new Date(b.orderDate || 0)); });  // အဟောင်းဆုံး အရင်
           var n = 0;
