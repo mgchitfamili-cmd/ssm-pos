@@ -1252,14 +1252,15 @@
       else salesHistory.push(savedData);
       let isEditMode = (editIndex != null) || (_exist >= 0);
 
-      // base64 paySS ကို IDB ထဲ ရွှေ့ (localStorage သေးငယ်အောင် — iOS 5MB quota fix)
-      if (window.ssmImg) {
-        if (savedData.paySS) { window.ssmImg.set(savedData.orderNo + ":pay", savedData.paySS); savedData.hasPay = true; savedData.payV = Date.now(); savedData.paySS = ""; }
-        else if (_prevSale && _prevSale.hasPay) { savedData.hasPay = true; savedData.payV = _prevSale.payV; savedData.paySS = ""; }   // edit — ပုံအသစ်မထည့် → အရင် pay ပုံ ထိန်း
-        else { savedData.hasPay = false; }
+      // ပုံ — Firestore (salesImages) မှာသာ သိမ်း။ paySS inline ပါရင် sync layer က cloud တင်ပြီး ဖြုတ်ပေး။
+      // edit မှာ ပုံအသစ် မထည့်ရင် — အရင် flag တွေ ထိန်း (cloud ပုံ မပျောက်အောင်)
+      if (!savedData.paySS && _prevSale && (_prevSale.hasPay || _prevSale._hadPay)) {
+        savedData.hasPay = true; if (_prevSale.payV) savedData.payV = _prevSale.payV;
       }
-      // delivery ပုံ — index.html က မကိုင်လို့ edit မှာ အရင် reference ဆက်ထား (မပျောက်အောင်)
-      if (!savedData.deliveryPhoto && _prevSale && _prevSale.hasDel) { savedData.hasDel = true; savedData.deliveryPhoto = ""; if (_prevSale.delV) savedData.delV = _prevSale.delV; }
+      if (!savedData.deliveryPhoto && _prevSale) {
+        if (_prevSale.deliveryPhoto) savedData.deliveryPhoto = _prevSale.deliveryPhoto;               // legacy inline (migrate မလုပ်ရသေး) → ဆက်သယ် (sync layer ဖြုတ်တင်မယ်)
+        else if (_prevSale.hasDel || _prevSale._hadDelivery) { savedData.hasDel = true; if (_prevSale.delV) savedData.delV = _prevSale.delV; }
+      }
 
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
 
@@ -1403,8 +1404,16 @@
       if (typeof toggleDepFields === "function") toggleDepFields();
       document.getElementById("depCode").value         = receipt.payCode         || "";
       depSSData = receipt.paySS || "";
-      if (!depSSData && receipt.hasPay && window.ssmImg) { window.ssmImg.get(receipt.orderNo + ":pay").then(function (v) { depSSData = v || ""; }); }
       (function(){ var pv = document.getElementById("depSSPreview"); if (depSSData) { pv.src = depSSData; pv.style.display = "block"; } else { pv.style.display = "none"; } })();
+      // ပုံက cloud (salesImages) မှာသာ ရှိရင် — ဆွဲပြီး preview ပြ (edit မှာ ပုံ မပျောက်အောင် depSSData ထဲ ထည့်)
+      if (!depSSData && (receipt.hasPay || receipt._hadPay) && window.ssmGetCloudImages) {
+        window.ssmGetCloudImages(receipt.orderNo).then(function (imgs) {
+          if (imgs && imgs.paySS) {
+            depSSData = imgs.paySS;
+            var pv = document.getElementById("depSSPreview"); if (pv) { pv.src = depSSData; pv.style.display = "block"; }
+          }
+        });
+      }
       document.getElementById("note").value            = receipt.note            || "";
       document.getElementById("discountType").value    = receipt.discountType    || "none";
       document.getElementById("discountValue").value   = receipt.discountValue   || "";

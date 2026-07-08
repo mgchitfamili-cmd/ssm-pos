@@ -624,7 +624,7 @@
         if(!arr.length){ box.innerHTML = '<p class="vw-meta">ဘောင်ချာ မရှိပါ</p>'; window._vwArr=arr; return; }
         var h = "";
         arr.forEach(function(s, i){
-          var img = (s.paySS || s.deliveryPhoto) ? " 📷" : "";
+          var img = (s.paySS || s.deliveryPhoto || s.hasPay || s.hasDel || s._hadPay || s._hadDelivery) ? " 📷" : "";
           var sub = fmtDate(s.orderDate) + " · " + (s.customer||"-") + (s.note? " · " + String(s.note).slice(0,26) : "");
           h += '<div class="vw-row" onclick="ssmViewerShow('+i+')"><b>'+(s.orderNo||"-")+'</b>'+img+'<div class="sub">'+sub+'</div></div>';
         });

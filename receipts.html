@@ -380,7 +380,7 @@
               <p>Code : ${sale.payCode || "-"}</p>
               <p>ပမာဏ : ${sale.payAmount || "-"}</p>
               <p>ရက်စွဲ : ${sale.payDate || "-"}</p>
-              ${sale.paySS ? `<img src="${sale.paySS}" style="max-width:100%;max-height:120px;border-radius:6px;margin-top:5px;" onclick="viewSS('${index}')">` : ""}
+              ${sale.paySS ? `<img src="${sale.paySS}" style="max-width:100%;max-height:120px;border-radius:6px;margin-top:5px;" onclick="viewSS('${index}')">` : (sale.hasPay || sale._hadPay) ? `<p style="font-size:12px;color:#8b5cf6;cursor:pointer;font-weight:600;margin-top:5px;" onclick="viewSS('${index}')">☁️ SS ကြည့်ရန်</p>` : ""}
             </div>`;
         }
 
@@ -479,6 +479,18 @@
       } else {
         ssPreview.style.display = "none";
         document.getElementById("payCode").disabled = true;
+        // ပုံက cloud (salesImages) မှာသာ ရှိရင် — ဆွဲပြီး ဖြည့် (edit save မှာ ပုံ မပျောက်အောင်)
+        var _s = salesHistory[index];
+        if ((_s.hasPay || _s._hadPay) && window.ssmGetCloudImages) {
+          window.ssmGetCloudImages(_s.orderNo).then(function (imgs) {
+            if (imgs && imgs.paySS && payingIndex === index) {
+              tempSS = imgs.paySS;
+              ssPreview.src = tempSS;
+              ssPreview.style.display = "block";
+              document.getElementById("payCode").disabled = false;
+            }
+          });
+        }
       }
 
       togglePrepaidFields();
@@ -554,6 +566,8 @@
         if (status !== "COD") { alert("ငွေ ပမာဏ ထည့်ပါ"); return; }
         sale.payStatus = "COD";
         sale.payType = ""; sale.payCode = ""; sale.payAmount = ""; sale.paySS = "";
+        sale.hasPay = false; sale._hadPay = false;
+        if (window.ssmDeleteCloudImage) window.ssmDeleteCloudImage(sale.orderNo, "paySS");
         sale.deposit = 0;
         finishSave();
         return;
@@ -603,10 +617,24 @@
       alert("Payment သိမ်းပြီးပါပြီ ✅");
     }
 
-    // ── View SS fullscreen ────────────────────────────────────────
+    // ── View SS fullscreen (local inline → cloud fallback) ───────
     function viewSS(index) {
       let win = window.open("");
-      win.document.write('<img src="' + salesHistory[index].paySS + '" style="max-width:100%">');
+      var sale = salesHistory[index];
+      if (sale.paySS) {
+        win.document.write('<img src="' + sale.paySS + '" style="max-width:100%">');
+        return;
+      }
+      win.document.write('<p style="font-family:sans-serif">☁️ cloud ကနေ ဆွဲနေသည် ...</p>');
+      if (window.ssmGetCloudImages) {
+        window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
+          win.document.body.innerHTML = (imgs && imgs.paySS)
+            ? '<img src="' + imgs.paySS + '" style="max-width:100%">'
+            : '<p style="font-family:sans-serif">ပုံ မတွေ့ပါ</p>';
+        });
+      } else {
+        win.document.body.innerHTML = '<p style="font-family:sans-serif">cloud sync မရနိုင်ပါ</p>';
+      }
     }
 
     // ── Delete ────────────────────────────────────────────────────

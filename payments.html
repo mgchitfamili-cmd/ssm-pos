@@ -370,8 +370,8 @@
 
         let ssImg = sale.paySS
           ? `<img class="pay-ss" src="${sale.paySS}" onclick="viewSS(${o.index})">`
-          : sale._hadPay
-            ? `<p style="font-size:12px;color:#8b5cf6;cursor:pointer;font-weight:600;" onclick="viewSS(${o.index})">☁️ SS ကြည့်ရန် (cloud)</p>`
+          : (sale.hasPay || sale._hadPay)
+            ? `<p style="font-size:12px;color:#8b5cf6;cursor:pointer;font-weight:600;" onclick="viewSS(${o.index})">☁️ SS ကြည့်ရန်</p>`
             : `<p style="font-size:12px;color:#ef4444;">⚠️ SS မရှိ</p>`;
 
         html += `
@@ -486,7 +486,7 @@
       if (window.ssmGetCloudImages) {
         window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
           if (imgs && imgs.paySS) imgEl.src = imgs.paySS;
-          else imgEl.alt = "ပုံ မတွေ့ပါ — cloud ၅၀ ရက် ကျော်နိုင် (Backup မှာ ကြည့်ပါ)";
+          else imgEl.alt = "ပုံ မတွေ့ပါ — cloud ၃၆၅ ရက် ကျော်နိုင် (Backup မှာ ကြည့်ပါ)";
         });
       } else {
         imgEl.alt = "cloud sync မရနိုင်ပါ";

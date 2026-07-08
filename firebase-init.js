@@ -67,6 +67,42 @@
       var _pendKeys    = {};                      // queued appdata pushes
       var _pendSales   = null;                    // queued salesHistory val
 
+      // ── ပုံများ — local မှာ လုံးဝ မသိမ်း၊ Firestore "salesImages" collection မှာသာ ──
+      var IMG_COL      = "salesImages";
+      var IMG_CACHE    = {};                      // sid -> {paySS, deliveryPhoto} (session memory — upload ပြီးချင်း ကြည့်ရင် cloud မစောင့်ရအောင်)
+      var _pendImgs    = {};                      // queued image pushes (sync မ ready ခင်)
+      var _doPushImg   = null;                    // (sid, {paySS?, deliveryPhoto?}) → salesImages push
+      function sidClean(orderNo) {
+        var id = (orderNo == null) ? "" : String(orderNo).trim();
+        return id.replace(/[\/\\#?%]/g, "-");
+      }
+      // sale array ထဲက inline ပုံတွေ ဖြုတ် → cache + push queue၊ flag (hasPay/hasDel) တင်
+      function ssmStripImages(arr) {
+        var changed = false;
+        arr.forEach(function (s) {
+          if (!s) return;
+          var sid = sidClean(s.orderNo); if (!sid) return;
+          var up = null;
+          if (s.paySS) {
+            IMG_CACHE[sid] = IMG_CACHE[sid] || {}; IMG_CACHE[sid].paySS = s.paySS;
+            up = up || {}; up.paySS = s.paySS;
+            s.paySS = ""; s.hasPay = true; if (!s.payV) s.payV = Date.now();
+            changed = true;
+          }
+          if (s.deliveryPhoto) {
+            IMG_CACHE[sid] = IMG_CACHE[sid] || {}; IMG_CACHE[sid].deliveryPhoto = s.deliveryPhoto;
+            up = up || {}; up.deliveryPhoto = s.deliveryPhoto;
+            s.deliveryPhoto = ""; s.hasDel = true; if (!s.delV) s.delV = Date.now();
+            changed = true;
+          }
+          if (up) {
+            if (_doPushImg) _doPushImg(sid, up);
+            else { _pendImgs[sid] = _pendImgs[sid] || {}; for (var k in up) _pendImgs[sid][k] = up[k]; }
+          }
+        });
+        return changed;
+      }
+
       // EARLY setItem patch — auth/sync မ ready ခင် save လုပ်ရင်လည်း lastPush ချက်ချင်း set။
       // (iOS မှာ SDK နှေး၍ edit save ပြီးမှ sync စလို့ merge က cloud အဟောင်းနဲ့ ပြန်ဖျက်တဲ့ bug fix)
       var _salesSnap = {};   // orderNo -> content hash (_u မပါ) — edit ဖြစ်မဖြစ် သိရန် + _u stamp
@@ -78,6 +114,7 @@
         if (key === "salesHistory") {
           try {
             var arr = JSON.parse(val) || [], changed = false;
+            if (ssmStripImages(arr)) changed = true;               // ပုံ inline ပါလာရင် — cloud ဆီ ပို့ပြီး local မှာ ဖြုတ် (localStorage မှာ ပုံ လုံးဝ မသိမ်း)
             arr.forEach(function (s) {
               var id = String(s.orderNo);
               var h = _saleHash(s);
@@ -120,8 +157,8 @@
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v31 (Blaze: cloud prune 365d) loaded");
-        window.SSM_SYNC_VER = "v31";
+        console.log("[SSM sync] inline v32 (Blaze: prune 365d + images cloud-only in salesImages) loaded");
+        window.SSM_SYNC_VER = "v32";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");
@@ -134,6 +171,35 @@
             .catch(function (e) { console.warn("[sync] push failed:", key, e); });
         };
         _doPushSales = function (val) { ssmPushSales(val); };
+
+        // ── salesImages push (merge — pay/delivery တစ်ခုချင်း သီးခြား update လို့ရ) ──
+        _doPushImg = function (sid, imgs) {
+          var doc = {}; for (var k in imgs) doc[k] = imgs[k];
+          doc.updatedAt = Date.now();
+          db.collection(IMG_COL).doc(sid).set(doc, { merge: true })
+            .catch(function (e) { console.warn("[img] push failed:", sid, e); });
+        };
+        // ပုံ ဖျက် (page တွေက ခေါ်ရန်) — field: "paySS" | "deliveryPhoto"
+        window.ssmDeleteCloudImage = function (orderNo, field) {
+          try {
+            var sid = sidClean(orderNo); if (!sid) return;
+            if (IMG_CACHE[sid]) IMG_CACHE[sid][field] = "";
+            var up = {}; up[field] = firebase.firestore.FieldValue.delete();
+            db.collection(IMG_COL).doc(sid).update(up).catch(function () {});
+          } catch (e) {}
+        };
+        // ── one-time migration: local salesHistory ထဲ ကျန်နေတဲ့ inline ပုံတွေ → salesImages ရွှေ့ ──
+        try {
+          var _mArr = JSON.parse(localStorage.getItem("salesHistory")) || [];
+          if (ssmStripImages(_mArr)) {
+            rawSet("salesHistory", JSON.stringify(_mArr));
+            try { _salesSnap = {}; _mArr.forEach(function (s) { _salesSnap[String(s.orderNo)] = _saleHash(s); }); } catch (e) {}
+            console.log("[img] migrated inline images → salesImages");
+          }
+        } catch (e) {}
+        // queued image pushes (sync မ ready ခင် သိမ်းခဲ့တာ) — cloud တင်
+        Object.keys(_pendImgs).forEach(function (sid) { _doPushImg(sid, _pendImgs[sid]); });
+        _pendImgs = {};
 
         // PULL (whole-key): products / shopSettings / staffList
         SYNC_KEYS.forEach(function (key) {
@@ -171,8 +237,8 @@
           id = id.replace(/[\/\\#?%]/g, "-");                    // Firestore doc-id safe
           return id || ("no-" + deviceId + "-" + ((s && s.orderDate) || Date.now()));
         }
-        // content = cloud + localStorage မှာ သိမ်းမယ့် အပိုင်း — ပုံ (paySS/deliveryPhoto) ကို inline ပါ ထည့် (HTML က inline ပြတယ်)
-        function saleContent(s) { var c = {}; for (var k in s) { if (k !== "__sid" && k !== "__synced") c[k] = s[k]; } return c; }
+        // content = cloud + localStorage မှာ သိမ်းမယ့် အပိုင်း — ပုံ (paySS/deliveryPhoto) မပါ (salesImages collection မှာ သီးခြား)
+        function saleContent(s) { var c = {}; for (var k in s) { if (k !== "__sid" && k !== "__synced" && k !== "paySS" && k !== "deliveryPhoto") c[k] = s[k]; } return c; }
 
         // syncedIds: cloud မှာ မြင်ဖူး/တင်ဖူးတဲ့ orderNo (device-local, persist) → "ဖျက်ထားတာ vs အသစ်" ခွဲဖို့
         var syncedIds; try { syncedIds = JSON.parse(localStorage.getItem("ssm_syncedIds")) || {}; } catch (e) { syncedIds = {}; }
@@ -205,6 +271,7 @@
             var sid = sidOf(s);
             if (isOldSale(s) && cloudIds[sid]) {                 // ဟောင်း + cloud မှာ ရှိသေး → cloud ကနေသာ ဖျက် (local မထိ)
               db.collection(SALES).doc(sid).delete().catch(function () {});
+              db.collection(IMG_COL).doc(sid).delete().catch(function () {});   // ပုံ doc ပါ ဖျက်
               delete saleCache[sid];
             }
           });
@@ -260,21 +327,31 @@
           });
           // delete: baseline မှာ ရှိပြီး အခု ပျောက် → cloud doc ဖျက်
           Object.keys(trackedSids).forEach(function (sid) {
-            if (!seen[sid]) { db.collection(SALES).doc(sid).delete().catch(function () {}); delete saleCache[sid]; }
+            if (!seen[sid]) { db.collection(SALES).doc(sid).delete().catch(function () {}); db.collection(IMG_COL).doc(sid).delete().catch(function () {}); delete saleCache[sid]; }
           });
           trackedSids = seen;
         }
 
-        // ── Cloud ကနေ ပုံ ပြန်ဆွဲ (local မှာ silent ဖယ်ထားရင် — ဘောင်ချာ ကြည့်ချိန် cloud ကနေ) ──
+        // ── ပုံ ကြည့်ရန် — memory cache → salesImages → (ဟောင်း) sales doc inline fallback ──
         window.ssmGetCloudImages = function (orderNo) {
           return new Promise(function (resolve) {
             try {
-              var id = String(orderNo == null ? "" : orderNo).trim().replace(/[\/\\#?%]/g, "-");
+              var id = sidClean(orderNo);
               if (!id || !db) { resolve(null); return; }
-              db.collection(SALES).doc(id).get().then(function (snap) {
-                if (!snap || !snap.exists) { resolve(null); return; }
-                var d = snap.data() || {};
-                resolve({ paySS: d.paySS || "", deliveryPhoto: d.deliveryPhoto || "" });
+              var c = IMG_CACHE[id];
+              if (c && (c.paySS || c.deliveryPhoto)) { resolve({ paySS: c.paySS || "", deliveryPhoto: c.deliveryPhoto || "" }); return; }
+              db.collection(IMG_COL).doc(id).get().then(function (snap) {
+                var d = (snap && snap.exists) ? (snap.data() || {}) : {};
+                if (d.paySS || d.deliveryPhoto) {
+                  IMG_CACHE[id] = { paySS: d.paySS || "", deliveryPhoto: d.deliveryPhoto || "" };
+                  resolve(IMG_CACHE[id]); return;
+                }
+                // legacy — ဗားရှင်းဟောင်းက sales doc ထဲ inline သိမ်းထားတာ
+                db.collection(SALES).doc(id).get().then(function (s2) {
+                  if (!s2 || !s2.exists) { resolve(null); return; }
+                  var d2 = s2.data() || {};
+                  resolve({ paySS: d2.paySS || "", deliveryPhoto: d2.deliveryPhoto || "" });
+                }).catch(function () { resolve(null); });
               }).catch(function () { resolve(null); });
             } catch (e) { resolve(null); }
           });
@@ -316,7 +393,8 @@
           Object.keys(byId).forEach(function (sid) { if (!seenL[sid]) extras.push(byId[sid]); });
           extras.sort(function (a, b) { return String(a.orderDate || "").localeCompare(String(b.orderDate || "")); });
           extras.forEach(function (s) { local.push(s); });
-          try { rawSet("salesHistory", JSON.stringify(local)); } catch (e) { console.warn("[sales] localStorage quota:", e); }  // ပုံ inline → ကြီးနိုင်၊ quota ကျော်ရင် crash မဖြစ်အောင်
+          ssmStripImages(local);                                 // cloud ဟောင်းက inline ပုံ ပါလာရင် — salesImages ဆီ ရွှေ့ပြီး local မှာ မသိမ်း
+          try { rawSet("salesHistory", JSON.stringify(local)); } catch (e) { console.warn("[sales] localStorage quota:", e); }
           try { _salesSnap = {}; local.forEach(function (s) { _salesSnap[String(s.orderNo)] = _saleHash(s); }); } catch (e) {}  // _u baseline refresh
           trackedSids = {}; local.forEach(function (s) { trackedSids[sidOf(s)] = true; });
           ssmRefreshSales();
