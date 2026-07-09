@@ -467,7 +467,7 @@
   <div class="layout">
   <div class="wrap">
 
-    <h3 id="parcelAlert" class="no-print"></h3>
+    <h3 id="parcelAlert" class="no-print" style="display:none !important"></h3>
 
     <div class="no-print">
 
@@ -1449,6 +1449,7 @@
     function loadParcelAlert() {
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
       let alertBox = document.getElementById("parcelAlert");
+      if (alertBox) { alertBox.style.display = "none"; return; }   // walk-in — banner မလို
 
       // Receipt တစ်ခုမှ မရှိရင် box ကို ဖျောက်ထားမယ်
       if (salesHistory.length === 0) {
