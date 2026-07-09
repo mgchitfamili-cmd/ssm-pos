@@ -130,7 +130,7 @@
       '<div class="line"><span>Total</span><span>' + fmt(sale.grandTotal) + '</span></div>' +
       discountLine +
       depositLine +
-      '<div class="line"><span>Delivery Fee</span><span>' + fmt(sale.delivery) + '</span></div>' +
+      (num(sale.delivery) > 0 ? '<div class="line"><span>Delivery Fee</span><span>' + fmt(sale.delivery) + '</span></div>' : '') +
       // 7. net-box (အိမ်ရောက်ငွေချေ)
       '<div class="net-box mm">' + payLabel + ' : ' + fmt(netNum) + '</div>' +
       // ဘောင်ချာ နံပါတ် / လက်ခံသူ / order app / delivery service
