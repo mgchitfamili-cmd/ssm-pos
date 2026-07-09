@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sone Sone Mommy POS</title>
+  <title>ဆိုင်ရောင်း (Walk-in)</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="receipt.js"></script>
@@ -460,7 +460,7 @@
   <!-- App bar -->
   <div class="top-bar no-print">
     <button id="menuBtn" onclick="openMenu()">☰</button>
-    <h1>Online Selling</h1>
+    <h1>ဆိုင်ရောင်း (Walk-in)</h1>
     <h3 id="orderNo"></h3>
   </div>
 
@@ -708,12 +708,12 @@
     let items      = [];
     let savedData  = null;
     let editIndex  = null;
-    let orderNo    = Number(localStorage.getItem("orderNo")) || 1;
+    let orderNo    = Number(localStorage.getItem("orderNoWI")) || 1;
 
     // order number မှာ device code ထည့် (device အလိုက် unique — sync collision မဖြစ်အောင်)
     function ssmOrderNo(n){
       var dc = (localStorage.getItem("ssm_deviceCode") || "").trim();
-      return "SSM-" + (dc ? dc + "-" : "") + String(n).padStart(4, "0");
+      return "SSM-WI-" + (dc ? dc + "-" : "") + String(n).padStart(4, "0");
     }
 
     document.getElementById("orderNo").innerHTML =
@@ -1225,7 +1225,7 @@
         discountAmount:  discountAmount,
         delivery:        document.getElementById("delivery").value,
         deliveryService: document.getElementById("deliveryService").value,
-        deliveryStatus:  "Pending",
+        deliveryStatus:  "Delivered",
         deliveryCode:    "",
         deliveryParcel:  false,
         deliveryFeeReal: "",
@@ -1267,7 +1267,7 @@
 
       if (!isEditMode) {
         orderNo++;
-        localStorage.setItem("orderNo", orderNo);
+        localStorage.setItem("orderNoWI", orderNo);
       }
 
       document.getElementById("saveBtn").disabled  = true;
@@ -1954,5 +1954,34 @@
   </script>
   <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
   <script src="menu-logo.js"></script>
+
+  <!-- Walk-in mode setup: customer/delivery ကွက်များ ဖျောက်၊ default များ သတ်မှတ် -->
+  <script>
+  (function () {
+    function hideWrap(el) { if (!el) return; var w = el.closest(".field") || el.parentElement; if (w) w.style.display = "none"; }
+    // customer info section တစ်ခုလုံး ဖျောက် (name ရှိတဲ့ section)
+    var nameEl = document.getElementById("name");
+    if (nameEl) { var sec = nameEl.closest("section"); if (sec) sec.style.display = "none"; nameEl.value = "Walk-in"; }
+    // orderapp default
+    var oa = document.getElementById("orderapp");
+    if (oa) { var o = document.createElement("option"); o.value = "Walk-in"; o.text = "Walk-in"; oa.appendChild(o); oa.value = "Walk-in"; }
+    // delivery service + fee ဖျောက်
+    var ds = document.getElementById("deliveryService");
+    if (ds) { var o2 = document.createElement("option"); o2.value = "Walk-in"; o2.text = "Walk-in"; ds.appendChild(o2); ds.value = "Walk-in"; hideWrap(ds); }
+    var dv = document.getElementById("delivery");
+    if (dv) { dv.value = "0"; hideWrap(dv); }
+    // payment: Prepaid အသေ၊ status select + deposit ကွက် ဖျောက်၊ Cash option ထည့်
+    var ps = document.getElementById("payStatusSel");
+    if (ps) { ps.value = "Prepaid"; ps.style.display = "none"; if (ps.previousElementSibling) ps.previousElementSibling.style.display = "none"; }
+    var dep = document.getElementById("deposit");
+    if (dep) { dep.style.display = "none"; if (dep.previousElementSibling) dep.previousElementSibling.style.display = "none"; }
+    var pt = document.getElementById("depPayType");
+    if (pt) { var c = document.createElement("option"); c.value = "Cash"; c.text = "Cash (လက်ငင်း)"; pt.insertBefore(c, pt.options[1] || null); pt.value = "Cash"; }
+    var nt = document.getElementById("note");
+    if (nt) nt.placeholder = "📝 မှတ်ချက် (receipt အောက်ခြေ)";
+    if (typeof toggleDepFields === "function") toggleDepFields();
+    if (typeof calculateNet === "function") calculateNet();
+  })();
+  </script>
 </body>
 </html>

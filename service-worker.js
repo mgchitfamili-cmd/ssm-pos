@@ -1,8 +1,8 @@
 /* Sone Sone Mommy POS — service worker. Bump CACHE on each deploy to push updates. */
-const CACHE = 'ssm-pos-v76';
+const CACHE = 'ssm-pos-v77';
 const ASSETS = [
   './', 'index.html', 'receipts.html', 'products.html', 'staff.html',
-  'delivery.html', 'payments.html', 'report.html', 'setting.html', 'print.html',
+  'delivery.html', 'walkin.html', 'payments.html', 'report.html', 'setting.html', 'print.html',
   'receipt.js', 'menu-logo.js', 'firebase-init.js', 'firebase-sync.js', 'login.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'icon-180.png'
 ];
 
