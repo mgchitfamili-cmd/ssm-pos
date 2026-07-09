@@ -206,14 +206,20 @@
     .oppay-box{ background:var(--brand-tint); border:1px solid var(--brand-line); border-radius:var(--r-sm); padding:14px; margin:0 0 12px; }
     .oppay-head{ margin:0 0 12px; font-size:14px; font-weight:800; color:var(--brand-ink); letter-spacing:-.01em; }
     .oppay-lbl{ display:block; font-size:12px; font-weight:600; color:var(--brand-ink); margin:0 0 6px 2px; }
-    .oppay-box #deposit, .oppay-box #depPayType{ margin:0 0 12px; }
-    .oppay-box #depCode{ margin:10px 0 0; }
+    .oppay-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end; margin-bottom:12px; }
+    .oppay-row > div{ min-width:0; display:flex; flex-direction:column; }
+    .oppay-row .oppay-lbl{ min-height:32px; display:flex; align-items:flex-end; }
+    .oppay-row input, .oppay-row select, .oppay-row .oppay-upload{
+      margin:0 !important; height:46px; box-sizing:border-box; width:100%; }
+    .oppay-row .oppay-upload{ padding:0 6px; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.15; font-size:11.5px; white-space:nowrap; overflow:hidden; }
     .oppay-upload{ width:100%; padding:12px; border:1.5px dashed var(--brand-line); border-radius:var(--r-sm);
       background:var(--surface); color:var(--brand-ink); font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
     .oppay-upload:active{ background:var(--brand-tint); }
     .oppay-ss-img{ display:block; max-width:150px; border-radius:10px; margin:10px 0 0; border:1px solid var(--brand-line); }
-    .oppay-confirm{ width:100%; margin:12px 0 0; padding:12px; border-radius:var(--r-sm); border:1px solid var(--brand-line);
-      background:var(--surface); color:var(--brand-ink); font-family:inherit; font-weight:800; font-size:13px; cursor:pointer; }
+    .oppay-confirm{ width:100%; margin:12px 0 0; padding:14px; border-radius:var(--r-sm); border:none;
+      background:linear-gradient(135deg,#7c3aed,#6d28d9); color:#fff; font-family:inherit; font-weight:800; font-size:14px; cursor:pointer;
+      box-shadow:0 4px 12px rgba(109,40,217,.35); transition:transform .12s, box-shadow .12s; }
+    .oppay-confirm:active{ transform:scale(.98); box-shadow:0 2px 6px rgba(109,40,217,.3); }
     .oppay-confirm.on{ background:#16a34a; border-color:#16a34a; color:#fff; }
     .oppay-note{ margin:8px 0 0; font-size:11px; font-weight:600; color:#b45309; }
     .oppay-confirm.on ~ .oppay-note{ display:none; }
@@ -608,22 +614,30 @@
             <option value="online">Online Payment</option>
             <option value="mixed">Online + လက်ငင်း (တစ်ဝက်စီ)</option>
           </select>
-          <label class="oppay-lbl">ကြိုတင်ပေးငွေ ပမာဏ (Deposit)</label>
-          <input id="deposit" oninput="resetDepConfirm(); toggleDepFields();" placeholder="0">
+          <div class="oppay-row">
+            <div>
+              <label class="oppay-lbl" id="depLbl">ကြိုတင်ပေးငွေ ပမာဏ (Deposit)</label>
+              <input id="deposit" oninput="resetDepConfirm(); toggleDepFields();" placeholder="0">
+            </div>
+            <div id="depTypeWrap" style="display:none;">
+              <label class="oppay-lbl">Online Payment Type</label>
+              <select id="depPayType" onchange="resetDepConfirm()">
+                <option value="">— ရွေးပါ —</option>
+                <option value="KPay">KPay</option>
+                <option value="Wave Pay">Wave Pay</option>
+                <option value="AYA Pay">AYA Pay</option>
+                <option value="CB Pay">CB Pay</option>
+                <option value="Mobile Banking">Mobile Banking</option>
+              </select>
+            </div>
+          </div>
           <div id="depExtra" style="display:none;">
-            <label class="oppay-lbl">Online Payment Type</label>
-            <select id="depPayType" onchange="resetDepConfirm()">
-              <option value="">— ရွေးပါ —</option>
-              <option value="KPay">KPay</option>
-              <option value="Wave Pay">Wave Pay</option>
-              <option value="AYA Pay">AYA Pay</option>
-              <option value="CB Pay">CB Pay</option>
-              <option value="Mobile Banking">Mobile Banking</option>
-            </select>
             <input type="file" id="depSSInput" accept="image/*" style="display:none" onchange="loadDepSS(event)">
-            <button type="button" class="oppay-upload" onclick="document.getElementById('depSSInput').click()">📷 ငွေလွှဲ Screenshot ထည့်ရန်</button>
+            <div class="oppay-row">
+              <button type="button" class="oppay-upload" onclick="document.getElementById('depSSInput').click()">📷 ငွေလွှဲ SS ထည့်ရန်</button>
+              <input id="depCode" maxlength="6" placeholder="Transaction Code (နောက်ဆုံး ၆ လုံး)" oninput="resetDepConfirm()">
+            </div>
             <img id="depSSPreview" class="oppay-ss-img" style="display:none;">
-            <input id="depCode" maxlength="6" placeholder="Transaction Code (နောက်ဆုံး ၆ လုံး)" oninput="resetDepConfirm()">
             <button type="button" id="depConfirmBtn" class="oppay-confirm" onclick="confirmDeposit()">💰 ငွေ လက်ခံရရှိပါသည် (Confirm)</button>
             <p id="depConfirmNote" class="oppay-note">⚠️ Confirm မလုပ်ရင် Deposit က invoice မှာ မပါပါ</p>
           </div>
@@ -1981,7 +1995,9 @@
     if (dv) { dv.value = "0"; hideWrap(dv); }
     // ── Payment: walk-in mode ၃ မျိုး — payStatusSel က hidden input (Prepaid အသေ) ──
     var dep = document.getElementById("deposit");
-    var depLbl = dep ? dep.previousElementSibling : null;
+    var depLbl = document.getElementById("depLbl");
+    var depWrap = dep ? dep.parentElement : null;   // deposit ကွက်တွဲ (row ထဲက div)
+    var depTypeWrap = document.getElementById("depTypeWrap");
     function wiNetNum() {
       var t = (document.getElementById("netTotal") || {}).innerText || "";
       return Number(String(t).replace(/[^\d]/g, "")) || 0;
@@ -1990,16 +2006,16 @@
       var m = (document.getElementById("wiPayMode") || {}).value || "cash";
       var ex = document.getElementById("depExtra");
       if (m === "cash") {
-        if (dep) { dep.value = ""; dep.style.display = "none"; }
-        if (depLbl) depLbl.style.display = "none";
+        if (dep) dep.value = "";
+        if (depWrap) depWrap.style.display = "none";
+        if (depTypeWrap) depTypeWrap.style.display = "none";
         if (ex) ex.style.display = "none";
         if (typeof resetDepConfirm === "function") resetDepConfirm();
       } else {
-        if (dep) { dep.style.display = ""; if (m === "online" && !dep.value) dep.value = wiNetNum() || ""; }
-        if (depLbl) {
-          depLbl.style.display = "";
-          depLbl.textContent = (m === "online") ? "Online ပေးငွေ ပမာဏ" : "Online ပိုင်း ပမာဏ (ကျန်ငွေ လက်ငင်း)";
-        }
+        if (depWrap) depWrap.style.display = "";
+        if (dep && m === "online" && !dep.value) dep.value = wiNetNum() || "";
+        if (depLbl) depLbl.textContent = (m === "online") ? "Online ပေးငွေ ပမာဏ" : "Online ပိုင်း ပမာဏ (ကျန်ငွေ လက်ငင်း)";
+        if (depTypeWrap) depTypeWrap.style.display = "";
         if (ex) ex.style.display = "block";
       }
       if (typeof calculateNet === "function") calculateNet();
