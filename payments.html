@@ -258,6 +258,18 @@
   <script>
 
     let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+
+    // ── legacy fix: paySS ကို cloud ဖြုတ်ပြီးသား ဒါပေမဲ့ hasPay flag မရှိတဲ့ order — payCode/payAmount ရှိရင် flag ပြန်တင် ──
+    (function ssmFixPayFlags(){
+      try {
+        var a = JSON.parse(localStorage.getItem("salesHistory")) || [], f = false;
+        a.forEach(function(s){
+          if (!s) return;
+          if (!s.paySS && !s.hasPay && !s._hadPay && ((s.payCode && String(s.payCode).trim()) || Number(s.payAmount) > 0)) { s.hasPay = true; f = true; }
+        });
+        if (f) localStorage.setItem("salesHistory", JSON.stringify(a));
+      } catch(e){}
+    })();
     let currentFilter = "all";
 
     // ── Today check ───────────────────────────────────────────────

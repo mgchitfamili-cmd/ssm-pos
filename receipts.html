@@ -331,6 +331,18 @@
   <script>
 
     let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+
+    // ── legacy fix: paySS ကို cloud ဖြုတ်ပြီးသား ဒါပေမဲ့ hasPay flag မရှိတဲ့ order — payCode/payAmount ရှိရင် flag ပြန်တင် ──
+    (function ssmFixPayFlags(){
+      try {
+        var a = JSON.parse(localStorage.getItem("salesHistory")) || [], f = false;
+        a.forEach(function(s){
+          if (!s) return;
+          if (!s.paySS && !s.hasPay && !s._hadPay && ((s.payCode && String(s.payCode).trim()) || Number(s.payAmount) > 0)) { s.hasPay = true; f = true; }
+        });
+        if (f) localStorage.setItem("salesHistory", JSON.stringify(a));
+      } catch(e){}
+    })();
     let openIndex    = null;
     let payingIndex  = null;
     let payingOrderNo = null;
@@ -387,7 +399,11 @@
               <p>Code : ${sale.payCode || "-"}</p>
               <p>ပမာဏ : ${sale.payAmount || "-"}</p>
               <p>ရက်စွဲ : ${sale.payDate || "-"}</p>
-              ${sale.paySS ? `<img src="${sale.paySS}" style="max-width:100%;max-height:120px;border-radius:6px;margin-top:5px;" onclick="viewSS('${index}')">` : ""}
+              ${sale.paySS
+                ? `<img src="${sale.paySS}" style="max-width:100%;max-height:120px;border-radius:6px;margin-top:5px;" onclick="viewSS('${index}')">`
+                : (sale.hasPay || sale._hadPay)
+                  ? `<p style="font-size:12px;color:#8b5cf6;cursor:pointer;font-weight:600;margin-top:5px;" onclick="viewSS('${index}')">☁️ SS ကြည့်ရန်</p>`
+                  : ""}
             </div>`;
         }
 
@@ -618,7 +634,16 @@
     // ── View SS fullscreen ────────────────────────────────────────
     function viewSS(index) {
       let win = window.open("");
-      win.document.write('<img src="' + salesHistory[index].paySS + '" style="max-width:100%">');
+      var sale = salesHistory[index];
+      if (sale.paySS) { win.document.write('<img src="' + sale.paySS + '" style="max-width:100%">'); return; }
+      win.document.write('<p style="font-family:sans-serif">☁️ cloud ကနေ ဆွဲနေသည် ...</p>');
+      if (window.ssmGetCloudImages) {
+        window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
+          win.document.body.innerHTML = (imgs && imgs.paySS)
+            ? '<img src="' + imgs.paySS + '" style="max-width:100%">'
+            : '<p style="font-family:sans-serif">ပုံ မတွေ့ပါ</p>';
+        });
+      } else { win.document.body.innerHTML = '<p style="font-family:sans-serif">cloud sync မရနိုင်ပါ</p>'; }
     }
 
     // ── Delete ────────────────────────────────────────────────────

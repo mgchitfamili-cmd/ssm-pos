@@ -1268,8 +1268,10 @@
       let isEditMode = (editIndex != null) || (_exist >= 0);
 
       // ပုံ — Firestore (salesImages) မှာသာ သိမ်း။ paySS inline ပါရင် sync layer က cloud တင်ပြီး ဖြုတ်ပေး။
+      // paySS အသစ် ပါလာရင် hasPay flag တင် (cloud ဖြုတ်ပြီးနောက် "☁️ SS ကြည့်ရန်" ပေါ်အောင်)
+      if (savedData.paySS) { savedData.hasPay = true; savedData.payV = Date.now(); }
       // edit မှာ ပုံအသစ် မထည့်ရင် — အရင် flag တွေ ထိန်း (cloud ပုံ မပျောက်အောင်)
-      if (!savedData.paySS && _prevSale && (_prevSale.hasPay || _prevSale._hadPay)) {
+      else if (_prevSale && (_prevSale.hasPay || _prevSale._hadPay)) {
         savedData.hasPay = true; if (_prevSale.payV) savedData.payV = _prevSale.payV;
       }
       if (!savedData.deliveryPhoto && _prevSale) {
