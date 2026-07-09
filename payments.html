@@ -61,14 +61,14 @@
     .filter-row{ display:flex; flex-wrap:nowrap; gap:8px; margin:0 14px 14px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
     .filter-row::-webkit-scrollbar{ display:none; }
     .filter-row .filter-btn{ flex:0 0 auto; white-space:nowrap; padding-left:14px; padding-right:14px; }
-    .filter-btn{ display:flex; width:100%; align-items:center; justify-content:center; gap:7px; white-space:nowrap;
-      padding:11px 12px; border-radius:999px; border:1px solid var(--line-2); background:var(--surface);
-      font-size:13px; font-weight:600; cursor:pointer; color:var(--ink-2); font-family:inherit;
+    .filter-btn{ display:flex; align-items:center; justify-content:center; gap:7px; white-space:nowrap;
+      padding:9px 12px; border-radius:999px; border:1px solid var(--line-2); background:var(--surface);
+      font-size:13.5px; font-weight:600; cursor:pointer; color:var(--ink-2); font-family:inherit;
       -webkit-tap-highlight-color:transparent;
-      transition:background .12s, color .12s, border-color .12s; }
+      transition:background .15s, border-color .15s; }
     .filter-btn b{ background:var(--brand-tint); color:var(--brand); border-radius:999px;
       padding:1px 8px; font-size:12px; font-weight:800; min-width:20px; text-align:center; }
-    .filter-btn.active{ background:var(--brand); color:#fff; border-color:var(--brand); }
+    .filter-btn.active{ background:var(--brand); color:#fff; border-color:transparent; }
     .filter-btn.active b{ background:rgba(255,255,255,.24); color:#fff; }
 
     #payList{ padding:0 14px; }
