@@ -1238,6 +1238,12 @@
         printed:         false,
         orderDate:       (editIndex != null && window.editOrderDate) ? window.editOrderDate : new Date().toISOString()
       };
+      // Walk-in ငွေချေနည်း — receipt net-box မှာ ဒီ label ကို ပြမယ်
+      (function () {
+        var _m = document.getElementById("wiPayMode");
+        savedData.payMode = _m ? _m.value : "cash";
+        savedData.payModeLabel = _m ? _m.options[_m.selectedIndex].text : "လက်ငင်း (Cash)";
+      })();
 
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
       // orderNo ရှိပြီးသားဆို update (edit/iOS safe) — မရှိဆို အသစ်ထည့်။ "ဘောင်ချာ ၂ ထပ် / edit မဝင်" ပြဿနာ ကာကွယ်
@@ -1884,12 +1890,11 @@
 
       var discount = num(gt('discountShow'));
       var note = gv('note');
-      var _ps = (document.getElementById('payStatusSel')||{}).value || 'COD';
-      var payLabelLive = _ps === 'Prepaid' ? 'ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး' : (_ps === 'Partial' ? 'ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်' : 'အိမ်ရောက်ငွေချေ');
+      var _wiM = document.getElementById('wiPayMode');
+      var payLabelLive = _wiM ? _wiM.options[_wiM.selectedIndex].text : 'လက်ငင်း (Cash)';
       var delivery = num(gv('delivery'));
       var deposit  = num(gv('deposit'));
-      var net      = num(gt('netTotal'));
-      if (!net) net = itemsSum - discount - deposit + delivery;
+      var net      = itemsSum - discount;   // walk-in — စုစုပေါင်း ပေးငွေ (deposit မနုတ်)
 
       // receipts/print နဲ့ တူညီတဲ့ shared template သုံး (single source of truth)
       if (window.ssmRenderReceipt) {

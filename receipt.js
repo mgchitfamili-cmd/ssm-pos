@@ -93,6 +93,11 @@
     else if (sale.payStatus === "Partial") payLabel = "\u1015\u1005\u1039\u1005\u100A\u103A\u1038\u1016\u102D\u102F\u1038\u101B\u103E\u1004\u103A\u1038\u1015\u103C\u102E\u1038 \u1015\u102D\u102F\u1037\u1001 \u101E\u102C\u1000\u1031\u102C\u1000\u103A\u101B\u1014\u103A";
 
     var netNum = getNetNumber(sale);
+    // Walk-in (ဆိုင်ရောင်း) — ငွေချေနည်း label + စုစုပေါင်း ပေးငွေ (deposit မနုတ်)
+    if (sale.payModeLabel) {
+      payLabel = sale.payModeLabel;
+      netNum = num(sale.grandTotal) - num(sale.discountAmount);
+    }
 
     return '' +
       // 1. logo only (top)
