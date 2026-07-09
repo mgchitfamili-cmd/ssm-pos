@@ -61,7 +61,9 @@
     ::placeholder{ color:var(--ink-3); }
 
     #rfilter{ margin:0 14px 14px; }
-    .rchips{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+    .rchips{ display:flex; flex-wrap:nowrap; gap:8px; margin-bottom:10px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
+    .rchips::-webkit-scrollbar{ display:none; }
+    .rchips .rchip{ flex:0 0 auto; white-space:nowrap; padding-left:14px; padding-right:14px; }
     .rchip{ display:flex; align-items:center; justify-content:center; gap:7px;
       border:1px solid var(--line-2); background:var(--surface); color:var(--ink-2);
       border-radius:999px; padding:9px 12px; font-size:13.5px; font-weight:600; cursor:pointer;
@@ -98,6 +100,7 @@
     .badge-printed{ background:var(--green-tint); color:var(--green); border-color:var(--green-line); }
     .badge-notprinted{ background:var(--red-tint); color:var(--red); border-color:var(--red-line); }
     .badge-cod{ background:var(--amber-tint); color:var(--amber); border-color:var(--amber-line); }
+    .badge-cash{ background:rgba(13,148,136,.14); color:#0d9488; border-color:rgba(13,148,136,.35); }
     .badge-prepaid{ background:var(--blue-tint); color:var(--blue); border-color:var(--blue-line); }
     .badge-partial{ background:var(--brand-tint); color:var(--brand-ink); border-color:var(--brand-line); }
 
@@ -244,7 +247,6 @@
       <p>POS System</p>
     </div>
     <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း</div>
-    <div class="menu-item" data-page="walkin.html" onclick="location.href='walkin.html'"><span class="ic">🏪</span> ဆိုင်ရောင်း</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
     <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
     <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
@@ -265,6 +267,7 @@
   <div id="rfilter">
     <div class="rchips">
       <button class="rchip active" data-st="all"     onclick="setRStatus('all',this)">အကုန် <b id="cnt-all">0</b></button>
+      <button class="rchip"        data-st="Cash"    onclick="setRStatus('Cash',this)">Cash <b id="cnt-Cash">0</b></button>
       <button class="rchip"        data-st="Prepaid" onclick="setRStatus('Prepaid',this)">Prepaid <b id="cnt-Prepaid">0</b></button>
       <button class="rchip"        data-st="Partial" onclick="setRStatus('Partial',this)">ပစ္စည်းဖိုးပြီး <b id="cnt-Partial">0</b></button>
       <button class="rchip"        data-st="COD"     onclick="setRStatus('COD',this)">COD <b id="cnt-COD">0</b></button>
@@ -366,7 +369,10 @@
         // Payment badge
         let payBadge = "";
         let payStatus = sale.payStatus || "COD";
-        if (payStatus === "Prepaid")      payBadge = `<span class="badge badge-prepaid">Prepaid</span>`;
+        var _isWI = /-WI-/.test(String(sale.orderNo || "")) || sale.payMode;
+        if (_isWI) payStatus = "Cash";   // walk-in (ဆိုင်ရောင်း) = Cash
+        if (payStatus === "Cash")         payBadge = `<span class="badge badge-cash">Cash</span>`;
+        else if (payStatus === "Prepaid") payBadge = `<span class="badge badge-prepaid">Prepaid</span>`;
         else if (payStatus === "Partial") payBadge = `<span class="badge badge-partial">ပစ္စည်းဖိုးပြီး</span>`;
         else                              payBadge = `<span class="badge badge-cod">COD</span>`;
 
@@ -381,7 +387,7 @@
               <p>Code : ${sale.payCode || "-"}</p>
               <p>ပမာဏ : ${sale.payAmount || "-"}</p>
               <p>ရက်စွဲ : ${sale.payDate || "-"}</p>
-              ${sale.paySS ? `<img src="${sale.paySS}" style="max-width:100%;max-height:120px;border-radius:6px;margin-top:5px;" onclick="viewSS('${index}')">` : (sale.hasPay || sale._hadPay) ? `<p style="font-size:12px;color:#8b5cf6;cursor:pointer;font-weight:600;margin-top:5px;" onclick="viewSS('${index}')">☁️ SS ကြည့်ရန်</p>` : ""}
+              ${sale.paySS ? `<img src="${sale.paySS}" style="max-width:100%;max-height:120px;border-radius:6px;margin-top:5px;" onclick="viewSS('${index}')">` : ""}
             </div>`;
         }
 
@@ -480,18 +486,6 @@
       } else {
         ssPreview.style.display = "none";
         document.getElementById("payCode").disabled = true;
-        // ပုံက cloud (salesImages) မှာသာ ရှိရင် — ဆွဲပြီး ဖြည့် (edit save မှာ ပုံ မပျောက်အောင်)
-        var _s = salesHistory[index];
-        if ((_s.hasPay || _s._hadPay) && window.ssmGetCloudImages) {
-          window.ssmGetCloudImages(_s.orderNo).then(function (imgs) {
-            if (imgs && imgs.paySS && payingIndex === index) {
-              tempSS = imgs.paySS;
-              ssPreview.src = tempSS;
-              ssPreview.style.display = "block";
-              document.getElementById("payCode").disabled = false;
-            }
-          });
-        }
       }
 
       togglePrepaidFields();
@@ -567,8 +561,6 @@
         if (status !== "COD") { alert("ငွေ ပမာဏ ထည့်ပါ"); return; }
         sale.payStatus = "COD";
         sale.payType = ""; sale.payCode = ""; sale.payAmount = ""; sale.paySS = "";
-        sale.hasPay = false; sale._hadPay = false;
-        if (window.ssmDeleteCloudImage) window.ssmDeleteCloudImage(sale.orderNo, "paySS");
         sale.deposit = 0;
         finishSave();
         return;
@@ -618,24 +610,10 @@
       alert("Payment သိမ်းပြီးပါပြီ ✅");
     }
 
-    // ── View SS fullscreen (local inline → cloud fallback) ───────
+    // ── View SS fullscreen ────────────────────────────────────────
     function viewSS(index) {
       let win = window.open("");
-      var sale = salesHistory[index];
-      if (sale.paySS) {
-        win.document.write('<img src="' + sale.paySS + '" style="max-width:100%">');
-        return;
-      }
-      win.document.write('<p style="font-family:sans-serif">☁️ cloud ကနေ ဆွဲနေသည် ...</p>');
-      if (window.ssmGetCloudImages) {
-        window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
-          win.document.body.innerHTML = (imgs && imgs.paySS)
-            ? '<img src="' + imgs.paySS + '" style="max-width:100%">'
-            : '<p style="font-family:sans-serif">ပုံ မတွေ့ပါ</p>';
-        });
-      } else {
-        win.document.body.innerHTML = '<p style="font-family:sans-serif">cloud sync မရနိုင်ပါ</p>';
-      }
+      win.document.write('<img src="' + salesHistory[index].paySS + '" style="max-width:100%">');
     }
 
     // ── Delete ────────────────────────────────────────────────────
@@ -680,7 +658,7 @@
       var kw   = (document.getElementById("searchBox").value || "").toLowerCase();
       var from = document.getElementById("dateFrom").value;
       var to   = document.getElementById("dateTo").value;
-      var counts = { all:0, Prepaid:0, Partial:0, COD:0 };
+      var counts = { all:0, Cash:0, Prepaid:0, Partial:0, COD:0 };
 
       document.querySelectorAll(".receipt-card").forEach(function (card) {
         var st   = card.getAttribute("data-status") || "COD";
@@ -699,6 +677,7 @@
       });
 
       document.getElementById("cnt-all").textContent     = counts.all;
+      document.getElementById("cnt-Cash").textContent    = counts.Cash;
       document.getElementById("cnt-Prepaid").textContent = counts.Prepaid;
       document.getElementById("cnt-Partial").textContent = counts.Partial;
       document.getElementById("cnt-COD").textContent     = counts.COD;
