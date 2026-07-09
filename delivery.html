@@ -393,7 +393,8 @@
                 </select>
               </div>
 
-              <!-- Code -->
+              <!-- Code (Royal ရွေးမှသာ ပေါ်) -->
+              ${sale.deliveryService == "Royal" ? `
               <div class="field">
                 <label>Delivery Code (ABC123456)</label>
                 <input
@@ -403,7 +404,7 @@
                   maxlength="9"
                   style="text-transform:uppercase"
                 >
-              </div>
+              </div>` : ""}
 
               <p class="parcel-line">${parcelText}</p>
 
@@ -416,7 +417,8 @@
               <p class="info-line"><b>Deposit:</b> ${sale.deposit || 0}</p>
               <p class="info-line"><b>Net Total:</b> ${netNum}</p>
 
-              <!-- Real Delivery Fee -->
+              ${sale.deliveryService == "Royal" ? `
+              <!-- Real Delivery Fee (Royal ရွေးမှသာ ပေါ်) -->
               <div class="field">
                 <label>တကယ်ကုန်ကျ Delivery Fee</label>
                 <input
@@ -426,7 +428,7 @@
                 >
               </div>
 
-              <p class="info-line"><b>Royal Charge:</b> ${received.charge} ${sale.deliveryService=="Royal"?"":"(Royal မဟုတ်)"}</p>
+              <p class="info-line"><b>Royal Charge:</b> ${received.charge}</p>` : ""}
 
               <div class="received-line">
                 Received : ${received.received}
