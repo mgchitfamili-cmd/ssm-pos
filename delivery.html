@@ -340,6 +340,14 @@
     // ── Render Cards ──────────────────────────────────────────────
     function renderCards() {
       salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      // walk-in (ဆိုင်ရောင်း) — parcel အလိုအလျောက် ထုတ်ပြီး (badge ✅ ဖြစ်အောင်)
+      (function () {
+        var fixed = false;
+        salesHistory.forEach(function (s) {
+          if ((/-WI-/.test(String(s.orderNo || "")) || s.payMode) && !s.deliveryParcel) { s.deliveryParcel = true; fixed = true; }
+        });
+        if (fixed) localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+      })();
       let html = "";
 
       if (salesHistory.length === 0) {
@@ -437,9 +445,10 @@
 
               <!-- Actions -->
               <div class="detail-actions">
+                ${(/-WI-/.test(String(sale.orderNo || "")) || sale.payMode) ? "" : `
                 <button class="btn btn-photo" onclick="uploadPhoto(${index})">
                   ${sale.deliveryPhoto ? "👁 Photo" : (sale.hasDel || sale._hadDelivery) ? "☁️ Photo" : "📷 Photo"}
-                </button>
+                </button>`}
                 <button class="btn btn-edit" onclick="editOrder(${index})">✏️ Edit</button>
                 <button class="btn btn-delete admin-del" onclick="deleteOrder(${index})">🗑️ Delete</button>
               </div>
