@@ -1172,16 +1172,9 @@
     // ── Save Receipt ──────────────────────────────────────────────
     function saveReceipt() {
      try {
-      // ── Required fields (Discount / Payment / Delivery note only are optional) ──
+      // ── Walk-in: Staff နဲ့ ပစ္စည်းသာ လို — customer/delivery info မလို ──
       var _req = [
-        ["staff", "Order လက်ခံသူ (Staff)"],
-        ["name", "Customer အမည်"],
-        ["phone", "ဖုန်း"],
-        ["address", "လိပ်စာ"],
-        ["township", "Township"],
-        ["orderapp", "Order App"],
-        ["deliveryService", "Delivery Service"],
-        ["delivery", "Delivery Fee"]
+        ["staff", "Order လက်ခံသူ (Staff)"]
       ];
       var _miss = [];
       _req.forEach(function (f) {
@@ -1959,9 +1952,16 @@
   <script>
   (function () {
     function hideWrap(el) { if (!el) return; var w = el.closest(".field") || el.parentElement; if (w) w.style.display = "none"; }
-    // customer info section တစ်ခုလုံး ဖျောက် (name ရှိတဲ့ section)
+    // customer ကွက်တွေ တစ်ခုချင်း ဖျောက် — Staff select တော့ ချန် (ဘယ်သူရောင်းလဲ မှတ်ရန်)
+    ["name", "phone", "address"].forEach(function (id) {
+      var el = document.getElementById(id); if (!el) return;
+      hideWrap(el);
+    });
     var nameEl = document.getElementById("name");
-    if (nameEl) { var sec = nameEl.closest("section"); if (sec) sec.style.display = "none"; nameEl.value = "Walk-in"; }
+    if (nameEl) nameEl.value = "Walk-in";
+    // township + orderapp တွဲနေတဲ့ row ကွက် ဖျောက်
+    var tw = document.getElementById("township");
+    if (tw) { var r = tw.closest(".field") || tw.parentElement; if (r) r.style.display = "none"; }
     // orderapp default
     var oa = document.getElementById("orderapp");
     if (oa) { var o = document.createElement("option"); o.value = "Walk-in"; o.text = "Walk-in"; oa.appendChild(o); oa.value = "Walk-in"; }
