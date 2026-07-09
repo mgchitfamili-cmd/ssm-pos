@@ -1454,11 +1454,13 @@
         return;
       }
 
+      // walk-in (ဆိုင်ရောင်း — SSM-WI-) မပါ — parcel/print မလို
+      function _isWalkIn(s) { return /-WI-/.test(String(s.orderNo || "")) || s.payMode; }
       var parcelPending = salesHistory.filter(function (sale) {
-        return !sale.deliveryParcel;
+        return !_isWalkIn(sale) && !sale.deliveryParcel;
       }).length;
       var printPending = salesHistory.filter(function (sale) {
-        return !sale.printed;
+        return !_isWalkIn(sale) && !sale.printed;
       }).length;
 
       alertBox.style.display = "block";
