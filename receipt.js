@@ -123,11 +123,13 @@
       '<hr>' +
       // 3. Delivery Note (note ရှိမှသာ — မရှိရင် အကွက်/dash မပေါ်)
       (sale.note ? '<div class="delivery-note mm">' + sale.note + '</div><hr>' : '') +
-      // 4. customer / phone / address
-      '<div class="cus-mid">' + (sale.customer || "-") + '</div>' +
-      '<div class="phone-clear">' + (sale.phone || "-") + '</div>' +
-      '<div class="addr-mm">' + (sale.address || "-") + '</div>' +
-      '<hr>' +
+      // 4. customer / phone / address — walk-in (ဆိုင်ရောင်း) ဆို မပြ
+      (( /-WI-/.test(String(sale.orderNo || "")) || sale.payMode )
+        ? ''
+        : '<div class="cus-mid">' + (sale.customer || "-") + '</div>' +
+          '<div class="phone-clear">' + (sale.phone || "-") + '</div>' +
+          '<div class="addr-mm">' + (sale.address || "-") + '</div>' +
+          '<hr>') +
       // 5. items
       itemHtml +
       '<hr>' +
