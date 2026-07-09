@@ -601,11 +601,12 @@
         </div>
         <div class="oppay-box">
           <p class="oppay-head">💵 Payment</p>
-          <label class="oppay-lbl">Payment အခြေအနေ <span style="font-weight:500;color:var(--ink-3);">(receipt အောက် label)</span></label>
-          <select id="payStatusSel" onchange="toggleDepFields(); calculateNet();">
-            <option value="COD">အိမ်ရောက်ငွေချေ (COD)</option>
-            <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်</option>
-            <option value="Prepaid">ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး</option>
+          <input type="hidden" id="payStatusSel" value="Prepaid">
+          <label class="oppay-lbl">ငွေချေနည်း</label>
+          <select id="wiPayMode" onchange="wiModeChange()">
+            <option value="cash">လက်ငင်း (Cash)</option>
+            <option value="online">Online Payment</option>
+            <option value="mixed">Online + လက်ငင်း (တစ်ဝက်စီ)</option>
           </select>
           <label class="oppay-lbl">ကြိုတင်ပေးငွေ ပမာဏ (Deposit)</label>
           <input id="deposit" oninput="resetDepConfirm(); toggleDepFields();" placeholder="0">
@@ -1970,26 +1971,9 @@
     if (ds) { var o2 = document.createElement("option"); o2.value = "Walk-in"; o2.text = "Walk-in"; ds.appendChild(o2); ds.value = "Walk-in"; hideWrap(ds); }
     var dv = document.getElementById("delivery");
     if (dv) { dv.value = "0"; hideWrap(dv); }
-    // ── Payment: walk-in mode ၃ မျိုး — လက်ငင်း / Online / Online+လက်ငင်း ──
-    var ps = document.getElementById("payStatusSel");
-    if (ps) { ps.value = "Prepaid"; ps.style.setProperty("display", "none", "important"); if (ps.previousElementSibling) ps.previousElementSibling.style.setProperty("display", "none", "important"); }
+    // ── Payment: walk-in mode ၃ မျိုး — payStatusSel က hidden input (Prepaid အသေ) ──
     var dep = document.getElementById("deposit");
     var depLbl = dep ? dep.previousElementSibling : null;
-    // mode select ကို payment box ထိပ်မှာ ထည့်
-    (function () {
-      if (!ps) return;
-      var lbl = document.createElement("label");
-      lbl.className = "oppay-lbl"; lbl.textContent = "ငွေချေနည်း";
-      var sel = document.createElement("select");
-      sel.id = "wiPayMode";
-      sel.innerHTML =
-        '<option value="cash">လက်ငင်း (Cash)</option>' +
-        '<option value="online">Online Payment</option>' +
-        '<option value="mixed">Online + လက်ငင်း (တစ်ဝက်စီ)</option>';
-      sel.onchange = wiModeChange;
-      ps.parentNode.insertBefore(lbl, ps);
-      ps.parentNode.insertBefore(sel, ps);
-    })();
     function wiNetNum() {
       var t = (document.getElementById("netTotal") || {}).innerText || "";
       return Number(String(t).replace(/[^\d]/g, "")) || 0;
