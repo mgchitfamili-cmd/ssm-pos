@@ -50,11 +50,8 @@
 
   function buildHTML(sale){
     var settings    = JSON.parse(localStorage.getItem("shopSettings")) || {};
-    var addrAlign   = settings.addrAlign || "left";
     var footerMsg   = (settings.thankYou || "စုံစုံမာမီရဲ့ လက်ရာလေးကို မြည်းစမ်းကြည့်ပေးလို့ ကျေးဇူးအများကြီး တင်ပါတယ် 🙏<br>စားမြိန်ပါစေနော် 💛").replace(/\n/g, "<br>");
     var shopLogo    = settings.logo    || DEFAULT_LOGO;
-    var shopAddress = settings.address || "၀/၁၂၆၊ ဗိုလ်တိုက်ချွန်းလမ်း၊ အောင်ချမ်းသာ (၃) ရပ်ကွက်၊<br>သန်လျင်";
-    var shopPhone   = settings.phone   || "09965303525, 09688199078";
     var logoSize    = settings.logoSize  || 115;
     var textSize    = settings.textSize  || 9;
 
@@ -93,10 +90,10 @@
     else if (sale.payStatus === "Partial") payLabel = "\u1015\u1005\u1039\u1005\u100A\u103A\u1038\u1016\u102D\u102F\u1038\u101B\u103E\u1004\u103A\u1038\u1015\u103C\u102E\u1038 \u1015\u102D\u102F\u1037\u1001 \u101E\u102C\u1000\u1031\u102C\u1000\u103A\u101B\u1014\u103A";
 
     var netNum = getNetNumber(sale);
-    // Walk-in (ဆိုင်ရောင်း) — ငွေချေနည်း label + စုစုပေါင်း ပေးငွေ (deposit မနုတ်)
+    // Walk-in (ဆိုင်ရောင်း) — ငွေချေနည်း label + net = total − discount − deposit
     if (sale.payModeLabel) {
       payLabel = sale.payModeLabel;
-      netNum = num(sale.grandTotal) - num(sale.discountAmount);
+      netNum = num(sale.grandTotal) - num(sale.discountAmount) - num(sale.deposit);
     }
 
     return '' +

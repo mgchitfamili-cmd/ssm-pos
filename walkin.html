@@ -1911,7 +1911,7 @@
       var payLabelLive = _wiM ? _wiM.options[_wiM.selectedIndex].text : 'လက်ငင်း (Cash)';
       var delivery = num(gv('delivery'));
       var deposit  = num(gv('deposit'));
-      var net      = itemsSum - discount;   // walk-in — စုစုပေါင်း ပေးငွေ (deposit မနုတ်)
+      var net      = itemsSum - discount - deposit;   // walk-in — total − discount − deposit
 
       // receipts/print နဲ့ တူညီတဲ့ shared template သုံး (single source of truth)
       if (window.ssmRenderReceipt) {
