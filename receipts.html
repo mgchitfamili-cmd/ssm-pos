@@ -376,9 +376,9 @@
         else if (payStatus === "Partial") payBadge = `<span class="badge badge-partial">ပစ္စည်းဖိုးပြီး</span>`;
         else                              payBadge = `<span class="badge badge-cod">COD</span>`;
 
-        // Payment info in detail
+        // Payment info in detail — deposit/online ပေးထားမှသာ ပြ (walk-in cash / COD သက်သက်ဆို မပြ)
         let payInfo = "";
-        if (payStatus !== "COD" || Number(sale.payAmount) > 0 || Number(sale.deposit) > 0) {
+        if (Number(sale.payAmount) > 0 || Number(sale.deposit) > 0) {
           payInfo = `
             <div class="items-box" style="background:#ecfeff;">
               <b>💵 Payment</b>
@@ -407,14 +407,15 @@
             </div>
 
             <div class="card-detail" id="detail-${index}">
+              ${_isWI ? "" : `
               <p class="info-line"><b>Phone:</b> ${sale.phone || "-"}</p>
               <p class="info-line"><b>Address:</b> ${sale.address || "-"}</p>
               <p class="info-line"><b>Order App:</b> ${sale.orderApp || "-"}</p>
-              <p class="info-line"><b>Delivery Service:</b> ${sale.deliveryService || "-"}</p>
+              <p class="info-line"><b>Delivery Service:</b> ${sale.deliveryService || "-"}</p>`}
               <p class="info-line"><b>Staff:</b> ${sale.staff || "-"}</p>
               <p class="info-line"><b>Grand Total:</b> ${sale.grandTotal || 0}</p>
-              <p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}</p>
-              <p class="info-line"><b>Deposit:</b> ${sale.deposit || 0}</p>
+              ${_isWI ? "" : `<p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}</p>`}
+              ${Number(sale.deposit) > 0 ? `<p class="info-line"><b>Deposit:</b> ${sale.deposit}</p>` : ""}
               <p class="info-line"><b>Net Total:</b> ${getNetNumber(sale)}</p>
 
               <div class="items-box">
@@ -448,6 +449,10 @@
     // ── Net number only ───────────────────────────────────────────
     function getNetNumber(sale) {
       function n(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
+      // walk-in (ဆိုင်ရောင်း) — total − discount သာ (deposit/delivery မထည့်)
+      if (/-WI-/.test(String(sale.orderNo || "")) || sale.payMode) {
+        return n(sale.grandTotal) - n(sale.discountAmount);
+      }
       // total - discount - deposit + delivery
       return n(sale.grandTotal) - n(sale.discountAmount) - n(sale.deposit) + n(sale.delivery);
     }
