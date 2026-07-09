@@ -1970,13 +1970,74 @@
     if (ds) { var o2 = document.createElement("option"); o2.value = "Walk-in"; o2.text = "Walk-in"; ds.appendChild(o2); ds.value = "Walk-in"; hideWrap(ds); }
     var dv = document.getElementById("delivery");
     if (dv) { dv.value = "0"; hideWrap(dv); }
-    // payment: Prepaid အသေ၊ status select + deposit ကွက် ဖျောက်၊ Cash option ထည့်
+    // ── Payment: walk-in mode ၃ မျိုး — လက်ငင်း / Online / Online+လက်ငင်း ──
     var ps = document.getElementById("payStatusSel");
-    if (ps) { ps.value = "Prepaid"; ps.style.display = "none"; if (ps.previousElementSibling) ps.previousElementSibling.style.display = "none"; }
+    if (ps) { ps.value = "Prepaid"; ps.style.setProperty("display", "none", "important"); if (ps.previousElementSibling) ps.previousElementSibling.style.setProperty("display", "none", "important"); }
     var dep = document.getElementById("deposit");
-    if (dep) { dep.style.display = "none"; if (dep.previousElementSibling) dep.previousElementSibling.style.display = "none"; }
-    var pt = document.getElementById("depPayType");
-    if (pt) { var c = document.createElement("option"); c.value = "Cash"; c.text = "Cash (လက်ငင်း)"; pt.insertBefore(c, pt.options[1] || null); pt.value = "Cash"; }
+    var depLbl = dep ? dep.previousElementSibling : null;
+    // mode select ကို payment box ထိပ်မှာ ထည့်
+    (function () {
+      if (!ps) return;
+      var lbl = document.createElement("label");
+      lbl.className = "oppay-lbl"; lbl.textContent = "ငွေချေနည်း";
+      var sel = document.createElement("select");
+      sel.id = "wiPayMode";
+      sel.innerHTML =
+        '<option value="cash">လက်ငင်း (Cash)</option>' +
+        '<option value="online">Online Payment</option>' +
+        '<option value="mixed">Online + လက်ငင်း (တစ်ဝက်စီ)</option>';
+      sel.onchange = wiModeChange;
+      ps.parentNode.insertBefore(lbl, ps);
+      ps.parentNode.insertBefore(sel, ps);
+    })();
+    function wiNetNum() {
+      var t = (document.getElementById("netTotal") || {}).innerText || "";
+      return Number(String(t).replace(/[^\d]/g, "")) || 0;
+    }
+    window.wiModeChange = function () {
+      var m = (document.getElementById("wiPayMode") || {}).value || "cash";
+      var ex = document.getElementById("depExtra");
+      if (m === "cash") {
+        if (dep) { dep.value = ""; dep.style.display = "none"; }
+        if (depLbl) depLbl.style.display = "none";
+        if (ex) ex.style.display = "none";
+        if (typeof resetDepConfirm === "function") resetDepConfirm();
+      } else {
+        if (dep) { dep.style.display = ""; if (m === "online" && !dep.value) dep.value = wiNetNum() || ""; }
+        if (depLbl) {
+          depLbl.style.display = "";
+          depLbl.textContent = (m === "online") ? "Online ပေးငွေ ပမာဏ" : "Online ပိုင်း ပမာဏ (ကျန်ငွေ လက်ငင်း)";
+        }
+        if (ex) ex.style.display = "block";
+      }
+      if (typeof calculateNet === "function") calculateNet();
+    };
+    // toggleDepFields ကို mode အလိုက် override (Prepaid ကြောင့် အမြဲပေါ်နေတာ ကာ)
+    window.toggleDepFields = function () { wiModeChange(); };
+    // Confirm ကို ပေါ့ပေါ့ — SS/code မဖြစ်မနေ မလို (ဆိုင်မှာ customer ဖုန်းပြရုံလည်း ရှိလို့)
+    window.confirmDeposit = function () {
+      var amt = Number(document.getElementById("deposit").value) || 0;
+      if (amt <= 0) { alert("ပမာဏ ထည့်ပါ။"); return; }
+      if (!document.getElementById("depPayType").value) { alert("Online Payment Type ရွေးပါ။"); return; }
+      var _dc = (document.getElementById("depCode").value || "").trim();
+      if (_dc) {
+        var _hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
+        var _myNo = window.editOrderNo || ssmOrderNo(orderNo);
+        for (var _i = 0; _i < _hist.length; _i++) {
+          var _h = _hist[_i];
+          if (_h && _h.payCode && String(_h.payCode).trim() === _dc && _h.orderNo !== _myNo) {
+            showConfirm(
+              "ယခုထည့်ထားသော " + _dc + " မှာ " + (_h.orderNo || "-") + " တွင် အသုံးပြုပြီးဖြစ်ပါသည်။\n\nသေချာအောင် ပြန်လည်စစ်ဆေးပါ။",
+              function () { applyDepConfirm(); }, null,
+              { yes: "သေချာပါသည်", no: "ပြန်စစ်ပါမည်" }
+            );
+            return;
+          }
+        }
+      }
+      applyDepConfirm();
+    };
+    wiModeChange();
     var nt = document.getElementById("note");
     if (nt) nt.placeholder = "📝 မှတ်ချက် (receipt အောက်ခြေ)";
     if (typeof toggleDepFields === "function") toggleDepFields();
