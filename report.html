@@ -213,13 +213,24 @@
   <!-- Main Stats -->
   <div class="stat-row">
     <div class="stat-card">
-      <div class="label">ရောင်းရငွေ (Net)</div>
+      <div class="label">စုစုပေါင်းအရောင်း</div>
       <div class="value green" id="totalSales">0</div>
       <div class="sub" id="orderCount">0 orders</div>
     </div>
+  </div>
+
+  <div class="stat-row">
     <div class="stat-card">
-      <div class="label">ပျှမ်းမျှ / order</div>
-      <div class="value blue" id="avgOrder">0</div>
+      <div class="label">Online selling COD</div>
+      <div class="value orange" id="onlineCod">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">ဆိုင်အရောင်း</div>
+      <div class="value blue" id="walkinAmount">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Online payment</div>
+      <div class="value purple" id="onlinePayAmount">0</div>
     </div>
   </div>
 
@@ -329,6 +340,8 @@
       // total - discount - deposit + delivery
       return n(sale.grandTotal) - n(sale.discountAmount) - n(sale.deposit) + n(sale.delivery);
     }
+    function numv(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
+    function isWalkIn(s){ return /-WI-/.test(String((s && s.orderNo) || "")) || (s && s.payMode); }
 
     // ── Set Period ────────────────────────────────────────────────
     function setPeriod(p, btn) {
@@ -360,14 +373,21 @@
       let orders = salesHistory.filter(inPeriod);
 
       // Main stats
-      let totalSales = 0;
-      orders.forEach(function (s) { totalSales += getNet(s); });
+      // ── စုစုပေါင်းအရောင်း = net total (online selling + walk-in) + online payment (deposit) ──
+      let onlineCod = 0, walkinAmount = 0, onlinePayAmount = 0;
+      orders.forEach(function (s) {
+        if (isWalkIn(s)) walkinAmount += getNet(s);   // ဆိုင်အရောင်း — net
+        else             onlineCod    += getNet(s);   // online selling — ကောက်ရန် (COD)
+        onlinePayAmount += numv(s.deposit);           // online payment — deposit (SS + code)
+      });
+      let totalSales = onlineCod + walkinAmount + onlinePayAmount;   // = net(2+3) + online payment(4)
       let orderCount = orders.length;
-      let avg = orderCount > 0 ? Math.round(totalSales / orderCount) : 0;
 
-      document.getElementById("totalSales").innerText = totalSales.toLocaleString();
-      document.getElementById("orderCount").innerText = orderCount + " orders";
-      document.getElementById("avgOrder").innerText   = avg.toLocaleString();
+      document.getElementById("totalSales").innerText      = totalSales.toLocaleString();
+      document.getElementById("orderCount").innerText      = orderCount + " orders";
+      document.getElementById("onlineCod").innerText       = onlineCod.toLocaleString();
+      document.getElementById("walkinAmount").innerText    = walkinAmount.toLocaleString();
+      document.getElementById("onlinePayAmount").innerText = onlinePayAmount.toLocaleString();
 
       // Status counts
       let delivered = 0, pending = 0, rts = 0;
