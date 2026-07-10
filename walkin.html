@@ -1375,7 +1375,14 @@
 
     // ── New Receipt ───────────────────────────────────────────────
     function newReceipt() {
-      location.href = "index.html";
+      // ဆိုင်ရောင်း ဘောင်ချာ အသစ် — edit identity ရှင်း (localStorage + sessionStorage) ပြီး walk-in page ကို reload
+      try {
+        localStorage.removeItem("editReceiptIndex");
+        localStorage.removeItem("editReceiptOrderNo");
+        sessionStorage.removeItem("ssm_editOrderNo");
+        sessionStorage.removeItem("ssm_editOrderNoT");
+      } catch (e) {}
+      location.href = "walkin.html";
     }
 
     // ── Load Edit Receipt ─────────────────────────────────────────
