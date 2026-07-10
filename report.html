@@ -406,15 +406,17 @@
       document.getElementById("walkinCount").innerText     = walkinCount + " order";
       document.getElementById("onlinePayCount").innerText  = onlinePayCount + " order";
 
-      // Top Products
+      // Top Products — unit → ခု, weight → ပိဿာ
       let productMap = {};
       orders.forEach(function (s) {
         if (s.items) s.items.forEach(function (item) {
           let name = item.product || "-";
-          productMap[name] = (productMap[name] || 0) + Number(item.qty || 0);
+          let rec = productMap[name] || (productMap[name] = { qty:0, kyattha:0, weight:false });
+          rec.qty += Number(item.qty || 0);
+          if (item.saleType === "weight") { rec.weight = true; rec.kyattha += _prodKyattha(item); }
         });
       });
-      renderRanking("topProducts", productMap, "ခု");
+      renderProductRanking(productMap);
 
       // Staff
       let staffMap = {};
@@ -471,6 +473,45 @@
         }
       });
       document.getElementById(elemId).innerHTML = html;
+    }
+
+    // ── Product weight helpers (weight → ပိဿာ) ─────────────────────
+    // size label ("5 ကျပ်သား" / "1 ပိဿာ") × qty → total ကျပ်သား
+    function _prodKyattha(item) {
+      var label = String(item.size || "");
+      var num = parseFloat((label.match(/[\d.]+/) || [0])[0]) || 0;
+      var per = /ပိဿာ/.test(label) ? num * 100 : num;   // ၁ ပိဿာ = ၁၀၀ ကျပ်သား
+      return per * Number(item.qty || 0);
+    }
+    // total ကျပ်သား → "X ပိဿာ Y ကျပ်သား"
+    function _fmtViss(ky) {
+      ky = Math.round(ky);
+      var v = Math.floor(ky / 100), r = ky % 100, parts = [];
+      if (v > 0) parts.push(v + " ပိဿာ");
+      if (r > 0) parts.push(r + " ကျပ်သား");
+      return parts.length ? parts.join(" ") : "0 ပိဿာ";
+    }
+    // Top products list — unit → "X ခု", weight → "X ပိဿာ Y ကျပ်သား"
+    function renderProductRanking(map) {
+      var arr = Object.keys(map).map(function (k) {
+        var rec = map[k];
+        return { name: k, sort: rec.qty,
+                 display: rec.weight ? _fmtViss(rec.kyattha) : (rec.qty + " ခု") };
+      });
+      arr.sort(function (a, b) { return b.sort - a.sort; });
+      if (arr.length === 0) {
+        document.getElementById("topProducts").innerHTML = `<p class="empty">data မရှိပါ</p>`;
+        return;
+      }
+      var html = "";
+      arr.forEach(function (item) {
+        html += `
+          <div class="rank-item">
+            <span class="name">${item.name}</span>
+            <span class="count">${item.display}</span>
+          </div>`;
+      });
+      document.getElementById("topProducts").innerHTML = html;
     }
 
     // ── Delivery Service breakdown (per-service table) ─────────────
