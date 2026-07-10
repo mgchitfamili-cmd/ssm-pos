@@ -192,15 +192,15 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း</div>
+    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> online အရောင်း</div>
     <div class="menu-item" data-page="walkin.html" onclick="location.href='walkin.html'"><span class="ic">🏪</span> ဆိုင်ရောင်း</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
-    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
-    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
     <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
     <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
-    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-      <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
+    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
   </div>
 
   <div class="top-bar">
@@ -224,9 +224,9 @@
       <div class="count" id="todayCount">0 payments</div>
     </div>
     <div class="summary-card">
-      <div class="label">စုစုပေါင်း (အကုန်)</div>
-      <div class="value" id="allTotal">0</div>
-      <div class="count" id="allCount">0 payments</div>
+      <div class="label">ဒီလ Online ငွေချေ</div>
+      <div class="value" id="monthTotal">0</div>
+      <div class="count" id="monthCount">0 payments</div>
     </div>
   </div>
 
@@ -278,6 +278,14 @@
       return dateStr === today;
     }
 
+    // ── This month check (orderDate ISO အလိုက် — robust) ──
+    function isThisMonth(sale) {
+      var d = sale && sale.orderDate ? new Date(sale.orderDate) : null;
+      if (!d || isNaN(d.getTime())) return false;
+      var now = new Date();
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    }
+
     // ── Online payment proof check (ပုံ SS / ကုတ် code / payType ရှိမှ) ──
     function hasOnlineProof(s) {
       if (!s) return false;
@@ -300,22 +308,24 @@
     function updateSummary() {
       let paid = getPaidOrders();
 
-      let allTotal = 0, allCount = 0;
+      let monthTotal = 0, monthCount = 0;
       let todayTotal = 0, todayCount = 0;
 
       paid.forEach(function (o) {
         let amount = Number(o.sale.payAmount || 0);
-        allTotal += amount;
-        allCount++;
 
+        if (isThisMonth(o.sale)) {
+          monthTotal += amount;
+          monthCount++;
+        }
         if (isToday(o.sale.payDate)) {
           todayTotal += amount;
           todayCount++;
         }
       });
 
-      document.getElementById("allTotal").innerText   = allTotal.toLocaleString();
-      document.getElementById("allCount").innerText   = allCount + " payments";
+      document.getElementById("monthTotal").innerText = monthTotal.toLocaleString();
+      document.getElementById("monthCount").innerText = monthCount + " payments";
       document.getElementById("todayTotal").innerText = todayTotal.toLocaleString();
       document.getElementById("todayCount").innerText = todayCount + " payments";
     }

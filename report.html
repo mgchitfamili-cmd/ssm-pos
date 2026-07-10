@@ -60,9 +60,10 @@
     /* စုစုပေါင်းအရောင်း — total + 3-col breakdown (single card) */
     .total-card{ background:var(--surface); border:1px solid var(--line); border-radius:16px;
       padding:16px; margin:0 14px 12px; box-shadow:var(--shadow); }
+    .total-card .th-top{ display:flex; justify-content:space-between; align-items:center; gap:12px; }
     .total-card .th-label{ font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--ink-3); }
-    .total-card .th-value{ font-size:28px; font-weight:800; letter-spacing:-.02em; color:var(--green); margin-top:4px; }
-    .total-card .th-sub{ font-size:12px; color:var(--ink-3); margin-top:3px; }
+    .total-card .th-value{ font-size:28px; font-weight:800; letter-spacing:-.02em; color:var(--green); text-align:right; white-space:nowrap; }
+    .total-card .th-sub{ font-size:12px; color:var(--ink-3); margin-top:4px; }
     .total-divider{ height:1px; background:var(--line); border:none; margin:14px 0; }
     .total-grid{ display:flex; gap:10px; }
     .total-col{ flex:1; min-width:0; }
@@ -193,11 +194,7 @@
     @media (min-width:700px){
       h1, h2, .period-row, .hero-staff, .stat-row, .box { max-width:640px; margin-left:auto; margin-right:auto; }
     }
-    .dr-box{ padding:14px; }
-    .dr-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-    .dr-eyebrow{ font-size:13px; font-weight:700; color:var(--ink-2); }
-    .dr-count{ font-size:12px; font-weight:600; color:var(--ink-3); }
-    .date-range{ display:flex; align-items:flex-end; gap:8px; }
+    .date-range{ display:flex; align-items:flex-end; gap:8px; padding:0 14px 4px; }
     .date-range .dr-field{ flex:1; min-width:0; }
     .date-range .dr-field label{ display:block; font-size:11px; font-weight:600; color:var(--ink-3); margin:0 0 4px 2px; }
     .date-range input[type=date]{ width:100%; padding:9px 10px; font-size:13px; font-family:inherit; color:var(--ink);
@@ -218,15 +215,15 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း</div>
+    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> online အရောင်း</div>
     <div class="menu-item" data-page="walkin.html" onclick="location.href='walkin.html'"><span class="ic">🏪</span> ဆိုင်ရောင်း</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
-    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
-    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
     <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
     <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
-    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-      <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
+    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
   </div>
 
   <div class="top-bar">
@@ -243,23 +240,22 @@
     <button class="period-btn"        data-p="all"   onclick="setPeriod('all', this)">အကုန်</button>
   </div>
 
-  <div class="box dr-box">
-    <div class="dr-head">
-      <span class="dr-eyebrow">Date range</span>
-      <span class="dr-count" id="rangeCount">0 sales in range</span>
-    </div>
-    <div class="date-range">
-      <div class="dr-field"><label>From</label><input type="date" id="repFrom" onchange="applyDateRange()"></div>
-      <div class="dr-field"><label>To</label><input type="date" id="repTo" onchange="applyDateRange()"></div>
-      <button class="dr-clear" onclick="clearRepRange()" aria-label="Clear">✕</button>
-    </div>
+  <!-- Date range (delivery style) -->
+  <div class="date-range">
+    <div class="dr-field"><label>From</label><input type="date" id="repFrom" onchange="applyDateRange()"></div>
+    <div class="dr-field"><label>To</label><input type="date" id="repTo" onchange="applyDateRange()"></div>
+    <button class="dr-clear" onclick="clearRepRange()" aria-label="Clear">✕</button>
   </div>
 
   <!-- Main Stats -->
   <div class="total-card">
-    <div class="th-label">စုစုပေါင်းအရောင်း</div>
-    <div class="th-value" id="totalSales">0</div>
-    <div class="th-sub" id="orderCount">0 orders</div>
+    <div class="th-top">
+      <div class="th-info">
+        <div class="th-label">စုစုပေါင်းအရောင်း</div>
+        <div class="th-sub" id="orderCount">0 orders</div>
+      </div>
+      <div class="th-value" id="totalSales">0</div>
+    </div>
     <hr class="total-divider">
     <div class="total-grid">
       <div class="total-col">
@@ -280,6 +276,14 @@
     </div>
   </div>
 
+  <!-- Daily chart -->
+  <h2>📈 နေ့အလိုက် ရောင်းအား (၇ ရက်)</h2>
+  <div class="box" id="dailyChart"></div>
+
+  <!-- Monthly chart -->
+  <h2>📊 လအလိုက် ရောင်းအား (၆ လ)</h2>
+  <div class="box" id="monthlyChart"></div>
+
   <!-- Top Products -->
   <h2>📦 အရောင်းရဆုံး Products</h2>
   <div class="box" id="topProducts"></div>
@@ -299,14 +303,6 @@
   <!-- Order source app -->
   <h2>📱 App အလိုက် Order အဝင်</h2>
   <div class="box" id="appChart"></div>
-
-  <!-- Daily chart -->
-  <h2>📈 နေ့အလိုက် ရောင်းအား (၇ ရက်)</h2>
-  <div class="box" id="dailyChart"></div>
-
-  <!-- Monthly chart -->
-  <h2>📊 လအလိုက် ရောင်းအား (၆ လ)</h2>
-  <div class="box" id="monthlyChart"></div>
 
   <script>
 
@@ -527,7 +523,9 @@
     function renderTownshipChart(orders) {
       var map = {};
       orders.forEach(function (s) {
-        var t = String(s.township || "").trim() || "(မရွေး)";
+        if (isWalkIn(s)) return;                 // walk-in — မြို့ မတွက် (online selling ပဲ)
+        var t = String(s.township || "").trim();
+        if (!t) return;                          // မြို့ မရွေးထားရင် ကျော် (မရွေး မထည့်)
         map[t] = (map[t] || 0) + 1;
       });
       var arr = Object.keys(map).map(function (k) { return { name: k, count: map[k] }; });

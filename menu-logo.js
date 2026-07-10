@@ -10,7 +10,7 @@
     "#sideMenu .menu-item .ic{width:40px;height:40px;border-radius:12px;" +
       "box-shadow:0 1px 3px rgba(16,24,40,.07);transition:transform .18s ease,box-shadow .18s ease;}" +
     "#sideMenu .menu-item.active .ic{background:#fff;box-shadow:0 4px 12px rgba(109,40,217,.22);transform:scale(1.05);}" +
-    "#sideMenu .menu-header{position:relative;overflow:hidden;}" +
+    "#sideMenu .menu-header{position:relative;overflow:hidden;background:linear-gradient(155deg,#6e42a6 0%,#4a2b83 52%,#38205f 100%);}" +
     "#sideMenu .menu-header::after{content:'';position:absolute;right:-30px;top:-30px;width:150px;height:150px;" +
       "background:radial-gradient(circle,rgba(255,255,255,.22),transparent 70%);pointer-events:none;}" +
     "#sideMenu .menu-header::before{content:'';position:absolute;left:-50px;bottom:-60px;width:170px;height:170px;" +
@@ -37,7 +37,7 @@
       img.className = "menu-logo";
       img.src = s.logo;
       img.alt = "logo";
-      img.style.cssText = "position:relative;width:120px;height:120px;border-radius:20px;object-fit:contain;display:block;margin-bottom:12px;background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.18);";
+      img.style.cssText = "position:relative;width:124px;height:124px;object-fit:contain;display:block;margin-bottom:12px;filter:drop-shadow(0 7px 16px rgba(0,0,0,.38));";
       head.insertBefore(img, head.firstChild);
     } catch (e) {}
   }
