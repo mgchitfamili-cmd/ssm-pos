@@ -340,8 +340,6 @@
       let c2 = document.createElement("canvas");
       c2.width = cw; c2.height = ch;
       let ctx2 = c2.getContext("2d");
-      ctx2.fillStyle = "white";
-      ctx2.fillRect(0, 0, cw, ch);
       ctx2.drawImage(canvas, left, top, cw, ch, 0, 0, cw, ch);
       let finalW = 300;
       let finalH = Math.round(ch * finalW / cw);
