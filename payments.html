@@ -90,7 +90,6 @@
     .badge-prepaid{ background:var(--green-tint); color:var(--green); border-color:var(--green-line); }
     .badge-partial{ background:var(--brand-tint); color:var(--brand-ink); border-color:var(--brand-line); }
     .badge-deposit{ background:var(--amber-tint); color:var(--amber); border-color:var(--amber-line); }
-    .badge-cash{ background:rgba(13,148,136,.14); color:#0d9488; border-color:rgba(13,148,136,.35); }
 
     /* Duplicate-code notification (owner only) */
     .dup-banner{ display:none; margin:0 14px 14px; padding:13px 15px; border-radius:14px;
@@ -236,7 +235,6 @@
   <!-- Filters -->
   <div class="filter-row">
     <button class="filter-btn active" data-filter="all"     onclick="setFilter('all', this)">အကုန် <b id="pcnt-all">0</b></button>
-    <button class="filter-btn"        data-filter="Cash"    onclick="setFilter('Cash', this)">Cash <b id="pcnt-Cash">0</b></button>
     <button class="filter-btn"        data-filter="Prepaid" onclick="setFilter('Prepaid', this)">Prepaid <b id="pcnt-Prepaid">0</b></button>
     <button class="filter-btn"        data-filter="Partial" onclick="setFilter('Partial', this)">ပစ္စည်းဖိုးပဲ <b id="pcnt-Partial">0</b></button>
     <button class="filter-btn"        data-filter="Deposit" onclick="setFilter('Deposit', this)">စရံ <b id="pcnt-Deposit">0</b></button>
@@ -280,16 +278,21 @@
       return dateStr === today;
     }
 
-    // ── Get paid orders only ──────────────────────────────────────
+    // ── Online payment proof check (ပုံ SS / ကုတ် code / payType ရှိမှ) ──
+    function hasOnlineProof(s) {
+      if (!s) return false;
+      var t = String(s.payType || "").trim().toLowerCase();
+      if (t && t !== "cash" && t !== "လက်ငင်း") return true;   // online provider (AYA Pay / KBZ Pay / Wave ...)
+      if (s.paySS || s.hasPay || s._hadPay) return true;        // payment screenshot (cloud-stripped flag ပါ)
+      if (String(s.payCode || "").trim()) return true;          // transaction code
+      return false;
+    }
+
+    // ── Get online payments only (walk-in cash ဖယ်) ───────────────
     function getPaidOrders() {
       return salesHistory
         .map(function (sale, index) { return { sale: sale, index: index }; })
-        .filter(function (o) {
-          let st = o.sale.payStatus;
-          // Prepaid/Partial OR any order that has a deposit / online payment (incl. COD+deposit)
-          return st === "Prepaid" || st === "Partial"
-                 || (Number(o.sale.payAmount) > 0) || (Number(o.sale.deposit) > 0);
-        })
+        .filter(function (o) { return hasOnlineProof(o.sale); })   // ပုံ + ကုတ် ပါတဲ့ online payment ပဲ
         .reverse(); // အသစ်ဆုံး အပေါ်ဆုံး
     }
 
@@ -340,7 +343,7 @@
       let paid = getPaidOrders();
 
       let html = "";
-      var counts = { all:0, Cash:0, Prepaid:0, Partial:0, Deposit:0 };
+      var counts = { all:0, Prepaid:0, Partial:0, Deposit:0 };
 
       paid.forEach(function (o) {
         let sale = o.sale;
@@ -366,11 +369,9 @@
           if (_pt && _pd > _pt) return;
         }
 
-        // Category: Cash(walk-in) / Prepaid / Partial / Deposit(စရံ)
-        // walk-in (ဆိုင်ရောင်း) = Cash — လက်ငင်း/online မခွဲ အားလုံး Cash
+        // Category: Prepaid / Partial / Deposit(စရံ) — online payment အားလုံး
         var _isWI = /-WI-/.test(String(sale.orderNo || "")) || sale.payMode;
-        var cat = _isWI ? "Cash"
-                : sale.payStatus === "Prepaid" ? "Prepaid"
+        var cat = sale.payStatus === "Prepaid" ? "Prepaid"
                 : sale.payStatus === "Partial" ? "Partial"
                 : "Deposit";
 
@@ -381,9 +382,7 @@
         // Status filter (display only)
         if (currentFilter !== "all" && cat !== currentFilter) return;
 
-        let statusLabel = cat === "Cash"
-          ? `<span class="status-badge badge-cash">Cash</span>`
-          : cat === "Prepaid"
+        let statusLabel = cat === "Prepaid"
           ? `<span class="status-badge badge-prepaid">အပြည့်</span>`
           : cat === "Partial"
           ? `<span class="status-badge badge-partial">ပစ္စည်းဖိုးပဲ</span>`
@@ -432,7 +431,6 @@
       document.getElementById("payList").innerHTML = html;
 
       document.getElementById("pcnt-all").textContent     = counts.all;
-      document.getElementById("pcnt-Cash").textContent    = counts.Cash;
       document.getElementById("pcnt-Prepaid").textContent = counts.Prepaid;
       document.getElementById("pcnt-Partial").textContent = counts.Partial;
       document.getElementById("pcnt-Deposit").textContent = counts.Deposit;
