@@ -322,8 +322,8 @@
       for (let y=0; y<h; y++) {
         for (let x=0; x<w; x++) {
           let i = (y*w + x)*4;
-          let r=data[i], g=data[i+1], b=data[i+2], a=data[i+3];
-          let isContent = a > 20 && !(r>240 && g>240 && b>240);
+          let a=data[i+3];
+          let isContent = a > 20;   // alpha အလိုက်ပဲ — အဖြူ outline/frame ပါ ထိန်း (crop မဖြစ်)
           if (isContent) {
             if (x<left) left=x;
             if (x>right) right=x;
@@ -333,7 +333,7 @@
         }
       }
       if (right<=left || bottom<=top) return canvas.toDataURL("image/png");
-      let pad = 10;
+      let pad = Math.round(Math.max(w, h) * 0.03) + 8;   // breathing room (image size အလိုက်)
       left = Math.max(0, left-pad); top = Math.max(0, top-pad);
       right = Math.min(w, right+pad); bottom = Math.min(h, bottom+pad);
       let cw = right-left, ch = bottom-top;

@@ -37,7 +37,7 @@
       img.className = "menu-logo";
       img.src = s.logo;
       img.alt = "logo";
-      img.style.cssText = "position:relative;width:124px;height:124px;object-fit:contain;display:block;margin-bottom:12px;filter:drop-shadow(0 7px 16px rgba(0,0,0,.38));";
+      img.style.cssText = "position:relative;width:160px;height:160px;object-fit:contain;display:block;margin-bottom:12px;filter:drop-shadow(0 7px 16px rgba(0,0,0,.38));";
       head.insertBefore(img, head.firstChild);
     } catch (e) {}
   }
