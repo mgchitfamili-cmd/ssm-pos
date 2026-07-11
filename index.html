@@ -450,6 +450,7 @@
     .ac-opt{ padding:11px 14px; font-size:15px; color:var(--ink); cursor:pointer; border-top:1px solid var(--line); }
     .ac-opt:first-child{ border-top:none; }
     .ac-opt:active, .ac-opt.active{ background:var(--brand-tint); color:var(--brand-ink); }
+    .ac-opt.custom{ color:var(--brand-ink); font-weight:600; }
     .ac-empty{ padding:14px 16px; text-align:center; color:var(--ink-3); font-size:14px; }
     html.dark .ac-list{ background-color:#1e222a; }
   </style>
@@ -1903,7 +1904,15 @@
     function render() {
       var q = inp.value.trim();
       list.innerHTML = "";
-      var matches = getProducts().filter(function (p) { return p.indexOf(q) >= 0; });
+      var prods = getProducts();
+      if (q && prods.indexOf(q) < 0) {
+        var c = document.createElement("div");
+        c.className = "ac-opt custom";
+        c.textContent = "「" + q + "」 ဒီအတိုင်း သုံးမည်";
+        c.addEventListener("mousedown", function (e) { e.preventDefault(); pick(q); });
+        list.appendChild(c);
+      }
+      var matches = prods.filter(function (p) { return p.indexOf(q) >= 0; });
       matches.sort(function (a, b) {
         return (a.indexOf(q) === 0 ? 0 : 1) - (b.indexOf(q) === 0 ? 0 : 1);
       });
@@ -1913,10 +1922,10 @@
         o.addEventListener("mousedown", function (e) { e.preventDefault(); pick(p); });
         list.appendChild(o);
       });
-      if (matches.length === 0) {
+      if (matches.length === 0 && !q) {
         var e = document.createElement("div");
         e.className = "ac-empty";
-        e.textContent = "ရိုက်ထားသည့်အတိုင်း သုံးနိုင်သည်";
+        e.textContent = "ပစ္စည်း မရှိသေးပါ — ရိုက်ထည်နိုင်သည်";
         list.appendChild(e);
       }
     }
