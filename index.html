@@ -1868,6 +1868,101 @@
     var t = document.getElementById("township");
     if (t) enhance(t);
   })();
+
+  // ── Product picker (bottom-sheet — theme, keyboard မကွယ်) ──────
+  (function () {
+    function getProducts() {
+      var arr = JSON.parse(localStorage.getItem("products") || "[]");
+      return arr.map(function (p) { return p.name; }).filter(Boolean);
+    }
+
+    var ov = document.createElement("div"); ov.className = "sheet-overlay";
+    var sheet = document.createElement("div"); sheet.className = "sheet";
+    sheet.innerHTML =
+      '<div class="sheet-grip"></div>' +
+      '<div class="sheet-title">ပစ္စည်း ရွေးပါ</div>' +
+      '<div class="sheet-search"><input id="prodSearch" placeholder="ပစ္စည်း ရိုက်ရှာရန်..." autocomplete="off"></div>' +
+      '<div class="sheet-list" id="prodList"></div>';
+    document.body.appendChild(ov);
+    document.body.appendChild(sheet);
+
+    var listEl = sheet.querySelector("#prodList");
+    var search = sheet.querySelector("#prodSearch");
+    var target = null, PRODS = [];
+
+    function row(label, value, selected, custom) {
+      var r = document.createElement("div");
+      r.className = "sheet-opt" + (selected ? " sel" : "") + (custom ? " custom" : "");
+      var a = document.createElement("span"); a.textContent = label;
+      var b = document.createElement("span"); b.className = "tick"; b.textContent = "\u2713";
+      r.appendChild(a); r.appendChild(b);
+      r.addEventListener("click", function () { choose(value); });
+      return r;
+    }
+
+    function render() {
+      var q = search.value.trim();
+      listEl.innerHTML = "";
+      if (q && PRODS.indexOf(q) < 0) {
+        listEl.appendChild(row("\u300C" + q + "\u300D \u1012\u102E\u1021\u1010\u102D\u102F\u1004\u103A\u1038 \u101E\u102F\u1036\u1038\u1019\u100A\u103A", q, false, true));
+      }
+      var matches = PRODS.filter(function (p) { return p.indexOf(q) >= 0; });
+      matches.sort(function (a, b) {
+        return (a.indexOf(q) === 0 ? 0 : 1) - (b.indexOf(q) === 0 ? 0 : 1);
+      });
+      matches.forEach(function (p) {
+        listEl.appendChild(row(p, p, target && target.value === p, false));
+      });
+      if (matches.length === 0 && !q) {
+        var e = document.createElement("div");
+        e.className = "sheet-empty";
+        e.textContent = "\u1015\u1005\u1039\u1005\u100A\u103A\u1038 \u1019\u101B\u103E\u102D\u101E\u1031\u1038\u1015\u102B \u2014 \u101B\u102D\u102F\u1000\u103A\u1011\u100A\u103A\u1037\u1014\u102D\u102F\u1004\u103A\u101E\u100A\u103A";
+        listEl.appendChild(e);
+      }
+    }
+
+    function choose(val) {
+      if (target) {
+        target.value = val;
+        target.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+      close();
+    }
+    function open(inp) {
+      target = inp; PRODS = getProducts(); search.value = ""; render();
+      ov.classList.add("show");
+      ssmLockScroll();
+      requestAnimationFrame(function () { sheet.classList.add("show"); });
+      setTimeout(function () { search.focus(); }, 280);
+    }
+    function close() { sheet.classList.remove("show"); ov.classList.remove("show"); ssmUnlockScroll(); }
+    ov.addEventListener("click", close);
+    search.addEventListener("input", render);
+
+    function enhance(inp) {
+      if (inp.dataset.spick) return;
+      inp.dataset.spick = "1";
+      inp.classList.add("csel-native");
+      var btn = document.createElement("button");
+      btn.type = "button"; btn.className = "csel-btn";
+      inp.parentNode.insertBefore(btn, inp.nextSibling);
+      btn.addEventListener("click", function (e) { e.preventDefault(); open(inp); });
+      var ph = inp.getAttribute("placeholder") || "ရွေးပါ";
+      var last = null;
+      (function sync() {
+        var v = inp.value || "";
+        if (v !== last) {
+          last = v;
+          btn.textContent = v || ph;
+          btn.classList.toggle("is-placeholder", !v);
+        }
+        requestAnimationFrame(sync);
+      })();
+    }
+
+    var pr = document.getElementById("product");
+    if (pr) enhance(pr);
+  })();
   </script>
   <script>
   /* ── Live receipt preview (mirrors print.html) ── */
