@@ -532,7 +532,8 @@
         <p class="eyebrow"><span class="dot"></span>ပစ္စည်း ထည့်ရန်</p>
 
         <div class="field">
-          <select id="product" onchange="productChanged()"></select>
+          <input id="product" list="productList" onchange="productChanged()" placeholder="ပစ္စည်း ရွေး / ရိုက်ထည့်ပါ" autocomplete="off">
+          <datalist id="productList"></datalist>
         </div>
 
         <div class="field">
@@ -561,7 +562,7 @@
               </select>
             </div>
             <div>
-              <input id="price" placeholder="ဈေးနှုန်း" oninput="calculateItemTotal()" readonly>
+              <input id="price" placeholder="ဈေးနှုန်း" inputmode="numeric" oninput="calculateItemTotal()">
             </div>
           </div>
         </div>
@@ -746,11 +747,11 @@
     // ── Load Product Dropdown ─────────────────────────────────────
     function loadProductsDropdown() {
       let products = JSON.parse(localStorage.getItem("products")) || [];
-      let html = '<option value="">ပစ္စည်း ရွေးပါ</option>';
+      let html = "";
       products.forEach(function (p) {
-        html += '<option value="' + p.name + '">' + p.name + '</option>';
+        html += '<option value="' + p.name + '"></option>';
       });
-      document.getElementById("product").innerHTML = html;
+      document.getElementById("productList").innerHTML = html;
     }
 
     // ── Sale Type Changed (Weight / Unit box ပြောင်း) ─────────────
