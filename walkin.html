@@ -159,6 +159,14 @@
     .saletype-row{ align-items:stretch; }
     .saletype-row > select{ flex:1; min-width:0; }
     .saletype-row > .gift-label{ flex:none; }
+    .seg-toggle{ display:flex; flex:1; min-width:0; gap:3px; padding:3px;
+      background:var(--bg); border:1px solid var(--line-2); border-radius:var(--r-sm); }
+    .seg-opt{ flex:1; border:none; background:transparent; color:var(--ink-3);
+      font-size:14px; font-weight:700; padding:9px 6px; border-radius:calc(var(--r-sm) - 3px);
+      cursor:pointer; white-space:nowrap; transition:background .15s, color .15s; }
+    .seg-opt.active{ background:var(--brand); color:#fff; box-shadow:0 2px 6px rgba(109,40,217,.28); }
+    .seg-opt.seg-disabled{ opacity:.32; pointer-events:none; }
+    html.dark .seg-toggle{ background-color:#12151c; }
 
     /* ── Sale list (cart) ── */
     .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -4px; }
@@ -554,10 +562,11 @@
 
         <div class="field">
           <div class="row saletype-row">
-            <select id="saleType" onchange="saleTypeChanged()">
-              <option value="weight">Weight</option>
-              <option value="unit">Unit</option>
-            </select>
+            <div class="seg-toggle" id="saleTypeToggle">
+              <button type="button" class="seg-opt active" data-v="weight" onclick="setSaleType('weight')">Weight</button>
+              <button type="button" class="seg-opt" data-v="unit" onclick="setSaleType('unit')">Unit</button>
+            </div>
+            <input type="hidden" id="saleType" value="weight">
             <label class="gift-label">
               <input type="checkbox" id="isGift" onchange="giftChanged()">
               <span>ဈေးနှုန်း (0 Ks)</span>
@@ -773,8 +782,34 @@
       document.getElementById("productList").innerHTML = html;
     }
 
+    // ── Sale Type toggle (Weight / Unit switch) ───────────────────
+    function ssmSyncSaleToggle() {
+      var v = document.getElementById("saleType").value;
+      var t = document.getElementById("saleTypeToggle");
+      if (!t) return;
+      t.querySelectorAll(".seg-opt").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-v") === v);
+      });
+    }
+    function setSaleType(v) {
+      var t = document.getElementById("saleTypeToggle");
+      var btn = t ? t.querySelector('[data-v="' + v + '"]') : null;
+      if (btn && btn.classList.contains("seg-disabled")) return;
+      document.getElementById("saleType").value = v;
+      saleTypeChanged();
+    }
+    function setSaleTypeAvail(aw, au) {
+      var t = document.getElementById("saleTypeToggle");
+      if (!t) return;
+      var bw = t.querySelector('[data-v="weight"]'), bu = t.querySelector('[data-v="unit"]');
+      if (bw) bw.classList.toggle("seg-disabled", !aw);
+      if (bu) bu.classList.toggle("seg-disabled", !au);
+      document.getElementById("saleType").value = aw ? "weight" : "unit";
+    }
+
     // ── Sale Type Changed (Weight / Unit box ပြောင်း) ─────────────
     function saleTypeChanged() {
+      ssmSyncSaleToggle();
       let saleType = document.getElementById("saleType").value;
       document.getElementById("sizeBox").style.display = saleType === "weight" ? "block" : "none";
       document.getElementById("unitBox").style.display = saleType === "unit"   ? "block" : "none";
@@ -895,18 +930,10 @@
 
       if (!product) return;
 
-      let saleTypeEl = document.getElementById("saleType");
-
-      if (product.allowWeight && product.allowUnit) {
-        saleTypeEl.innerHTML = `
-          <option value="weight">Weight</option>
-          <option value="unit">Unit</option>`;
-        saleTypeEl.value = "weight";
-      } else if (product.allowWeight) {
-        saleTypeEl.innerHTML = `<option value="weight">Weight</option>`;
-      } else if (product.allowUnit) {
-        saleTypeEl.innerHTML = `<option value="unit">Unit</option>`;
-      }
+      if (product.allowWeight && product.allowUnit) setSaleTypeAvail(true, true);
+      else if (product.allowWeight) setSaleTypeAvail(true, false);
+      else if (product.allowUnit) setSaleTypeAvail(false, true);
+      else setSaleTypeAvail(true, true);
 
       saleTypeChanged();
     }
@@ -990,6 +1017,8 @@
       document.getElementById("remark").value    = "";
       document.getElementById("itemTotal").value = "";
       document.getElementById("isGift").checked  = false;
+      setSaleTypeAvail(true, true);   // toggle ပြန် fresh (Weight, both enable)
+      saleTypeChanged();
     }
 
     // ── Edit Row (load back into form, remove row) ────
