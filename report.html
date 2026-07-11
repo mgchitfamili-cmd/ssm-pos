@@ -190,9 +190,17 @@
     html.dark .filter-btn.active, html.dark .filter-row .chip.active{ background:var(--brand); color:#fff; }
     html.dark input:focus, html.dark select:focus, html.dark textarea:focus,
     html.dark #searchBox:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
-    /* WIDE-SCREEN CAP — comfortable centered column on tablets */
+    /* TABLET — centered column (portrait), 2-column masonry (landscape) */
     @media (min-width:700px){
-      h1, h2, .period-row, .hero-staff, .stat-row, .box { max-width:640px; margin-left:auto; margin-right:auto; }
+      h1, .period-row, .date-range, .rpt-grid{ max-width:640px; margin-left:auto; margin-right:auto; }
+    }
+    @media (min-width:1000px){
+      h1, .period-row, .date-range, .rpt-grid{ max-width:940px; }
+      .rpt-grid{ column-count:2; column-gap:10px; }
+      .rpt-grid > *{ -webkit-column-break-inside:avoid; break-inside:avoid; }
+      .rpt-grid > h2{ -webkit-column-break-after:avoid; break-after:avoid; }
+      .rpt-grid > .total-card{ -webkit-column-span:all; column-span:all; }
+      .svc-card{ -webkit-column-break-inside:avoid; break-inside:avoid; }
     }
     .date-range{ display:flex; align-items:flex-end; gap:8px; padding:0 14px 4px; }
     .date-range .dr-field{ flex:1; min-width:0; }
@@ -247,6 +255,7 @@
     <button class="dr-clear" onclick="clearRepRange()" aria-label="Clear">✕</button>
   </div>
 
+  <div class="rpt-grid">
   <!-- Main Stats -->
   <div class="total-card">
     <div class="th-top">
@@ -303,6 +312,7 @@
   <!-- Order source app -->
   <h2>📱 App အလိုက် Order အဝင်</h2>
   <div class="box" id="appChart"></div>
+  </div><!-- /rpt-grid -->
 
   <script>
 
