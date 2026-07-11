@@ -211,6 +211,7 @@
     }
     .disc-box .lbl{ color:var(--brand-ink); }
     #discountNote{ font-size:12px; color:var(--brand-ink); margin:9px 2px 0; font-weight:500; }
+    #discountValue:disabled{ opacity:.45; cursor:not-allowed; }
     #discountNote:empty{ display:none; }
 
     /* deposit / online payment box */
@@ -680,7 +681,7 @@
               </select>
             </div>
             <div>
-              <input id="discountValue" placeholder="ပမာဏ" oninput="calculateNet()">
+              <input id="discountValue" placeholder="ပမာဏ" oninput="calculateNet()" disabled>
             </div>
           </div>
           <p id="discountNote"></p>
@@ -1087,6 +1088,11 @@
       let delivery = Number(document.getElementById("delivery").value);
       let deposit  = effectiveDeposit();
       let discType = document.getElementById("discountType").value;
+      var _dvEl = document.getElementById("discountValue");
+      if (_dvEl) {
+        if (discType === "none") { _dvEl.disabled = true; if (_dvEl.value) _dvEl.value = ""; }
+        else { _dvEl.disabled = false; }
+      }
       let discVal  = Number(document.getElementById("discountValue").value) || 0;
 
       let discountAmount = 0;
