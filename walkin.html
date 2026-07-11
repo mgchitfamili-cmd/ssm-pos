@@ -512,7 +512,7 @@
         <div class="field">
           <div class="row">
             <div>
-              <input id="township" placeholder="Township ရွေးပါ">
+              <input id="township" placeholder="မြို့ ရွေး / ရိုက်ထည့်ပါ" autocomplete="off">
             </div>
             <div>
               <select id="orderapp">
@@ -1795,98 +1795,46 @@
       "အောင်မြေသာစည်","ဥတ္တရသီရိ"
     ];
 
-    var ov = document.createElement("div"); ov.className = "sheet-overlay";
-    var sheet = document.createElement("div"); sheet.className = "sheet";
-    sheet.innerHTML =
-      '<div class="sheet-grip"></div>' +
-      '<div class="sheet-title">မြို့နယ် ရွေးပါ</div>' +
-      '<div class="sheet-search"><input id="twnSearch" placeholder="မြို့ ရိုက်ရှာရန်..." autocomplete="off"></div>' +
-      '<div class="sheet-list" id="twnList"></div>';
-    document.body.appendChild(ov);
-    document.body.appendChild(sheet);
+    var inp = document.getElementById("township");
+    if (!inp) return;
+    var wrap = inp.parentNode;
+    wrap.classList.add("ac-wrap");
+    var list = document.createElement("div");
+    list.className = "ac-list";
+    wrap.appendChild(list);
 
-    var listEl = sheet.querySelector("#twnList");
-    var search = sheet.querySelector("#twnSearch");
-    var target = null;
-
-    function row(label, value, selected, custom) {
-      var r = document.createElement("div");
-      r.className = "sheet-opt" + (selected ? " sel" : "") + (custom ? " custom" : "");
-      var a = document.createElement("span"); a.textContent = label;
-      var b = document.createElement("span"); b.className = "tick"; b.textContent = "\u2713";
-      r.appendChild(a); r.appendChild(b);
-      r.addEventListener("click", function () { choose(value); });
-      return r;
+    function pick(v) {
+      inp.value = v;
+      hide();
+      inp.dispatchEvent(new Event("change", { bubbles: true }));
     }
-
     function render() {
-      var q = search.value.trim();
-      listEl.innerHTML = "";
-
+      var q = inp.value.trim();
+      list.innerHTML = "";
       if (q && TOWNS.indexOf(q) < 0) {
-        listEl.appendChild(row("「" + q + "」 ဒီအတိုင်း သုံးမည်", q, false, true));
+        var c = document.createElement("div");
+        c.className = "ac-opt custom";
+        c.textContent = "「" + q + "」 ဒီအတိုင်း သုံးမည်";
+        c.addEventListener("mousedown", function (e) { e.preventDefault(); pick(q); });
+        list.appendChild(c);
       }
-
-      var matches = TOWNS.filter(function (t) { return t.indexOf(q) >= 0; });
+      var matches = TOWNS.filter(function (p) { return p.indexOf(q) >= 0; });
       matches.sort(function (a, b) {
         return (a.indexOf(q) === 0 ? 0 : 1) - (b.indexOf(q) === 0 ? 0 : 1);
       });
-      matches.forEach(function (t) {
-        listEl.appendChild(row(t, t, target && target.value === t, false));
+      matches.forEach(function (p) {
+        var o = document.createElement("div");
+        o.className = "ac-opt"; o.textContent = p;
+        o.addEventListener("mousedown", function (e) { e.preventDefault(); pick(p); });
+        list.appendChild(o);
       });
-
-      if (matches.length === 0 && !q) {
-        listEl.appendChild(emptyMsg());
-      } else if (matches.length === 0 && q && TOWNS.indexOf(q) >= 0) {
-        listEl.appendChild(emptyMsg());
-      }
     }
+    function show() { render(); list.classList.add("show"); }
+    function hide() { list.classList.remove("show"); }
 
-    function emptyMsg() {
-      var e = document.createElement("div");
-      e.className = "sheet-empty";
-      e.textContent = "တွေ့မရှိပါ — ရိုက်ထားသည့်အတိုင်း သုံးနိုင်သည်";
-      return e;
-    }
-
-    function choose(val) {
-      if (target) { target.value = val; target.dispatchEvent(new Event("input", { bubbles: true })); }
-      close();
-    }
-    function open(inp) {
-      target = inp; search.value = ""; render();
-      ov.classList.add("show");
-      ssmLockScroll();
-      requestAnimationFrame(function () { sheet.classList.add("show"); });
-      setTimeout(function () { search.focus(); }, 280);
-    }
-    function close() { sheet.classList.remove("show"); ov.classList.remove("show"); ssmUnlockScroll(); }
-    ov.addEventListener("click", close);
-    search.addEventListener("input", render);
-
-    function enhance(inp) {
-      if (inp.dataset.spick) return;
-      inp.dataset.spick = "1";
-      inp.classList.add("csel-native");
-      var btn = document.createElement("button");
-      btn.type = "button"; btn.className = "csel-btn";
-      inp.parentNode.insertBefore(btn, inp.nextSibling);
-      btn.addEventListener("click", function (e) { e.preventDefault(); open(inp); });
-      var ph = inp.getAttribute("placeholder") || "ရွေးပါ";
-      var last = null;
-      (function sync() {
-        var v = inp.value || "";
-        if (v !== last) {
-          last = v;
-          btn.textContent = v || ph;
-          btn.classList.toggle("is-placeholder", !v);
-        }
-        requestAnimationFrame(sync);
-      })();
-    }
-
-    var t = document.getElementById("township");
-    if (t) enhance(t);
+    inp.addEventListener("focus", show);
+    inp.addEventListener("input", show);
+    inp.addEventListener("blur", function () { setTimeout(hide, 150); });
   })();
 
   // ── Product inline autocomplete (field ထဲ ရိုက်၊ အောက်မှာ list) ──
