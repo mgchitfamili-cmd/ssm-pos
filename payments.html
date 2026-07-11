@@ -520,7 +520,7 @@
       if (window.ssmGetCloudImages) {
         window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
           if (imgs && imgs.paySS) imgEl.src = imgs.paySS;
-          else imgEl.alt = "ပုံ မတွေ့ပါ — cloud ၅၀ ရက် ကျော်နိုင် (Backup မှာ ကြည့်ပါ)";
+          else imgEl.alt = "ပုံ မတွေ့ပါ — internet စစ်ပါ / Backup မှာ ကြည့်ပါ";
         });
       } else {
         imgEl.alt = "cloud sync မရနိုင်ပါ";
