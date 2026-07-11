@@ -81,8 +81,10 @@
       font-weight:700; margin-top:5px; margin-left:6px; border:1px solid transparent; vertical-align:middle; }
     .parcel-yes{ background:var(--green-tint); color:var(--green); border-color:var(--green-line); }
     .parcel-no{ background:var(--bg); color:var(--ink-3); border-color:var(--line-2); }
-    .badge-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:6px; }
-    .badge-row > span{ margin:0; }
+    .badge-row{ display:flex; flex-wrap:nowrap; gap:6px; align-items:center;
+      padding:0 14px 13px; overflow-x:auto; -webkit-overflow-scrolling:touch; cursor:pointer; }
+    .badge-row::-webkit-scrollbar{ display:none; }
+    .badge-row > span{ margin:0; white-space:nowrap; flex:none; }
 
     /* Delivery code ကျန် — red marker + banner */
     .badge-nocode{ display:inline-block; padding:3px 9px; border-radius:999px; font-size:11px;
@@ -406,16 +408,16 @@
               <div class="summary-left">
                 <h3>${sale.customer || "-"}</h3>
                 <p>${sale.township || "-"}</p>
-                <div class="badge-row">
-                  <span class="status-badge badge-${status}">${status}</span>
-                  <span class="badge-parcel ${sale.deliveryParcel ? 'parcel-yes' : 'parcel-no'}">${sale.deliveryParcel ? '📦 ထုပ်ပြီး' : '📦 မထုပ်ရသေး'}</span>
-                  ${(sale.deliveryService == "Royal" && !sale.deliveryCode) ? '<span class="badge-nocode">⚠️ Code ကျန်</span>' : ''}
-                </div>
               </div>
               <div class="summary-right">
                 <div class="net">${netNum}</div>
                 <div style="font-size:11px;color:#9ca3af;margin-top:3px;">${sale.orderNo || ""}</div>
               </div>
+            </div>
+            <div class="badge-row" onclick="toggleCard(${index})">
+              <span class="status-badge badge-${status}">${status}</span>
+              <span class="badge-parcel ${sale.deliveryParcel ? 'parcel-yes' : 'parcel-no'}">${sale.deliveryParcel ? '📦 ထုပ်ပြီး' : '📦 မထုပ်ရသေး'}</span>
+              ${(sale.deliveryService == "Royal" && !sale.deliveryCode) ? '<span class="badge-nocode">⚠️ Code ကျန်</span>' : ''}
             </div>
 
             <!-- Detail -->
