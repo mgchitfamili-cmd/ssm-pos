@@ -156,6 +156,9 @@
     }
     .gift-remark{ flex:1; min-width:0; }
     .gift-label input{ width:19px; height:19px; accent-color:var(--brand); margin:0; flex:none; }
+    .saletype-row{ align-items:stretch; }
+    .saletype-row > select{ flex:1; min-width:0; }
+    .saletype-row > .gift-label{ flex:none; }
 
     /* ── Sale list (cart) ── */
     .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -4px; }
@@ -550,10 +553,16 @@
         </div>
 
         <div class="field">
-          <select id="saleType" onchange="saleTypeChanged()">
-            <option value="weight">Weight</option>
-            <option value="unit">Unit</option>
-          </select>
+          <div class="row saletype-row">
+            <select id="saleType" onchange="saleTypeChanged()">
+              <option value="weight">Weight</option>
+              <option value="unit">Unit</option>
+            </select>
+            <label class="gift-label">
+              <input type="checkbox" id="isGift" onchange="giftChanged()">
+              <span>ဈေးနှုန်း (0 Ks)</span>
+            </label>
+          </div>
         </div>
 
         <div class="field">
@@ -591,12 +600,8 @@
           </div>
         </div>
 
-        <div class="gift-row">
-          <label class="gift-label">
-            <input type="checkbox" id="isGift" onchange="giftChanged()">
-            <span>ဈေးနှုန်း (0 Ks)</span>
-          </label>
-          <input id="remark" placeholder="Remark" class="gift-remark">
+        <div class="field">
+          <input id="remark" placeholder="Remark">
         </div>
 
         <button class="add-btn" onclick="addItem()">＋ Add Item</button>
