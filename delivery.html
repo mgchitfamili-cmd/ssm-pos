@@ -397,9 +397,6 @@
         // Received calculation
         let received = calculateReceived(sale);
 
-        // Parcel status
-        let parcelText = sale.deliveryParcel ? "📦 Parcel ထုပ်ပြီး" : "📦 Parcel မထုပ်ရသေး";
-
         html += `
           <div class="card ${status}" id="card-${index}">
 
@@ -445,8 +442,6 @@
                   style="text-transform:uppercase"
                 >
               </div>` : ""}
-
-              <p class="parcel-line">${parcelText}</p>
 
               <!-- Info -->
               <p class="info-line"><b>Service:</b> ${sale.deliveryService || "-"}</p>
