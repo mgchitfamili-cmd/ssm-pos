@@ -444,6 +444,26 @@
                 </div>` : ""}
               </div>
 
+              <!-- Real Delivery Fee + Received (တစ်တန်းထဲ) -->
+              <div class="field-row">
+                ${sale.deliveryService == "Royal" ? `
+                <div class="field">
+                  <label>တကယ်ကုန်ကျ Delivery Fee</label>
+                  <input
+                    value="${sale.deliveryFeeReal || ''}"
+                    onchange="saveDeliFee(${index}, this.value)"
+                    placeholder="0"
+                  >
+                </div>` : ""}
+
+                <div class="received-line" style="flex:1;">
+                  Received : ${received.received}
+                </div>
+              </div>
+
+              ${sale.deliveryService == "Royal" ? `
+              <p class="info-line"><b>Royal Charge:</b> ${received.charge}</p>` : ""}
+
               <!-- Info -->
               <p class="info-line"><b>Service:</b> ${sale.deliveryService || "-"}</p>
 
@@ -452,23 +472,6 @@
               <p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}</p>
               <p class="info-line"><b>Deposit:</b> ${sale.deposit || 0}</p>
               <p class="info-line"><b>Net Total:</b> ${netNum}</p>
-
-              ${sale.deliveryService == "Royal" ? `
-              <!-- Real Delivery Fee (Royal ရွေးမှသာ ပေါ်) -->
-              <div class="field">
-                <label>တကယ်ကုန်ကျ Delivery Fee</label>
-                <input
-                  value="${sale.deliveryFeeReal || ''}"
-                  onchange="saveDeliFee(${index}, this.value)"
-                  placeholder="0"
-                >
-              </div>
-
-              <p class="info-line"><b>Royal Charge:</b> ${received.charge}</p>` : ""}
-
-              <div class="received-line">
-                Received : ${received.received}
-              </div>
 
               <!-- Actions -->
               <div class="detail-actions">
