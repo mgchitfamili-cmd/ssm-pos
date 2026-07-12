@@ -420,28 +420,29 @@
             <!-- Detail -->
             <div class="card-detail" id="detail-${index}">
 
-              <!-- Status -->
-              <div class="field">
-                <label>Status</label>
-                <select onchange="saveStatus(${index}, this.value)">
-                  <option ${status=="Pending"   ? "selected":""}>Pending</option>
-                  <option ${status=="Delivered" ? "selected":""}>Delivered</option>
-                  <option ${status=="RTS"       ? "selected":""}>RTS</option>
-                </select>
-              </div>
+              <!-- Status + Code (Royal ရွေးမှသာ Code ပေါ်) -->
+              <div class="field-row">
+                <div class="field">
+                  <label>Status</label>
+                  <select onchange="saveStatus(${index}, this.value)">
+                    <option ${status=="Pending"   ? "selected":""}>Pending</option>
+                    <option ${status=="Delivered" ? "selected":""}>Delivered</option>
+                    <option ${status=="RTS"       ? "selected":""}>RTS</option>
+                  </select>
+                </div>
 
-              <!-- Code (Royal ရွေးမှသာ ပေါ်) -->
-              ${sale.deliveryService == "Royal" ? `
-              <div class="field">
-                <label>Delivery Code (ABC123456)</label>
-                <input
-                  value="${sale.deliveryCode || ""}"
-                  oninput="saveCode(${index}, this.value)"
-                  placeholder="ABC123456"
-                  maxlength="9"
-                  style="text-transform:uppercase"
-                >
-              </div>` : ""}
+                ${sale.deliveryService == "Royal" ? `
+                <div class="field">
+                  <label>Delivery Code (ABC123456)</label>
+                  <input
+                    value="${sale.deliveryCode || ""}"
+                    oninput="saveCode(${index}, this.value)"
+                    placeholder="ABC123456"
+                    maxlength="9"
+                    style="text-transform:uppercase"
+                  >
+                </div>` : ""}
+              </div>
 
               <!-- Info -->
               <p class="info-line"><b>Service:</b> ${sale.deliveryService || "-"}</p>
