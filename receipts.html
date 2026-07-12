@@ -112,7 +112,6 @@
       padding:11px 12px; margin:11px 0; font-size:13px; color:var(--ink-2); }
     .items-box b{ color:var(--ink); }
     .items-box p{ margin:5px 0; }
-    .pay-box{ background:var(--green-tint); border-color:var(--green-line); }
 
     .actions{ display:flex; gap:7px; margin-top:13px; flex-wrap:wrap; }
     .btn{ border:none; padding:10px 12px; border-radius:10px; color:#fff; font-size:13px;
@@ -394,7 +393,7 @@
         let payInfo = "";
         if (Number(sale.payAmount) > 0 || Number(sale.deposit) > 0) {
           payInfo = `
-            <div class="items-box pay-box">
+            <div class="items-box" style="background:#ecfeff;">
               <b>💵 Payment</b>
               <p>အခြေအနေ : ${payStatus === "Prepaid" ? "ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး" : (payStatus === "Partial" ? "ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်" : "အိမ်ရောက်ငွေချေ (COD)")}</p>
               <p>Type : ${sale.payType || "-"}</p>
