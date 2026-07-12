@@ -433,7 +433,7 @@
 
                 ${sale.deliveryService == "Royal" ? `
                 <div class="field">
-                  <label>Delivery Code (ABC123456)</label>
+                  <label>Delivery Code</label>
                   <input
                     value="${sale.deliveryCode || ""}"
                     oninput="saveCode(${index}, this.value)"
@@ -454,11 +454,16 @@
                     onchange="saveDeliFee(${index}, this.value)"
                     placeholder="0"
                   >
-                </div>` : ""}
-
+                </div>
+                <div class="field" style="flex:1;">
+                  <label style="visibility:hidden;">တကယ်ကုန်ကျ Delivery Fee</label>
+                  <div class="received-line" style="margin-top:0;">
+                    Received : ${received.received}
+                  </div>
+                </div>` : `
                 <div class="received-line" style="flex:1;">
                   Received : ${received.received}
-                </div>
+                </div>`}
               </div>
 
               ${sale.deliveryService == "Royal" ? `
