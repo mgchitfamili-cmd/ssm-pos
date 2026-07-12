@@ -108,6 +108,8 @@
     .field-row .field{ flex:1; min-width:0; }
 
     .info-line{ font-size:13px; margin:7px 0; color:var(--ink-2); }
+    .info-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
+    .info-grid .info-line{ margin:7px 0; }
     .info-line b{ color:var(--ink); font-weight:600; }
     .items-box{ background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:11px 12px;
       margin:11px 0; font-size:13px; color:var(--ink-2); }
@@ -469,17 +471,15 @@
                 </div>`}
               </div>
 
-              ${sale.deliveryService == "Royal" ? `
-              <p class="info-line"><b>Royal Charge:</b> ${received.charge}</p>` : ""}
+              <div class="info-grid">
+                ${sale.deliveryService == "Royal" ? `<p class="info-line"><b>Royal Charge:</b> ${received.charge}</p>` : `<p class="info-line"></p>`}
+                <p class="info-line"><b>Service:</b> ${sale.deliveryService || "-"}</p>
 
-              <!-- Info -->
-              <p class="info-line"><b>Service:</b> ${sale.deliveryService || "-"}</p>
-
-              <!-- Money -->
-              <p class="info-line"><b>Grand Total:</b> ${sale.grandTotal || 0}</p>
-              <p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}</p>
-              <p class="info-line"><b>Deposit:</b> ${sale.deposit || 0}</p>
-              <p class="info-line"><b>Net Total:</b> ${netNum}</p>
+                <p class="info-line"><b>Grand Total:</b> ${sale.grandTotal || 0}</p>
+                <p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}</p>
+                <p class="info-line"><b>Deposit:</b> ${sale.deposit || 0}</p>
+                <p class="info-line"><b>Net Total:</b> ${netNum}</p>
+              </div>
 
               <!-- Actions -->
               <div class="detail-actions">
