@@ -638,7 +638,7 @@
         <div class="oppay-box">
           <p class="oppay-head">💵 Payment</p>
           <label class="oppay-lbl">Payment အခြေအနေ <span style="font-weight:500;color:var(--ink-3);">(receipt အောက် label)</span></label>
-          <select id="payStatusSel" onchange="toggleDepFields(); calculateNet();">
+          <select id="payStatusSel" onchange="autoFillDeposit(); toggleDepFields(); calculateNet();">
             <option value="COD">အိမ်ရောက်ငွေချေ (COD)</option>
             <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်</option>
             <option value="Prepaid">ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး</option>
@@ -1138,6 +1138,21 @@
 
     // ── Deposit online-payment screenshot ──
     var depSSData = "";
+    // Payment status ရွေးလိုက်ရင် Deposit ကို auto ဖြည့်ပေးမယ် (COD ဆို ပုံမှန်အတိုင်း မပြောင်း)
+    function autoFillDeposit() {
+      var v = document.getElementById("payStatusSel").value;
+      if (v !== "Partial" && v !== "Prepaid") return; // COD → မထိ
+      var delivery = Number(document.getElementById("delivery").value) || 0;
+      var discountAmount = getDiscountAmount();
+      var itemsNet = grandTotal - discountAmount; // Delivery မပါဘဲ ဘောင်ချာ တန်ဖိုး
+      var depEl = document.getElementById("deposit");
+      if (v === "Partial") {
+        depEl.value = itemsNet;               // ပစ္စည်းဖိုးသာ ရှင်း → ပို့ခ ကျန်
+      } else if (v === "Prepaid") {
+        depEl.value = itemsNet + delivery;     // အားလုံး ရှင်း → ဘောင်ချာတန်ဖိုး အပြည့်
+      }
+      resetDepConfirm();
+    }
     function toggleDepFields() {
       var v = document.getElementById("payStatusSel").value;
       var dep = Number(document.getElementById("deposit").value) || 0;
