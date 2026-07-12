@@ -393,7 +393,7 @@
         let payInfo = "";
         if (Number(sale.payAmount) > 0 || Number(sale.deposit) > 0) {
           payInfo = `
-            <div class="items-box" style="background:#ecfeff;">
+            <div class="items-box">
               <b>💵 Payment</b>
               <p>အခြေအနေ : ${payStatus === "Prepaid" ? "ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး" : (payStatus === "Partial" ? "ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်" : "အိမ်ရောက်ငွေချေ (COD)")}</p>
               <p>Type : ${sale.payType || "-"}</p>
