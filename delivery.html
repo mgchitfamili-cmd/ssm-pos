@@ -81,20 +81,6 @@
       font-weight:700; margin-top:5px; margin-left:6px; border:1px solid transparent; vertical-align:middle; }
     .parcel-yes{ background:var(--green-tint); color:var(--green); border-color:var(--green-line); }
     .parcel-no{ background:var(--bg); color:var(--ink-3); border-color:var(--line-2); }
-    .badge-row{ display:flex; flex-wrap:nowrap; gap:6px; align-items:center;
-      padding:0 14px 13px; overflow-x:auto; -webkit-overflow-scrolling:touch; cursor:pointer; }
-    .badge-row::-webkit-scrollbar{ display:none; }
-    .badge-row > span{ margin:0; white-space:nowrap; flex:none; }
-
-    /* Delivery code ကျန် — red marker + banner */
-    .badge-nocode{ display:inline-block; padding:3px 9px; border-radius:999px; font-size:11px;
-      font-weight:700; margin-top:5px; margin-left:6px; vertical-align:middle;
-      background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; }
-    html.dark .badge-nocode{ background:rgba(220,38,38,.18); color:#f87171; border-color:rgba(248,113,113,.45); }
-    .nocode-banner{ margin:0 14px 12px; padding:11px 14px; border-radius:12px;
-      background:#fef2f2; border:1px solid #fca5a5; color:#dc2626;
-      font-size:14px; font-weight:700; align-items:center; gap:8px; }
-    html.dark .nocode-banner{ background:rgba(220,38,38,.15); border-color:rgba(248,113,113,.4); color:#f87171; }
 
     /* detail */
     .card-detail{ display:none; padding:4px 14px 14px; border-top:1px solid var(--line); }
@@ -329,8 +315,6 @@
     <button class="dr-clear" onclick="clearDateRange()" aria-label="Clear">✕</button>
   </div>
 
-  <div id="noCodeBanner" class="nocode-banner" style="display:none;"></div>
-
   <div id="cardList"></div>
 
   <!-- Hidden file input -->
@@ -354,17 +338,6 @@
     let openCardIndex     = null;  // ဘယ် card ဖွင့်ထားလဲ မှတ်ထားမယ်
 
     // ── Render Cards ──────────────────────────────────────────────
-    // ── Royal delivery code ကျန်နေတာ ရေတွက် → banner ──
-    function updateNoCodeBanner() {
-      var arr = [];
-      try { arr = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) {}
-      var n = arr.filter(function (s) { return s && s.deliveryService == "Royal" && !s.deliveryCode; }).length;
-      var b = document.getElementById("noCodeBanner");
-      if (!b) return;
-      if (n > 0) { b.style.display = "flex"; b.innerHTML = '⚠️ Code ထည့်ရန်ကျန် <b style="margin:0 3px">' + n + '</b> ခု'; }
-      else { b.style.display = "none"; }
-    }
-
     function renderCards() {
       salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
       // walk-in (ဆိုင်ရောင်း) — parcel အလိုအလျောက် ထုတ်ပြီး (badge ✅ ဖြစ်အောင်)
@@ -375,7 +348,6 @@
         });
         if (fixed) localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
       })();
-      updateNoCodeBanner();
       let html = "";
 
       if (salesHistory.length === 0) {
@@ -408,16 +380,13 @@
               <div class="summary-left">
                 <h3>${sale.customer || "-"}</h3>
                 <p>${sale.township || "-"}</p>
+                <span class="status-badge badge-${status}">${status}</span>
+                <span class="badge-parcel ${sale.deliveryParcel ? 'parcel-yes' : 'parcel-no'}">${sale.deliveryParcel ? '📦 ထုပ်ပြီး' : '📦 မထုပ်ရသေး'}</span>
               </div>
               <div class="summary-right">
                 <div class="net">${netNum}</div>
                 <div style="font-size:11px;color:#9ca3af;margin-top:3px;">${sale.orderNo || ""}</div>
               </div>
-            </div>
-            <div class="badge-row" onclick="toggleCard(${index})">
-              <span class="status-badge badge-${status}">${status}</span>
-              <span class="badge-parcel ${sale.deliveryParcel ? 'parcel-yes' : 'parcel-no'}">${sale.deliveryParcel ? '📦 ထုပ်ပြီး' : '📦 မထုပ်ရသေး'}</span>
-              ${(sale.deliveryService == "Royal" && !sale.deliveryCode) ? '<span class="badge-nocode">⚠️ Code ကျန်</span>' : ''}
             </div>
 
             <!-- Detail -->
@@ -544,7 +513,6 @@
     function saveCode(index, code) {
       salesHistory[index].deliveryCode = code.toUpperCase();
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
-      updateNoCodeBanner();   // count live update (typing focus မပျက်)
       // render မလုပ်ဘူး — typing အဆင်ပြေအောင်
     }
 
