@@ -448,7 +448,7 @@
               <div class="field-row">
                 ${sale.deliveryService == "Royal" ? `
                 <div class="field">
-                  <label>တကယ်ကုန်ကျ Delivery Fee</label>
+                  <label>Royal Deli Fee</label>
                   <input
                     value="${sale.deliveryFeeReal || ''}"
                     onchange="saveDeliFee(${index}, this.value)"
@@ -456,13 +456,16 @@
                   >
                 </div>
                 <div class="field" style="flex:1;">
-                  <label style="visibility:hidden;">တကယ်ကုန်ကျ Delivery Fee</label>
+                  <label>Received</label>
                   <div class="received-line" style="margin-top:0;">
-                    Received : ${received.received}
+                    ${received.received}
                   </div>
                 </div>` : `
-                <div class="received-line" style="flex:1;">
-                  Received : ${received.received}
+                <div class="field" style="flex:1;">
+                  <label>Received</label>
+                  <div class="received-line" style="margin-top:0;">
+                    ${received.received}
+                  </div>
                 </div>`}
               </div>
 
