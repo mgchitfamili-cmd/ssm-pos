@@ -287,6 +287,11 @@
 
   <div id="historyList"></div>
 
+  <div id="loadMoreWrap" style="max-width:920px;margin:14px auto 24px;padding:0 14px;text-align:center;">
+    <button id="loadMoreBtn" class="btn btn-payment" style="width:auto;padding:11px 22px;" onclick="loadMoreReceipts()">🔄 နောက်ထပ် ၂၀ ရက်စာ ကြည့်ရန်</button>
+    <p id="loadMoreNote" style="font-size:12.5px;color:var(--ink-3);margin-top:8px;"></p>
+  </div>
+
   <!-- Hidden SS file input -->
   <input type="file" id="ssInput" accept="image/*" style="display:none" onchange="loadSS(event)">
 
@@ -644,6 +649,33 @@
     }
 
     // ── View SS fullscreen ────────────────────────────────────────
+    // ── Load More (ရက်ဟောင်း ၂၀ ရက်စီ ထပ်ဆွဲ) ──
+    function loadMoreReceipts() {
+      var btn = document.getElementById("loadMoreBtn");
+      var note = document.getElementById("loadMoreNote");
+      if (!window.ssmLoadMoreSales) {
+        note.textContent = "Cloud sync မရနိုင်ပါ (internet စစ်ပါ)";
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "⏳ ဆွဲနေသည် ...";
+      note.textContent = "";
+      window.ssmLoadMoreSales(function (res) {
+        btn.disabled = false;
+        btn.textContent = "🔄 နောက်ထပ် ၂၀ ရက်စာ ကြည့်ရန်";
+        if (res && res.error) {
+          note.textContent = "မဆွဲနိုင်ပါ — ထပ်ကြိုးစားကြည့်ပါ";
+          return;
+        }
+        if (res && !res.more) {
+          document.getElementById("loadMoreWrap").style.display = "none";
+          note.textContent = "";
+        } else if (res && res.count === 0) {
+          note.textContent = "ဒီအပိုင်းမှာ receipt မတွေ့ပါ — ထပ်နှိပ်ကြည့်ပါ";
+        }
+      });
+    }
+
     function viewSS(index) {
       var sale = salesHistory[index];
       var modal = document.getElementById("ssModal");

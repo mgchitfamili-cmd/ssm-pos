@@ -229,7 +229,6 @@
         var SALES = "sales";
         var saleCache = {};            // orderNo -> content JSON (change detection)
         var trackedSids = {};          // orderNo -> true (delete baseline)
-        var salesInitialDone = false;
 
         // doc id = orderNo (SSM-A-0001 …). edit လုပ်လည်း orderNo မပြောင်း → doc တူ → ဘောင်ချာ ၂ ခု မကွဲ
         function sidOf(s) {
@@ -356,49 +355,93 @@
           });
         };
 
-        // PULL: load မှာ cloud sales merge (clobber-proof, ပုံ inline)၊ ပြီးရင် push-only
-        db.collection(SALES).onSnapshot(function (snap) {
-          if (salesInitialDone) return;
-          salesInitialDone = true;
+        // ── PULL (paginated): app ဖွင့်တိုင်း ၂၀ ရက်စာသာ ဆွဲမယ် (read cost လျော့ချရန်) ──
+        // "Load More" ခလုတ် နှိပ်တိုင်း နောက်ထပ် ၂၀ ရက်စာ ဆွဲမယ် (window ချဲ့)
+        var SALES_STEP_DAYS = 20;
+        var SALES_MAX_DAYS  = 365;
+        var salesWindowDays = SALES_STEP_DAYS;
+        function ssmSinceISO(days) { return new Date(Date.now() - days * 86400000).toISOString(); }
+
+        function ssmHandleSalesBatch(snap, sinceMs, isInitial) {
           var byId = {};
           snap.forEach(function (d) {
             var s = d.data(); if (s.orderNo == null) s.orderNo = d.id;
             var sid = sidOf(s);
             byId[sid] = s; markSynced(sid);
-            if (d.id === sid) saleCache[sid] = JSON.stringify(saleContent(s));        // format မှန် → change-detect cache
-            else db.collection(SALES).doc(d.id).delete().catch(function () {});        // format ဟောင်း → ဖျက်
+            if (d.id === sid) saleCache[sid] = JSON.stringify(saleContent(s));
+            else db.collection(SALES).doc(d.id).delete().catch(function () {});
           });
-          ssmPruneOldSales(byId);                                // ၅၀ ရက်ကျော် ဘောင်ချာ cloud ကနေ ဖယ် (local + device အားလုံးမှာ ကျန်)
-          if (lastPush["__sales"]) return;                       // session ထဲ save ပြီးပြီ → adopt မလုပ် (clobber မဖြစ်)
+
+          if (isInitial) {
+            ssmPruneOldSales(byId);
+            if (lastPush["__sales"]) return;
+          }
+
           var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
-          // ── ORDER-PRESERVING merge (positional editIndex မပျက်အောင် local အစီအစဉ် ထိန်း) ──
           var seenL = {};
-          local.forEach(function (s) {                            // 1) local sale တွေ နေရာအတိုင်း ထား၊ cloud ပိုသစ်ရင် content ကို နေရာတည်ရာမှာ update
+          local.forEach(function (s) {
             var sid = sidOf(s); seenL[sid] = true;
             var c = byId[sid];
-            if (c && (c._u || 0) > (s._u || 0)) {                 // cloud ပိုသစ် (တခြား device က edit) → in-place adopt (index မရွှေ့)
+            if (c && (c._u || 0) > (s._u || 0)) {
               for (var k in s) { if (!(k in c)) delete s[k]; }
               for (var k2 in c) { s[k2] = c[k2]; }
             }
           });
-          local = local.filter(function (s) {                    // 2) cloud မှာ ပျောက်တာ → recent ဆို တခြား device ဖျက်တာ (ဖယ်)၊ ဟောင်း (၅၀ ရက်ကျော်) ဆို prune လုပ်တာ (local မှာ ထား)
-            var sid = sidOf(s);
-            if (byId[sid]) return true;                          // cloud မှာ ရှိ → ထား
-            if (!syncedIds[sid]) return true;                    // တင်ဖူးတာ မဟုတ် (local အသစ်) → ထား
-            if (isOldSale(s)) return true;                       // ဟောင်း + cloud ပျောက် → prune ထားတာ → local မှာ ဆက်ထား
-            return false;                                        // recent + တင်ဖူး + cloud ပျောက် → တခြား device ဖျက် → ဖယ်
-          });
-          var extras = [];                                       // 3) cloud-only (တခြား device က အသစ်) → local အဆုံးမှာ ဆက် (orderDate အလိုက် စီ)
+
+          if (isInitial) {
+            local = local.filter(function (s) {
+              var sid = sidOf(s);
+              if (byId[sid]) return true;
+              var t = new Date(s.orderDate || 0).getTime();
+              if (isNaN(t) || t < sinceMs) return true;
+              if (!syncedIds[sid]) return true;
+              if (isOldSale(s)) return true;
+              return false;
+            });
+          }
+
+          var extras = [];
           Object.keys(byId).forEach(function (sid) { if (!seenL[sid]) extras.push(byId[sid]); });
           extras.sort(function (a, b) { return String(a.orderDate || "").localeCompare(String(b.orderDate || "")); });
-          extras.forEach(function (s) { local.push(s); });
-          ssmStripImages(local);                                 // cloud ဟောင်းက inline ပုံ ပါလာရင် — salesImages ဆီ ရွှေ့ပြီး local မှာ မသိမ်း
+          if (isInitial) extras.forEach(function (s) { local.push(s); });
+          else local = extras.concat(local);
+
+          ssmStripImages(local);
           try { rawSet("salesHistory", JSON.stringify(local)); } catch (e) { console.warn("[sales] localStorage quota:", e); }
-          try { _salesSnap = {}; local.forEach(function (s) { _salesSnap[String(s.orderNo)] = _saleHash(s); }); } catch (e) {}  // _u baseline refresh
+          try { _salesSnap = {}; local.forEach(function (s) { _salesSnap[String(s.orderNo)] = _saleHash(s); }); } catch (e) {}
           trackedSids = {}; local.forEach(function (s) { trackedSids[sidOf(s)] = true; });
           ssmRefreshSales();
-          ssmPushSales(JSON.stringify(local));                   // missing sales cloud ကို seed
-        }, function (err) { console.warn("[sales] listen error:", err); });
+          ssmPushSales(JSON.stringify(local));
+        }
+
+        db.collection(SALES).where("orderDate", ">=", ssmSinceISO(salesWindowDays)).get()
+          .then(function (snap) { ssmHandleSalesBatch(snap, Date.now() - salesWindowDays * 86400000, true); })
+          .catch(function (err) { console.warn("[sales] initial fetch failed:", err); });
+
+        var salesLoadMoreBusy = false;
+        window.ssmLoadMoreSales = function (cb) {
+          if (salesLoadMoreBusy) return;
+          if (salesWindowDays >= SALES_MAX_DAYS) { if (cb) cb({ more: false, count: 0 }); return; }
+          salesLoadMoreBusy = true;
+          var oldDays = salesWindowDays;
+          var newDays = Math.min(oldDays + SALES_STEP_DAYS, SALES_MAX_DAYS);
+          db.collection(SALES)
+            .where("orderDate", ">=", ssmSinceISO(newDays))
+            .where("orderDate", "<",  ssmSinceISO(oldDays))
+            .get()
+            .then(function (snap) {
+              salesWindowDays = newDays;
+              ssmHandleSalesBatch(snap, Date.now() - newDays * 86400000, false);
+              salesLoadMoreBusy = false;
+              if (cb) cb({ more: newDays < SALES_MAX_DAYS, count: snap.size });
+            })
+            .catch(function (err) {
+              salesLoadMoreBusy = false;
+              console.warn("[sales] load-more failed:", err);
+              if (cb) cb({ more: true, count: 0, error: true });
+            });
+        };
+
 
         // auth မရခင် (early-patch) queue ထားခဲ့တဲ့ save တွေ cloud တင် (iOS slow-start fix)
         if (_pendSales != null) { ssmPushSales(_pendSales); _pendSales = null; }
