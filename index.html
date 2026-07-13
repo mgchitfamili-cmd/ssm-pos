@@ -632,8 +632,20 @@
       <section class="card">
         <p class="eyebrow"><span class="dot"></span>လျှော့ဈေး & ပေးချေမှု</p>
 
-        <div class="field">
-          <input id="delivery" placeholder="Delivery Fee" oninput="calculateNet()">
+        <div class="disc-box">
+          <div class="row">
+            <div>
+              <select id="discountType" onchange="calculateNet()">
+                <option value="none">Discount မရှိ</option>
+                <option value="amount">Amount (ငွေပမာဏ)</option>
+                <option value="percent">Percent (%)</option>
+              </select>
+            </div>
+            <div>
+              <input id="discountValue" placeholder="ပမာဏ" oninput="calculateNet()" disabled>
+            </div>
+          </div>
+          <p id="discountNote"></p>
         </div>
         <div class="oppay-box">
           <p class="oppay-head">💵 Payment</p>
@@ -671,20 +683,8 @@
             <p id="depConfirmNote" class="oppay-note">⚠️ Confirm မလုပ်ရင် Deposit က invoice မှာ မပါပါ</p>
           </div>
         </div>
-        <div class="disc-box">
-          <div class="row">
-            <div>
-              <select id="discountType" onchange="calculateNet()">
-                <option value="none">Discount မရှိ</option>
-                <option value="amount">Amount (ငွေပမာဏ)</option>
-                <option value="percent">Percent (%)</option>
-              </select>
-            </div>
-            <div>
-              <input id="discountValue" placeholder="ပမာဏ" oninput="calculateNet()" disabled>
-            </div>
-          </div>
-          <p id="discountNote"></p>
+        <div class="field">
+          <input id="delivery" placeholder="Delivery Fee" oninput="calculateNet()">
         </div>
         <div class="field">
           <textarea id="note" placeholder="📝 Delivery မှတ်ချက် (receipt အောက်ခြေ)"></textarea>
