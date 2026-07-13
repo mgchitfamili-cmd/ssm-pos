@@ -233,6 +233,11 @@
     .items-box .ritem-sub span:last-child{ font-weight:700; color:var(--brand-ink); white-space:nowrap; }
     .items-box .ritem-remark{ font-size:12px; color:var(--ink-3); margin-top:1px; }
     html.role-staff .btn-delete{ display:none !important; }
+    #ssModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:9999;
+      flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+    #ssModalImg{ max-width:100%; max-height:80vh; object-fit:contain; border-radius:12px; }
+    #ssModal button{ margin-top:20px; padding:12px 24px; border-radius:var(--r-sm); border:none;
+      background:#fff; color:var(--ink); font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; }
   </style>
 </head>
 
@@ -324,6 +329,12 @@
         <button style="background:#16a34a" onclick="savePayment()">💾 Save</button>
       </div>
     </div>
+  </div>
+
+  <!-- SS Modal -->
+  <div id="ssModal">
+    <img id="ssModalImg">
+    <button onclick="closeSS()">✖ Close</button>
   </div>
 
   <!-- Hidden receipt preview for print/share -->
@@ -634,17 +645,29 @@
 
     // ── View SS fullscreen ────────────────────────────────────────
     function viewSS(index) {
-      let win = window.open("");
       var sale = salesHistory[index];
-      if (sale.paySS) { win.document.write('<img src="' + sale.paySS + '" style="max-width:100%">'); return; }
-      win.document.write('<p style="font-family:sans-serif">☁️ cloud ကနေ ဆွဲနေသည် ...</p>');
+      var modal = document.getElementById("ssModal");
+      var imgEl = document.getElementById("ssModalImg");
+      if (sale.paySS) {
+        imgEl.src = sale.paySS;
+        modal.style.display = "flex";
+        return;
+      }
+      // local မှာ silent ဖယ်ထားရင် — cloud ကနေ ဆွဲ
+      imgEl.removeAttribute("src");
+      imgEl.alt = "☁️ cloud ကနေ ဆွဲနေသည် ...";
+      modal.style.display = "flex";
       if (window.ssmGetCloudImages) {
         window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
-          win.document.body.innerHTML = (imgs && imgs.paySS)
-            ? '<img src="' + imgs.paySS + '" style="max-width:100%">'
-            : '<p style="font-family:sans-serif">ပုံ မတွေ့ပါ</p>';
+          if (imgs && imgs.paySS) imgEl.src = imgs.paySS;
+          else imgEl.alt = "ပုံ မတွေ့ပါ — internet စစ်ပါ / Backup မှာ ကြည့်ပါ";
         });
-      } else { win.document.body.innerHTML = '<p style="font-family:sans-serif">cloud sync မရနိုင်ပါ</p>'; }
+      } else {
+        imgEl.alt = "cloud sync မရနိုင်ပါ";
+      }
+    }
+    function closeSS() {
+      document.getElementById("ssModal").style.display = "none";
     }
 
     // ── Delete ────────────────────────────────────────────────────
