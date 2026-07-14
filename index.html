@@ -156,7 +156,7 @@
     }
     .gift-remark{ flex:1; min-width:0; }
     .gift-label input{ width:19px; height:19px; accent-color:var(--brand); margin:0; flex:none; }
-    .saletype-row{ align-items:stretch; }
+    .saletype-row{ align-items:stretch; flex-wrap:wrap; }
     .saletype-row > select{ flex:1; min-width:0; }
     .saletype-row > .gift-label{ flex:none; }
     /* Weight / Unit segmented switch */
@@ -573,6 +573,10 @@
               <input type="checkbox" id="isGift" onchange="giftChanged()">
               <span>ဈေးနှုန်း (0 Ks)</span>
             </label>
+            <label class="gift-label" id="repPriceWrap">
+              <input type="checkbox" id="repPrice" onchange="calculateItemTotal()">
+              <span>ကိုယ်စားလှယ်ဈေး</span>
+            </label>
           </div>
         </div>
 
@@ -842,7 +846,8 @@
     }
     // total = (ပြည့်တဲ့ ပိဿာ × price1viss) + (ကျန်ကျပ်သား × extraVissPrice)
     //         ၁ ပိဿာ မပြည့်ရင် → size ဈေး × qty
-    function weightTotal(product, sizeVal, qty){
+    //         ကိုယ်စားလှယ်ဈေး (repPrice) ✓ ရင် → ၁ပိဿာ ပြည့်/မပြည့် ဆက်စပ်မရှိ၊ ပိဿာဈေးအတိုင်း အချိုးကျ ရေတွက်
+    function weightTotal(product, sizeVal, qty, repPrice){
       var sizePriceMap = {
         "5": product.price5, "10": product.price10, "15": product.price15,
         "25": product.price25, "50": product.price50, "1viss": product.price1viss
@@ -854,7 +859,9 @@
       var fullV   = Math.floor(totalKy / KYATTHA_PER_VISS);
       var rem     = totalKy - fullV * KYATTHA_PER_VISS;
       var total;
-      if (product.vissFrom50 && totalKy >= 50) {
+      if (repPrice) {
+        total = totalKy * (vissP / KYATTHA_PER_VISS);   // ကိုယ်စားလှယ်ဈေး — ပိဿာဈေး အချိုးကျ (qty မရွေး)
+      } else if (product.vissFrom50 && totalKy >= 50) {
         total = totalKy * extraP;            // Special: 50 ကျပ်သားကနေ → ပိဿာပိုဈေး(/ကျပ်သား) × စုစုပေါင်းကျပ်သား
       } else if (fullV >= 1) {
         total = fullV * vissP + rem * extraP; // ပုံမှန် ၁ ပိဿာ+
@@ -874,13 +881,20 @@
         var pName = document.getElementById("product").value;
         var product = products.find(function (p) { return p.name == pName; });
         var sizeVal = document.getElementById("size").value;
-        var t = product ? weightTotal(product, sizeVal, qty) : { total: 0 };
+        var repPriceEl = document.getElementById("repPrice");
+        var repPrice = repPriceEl ? repPriceEl.checked : false;
+        var t = product ? weightTotal(product, sizeVal, qty, repPrice) : { total: 0 };
         document.getElementById("itemTotal").value = t.total;
         return;
       }
 
       var price = Number(document.getElementById("price").value) || 0;
-      document.getElementById("itemTotal").value = price * qty;
+      var total = price * qty;
+      if (saleType === "unit" && !document.getElementById("isGift").checked) {
+        var repPriceElU = document.getElementById("repPrice");
+        if (repPriceElU && repPriceElU.checked) total = total * 0.9;   // ကိုယ်စားလှယ်ဈေး — Unit ဆို 10% လျှော့
+      }
+      document.getElementById("itemTotal").value = Math.round(total);
     }
 
     // ── Fill Price ────────────────────────────────────────────────
@@ -946,13 +960,15 @@
     }
 
     function addItem() {
-      let product  = document.getElementById("product").value;
-      let saleType = document.getElementById("saleType").value;
-      let isGift   = document.getElementById("isGift").checked;
-      let price    = Number(document.getElementById("price").value);
-      let qty      = Number(document.getElementById("qty").value);
-      let remark   = document.getElementById("remark").value;
-      let total    = Number(document.getElementById("itemTotal").value);
+      let product   = document.getElementById("product").value;
+      let saleType  = document.getElementById("saleType").value;
+      let isGift    = document.getElementById("isGift").checked;
+      let repPriceEl = document.getElementById("repPrice");
+      let repPrice  = repPriceEl ? repPriceEl.checked : false;
+      let price     = Number(document.getElementById("price").value);
+      let qty       = Number(document.getElementById("qty").value);
+      let remark    = document.getElementById("remark").value;
+      let total     = Number(document.getElementById("itemTotal").value);
 
       // Size / Unit label
       let sizeLabel = "";
@@ -986,13 +1002,15 @@
         product, saleType, size: sizeLabel,
         price, qty, remark, total,
         weightText: weightText,
-        isGift: isGift
+        isGift: isGift,
+        repPrice: repPrice
       };
 
       items.push(item);
       grandTotal += total;
 
       let giftTag = isGift ? " 🎁" : "";
+      let repTag  = repPrice ? " 🏷️" : "";
 
       var _sub = (saleType === "weight")
         ? weightText
@@ -1000,7 +1018,7 @@
       document.getElementById("saleTable").innerHTML += `
         <div class="rcart-item" data-id="${item.id}" data-total="${total}">
           <div class="rcart-main">
-            <div class="item-name">${product}${giftTag}</div>
+            <div class="item-name">${product}${giftTag}${repTag}</div>
             <div class="item-sub"><span>${_sub}</span><span>${total}</span></div>
             ${remark ? `<div class="item-remark">→ ${remark}</div>` : ""}
           </div>
@@ -1018,6 +1036,7 @@
       document.getElementById("remark").value    = "";
       document.getElementById("itemTotal").value = "";
       document.getElementById("isGift").checked  = false;
+      if (document.getElementById("repPrice")) document.getElementById("repPrice").checked = false;
       setSaleTypeAvail(true, true);   // toggle ပြန် fresh (Weight, both enable)
       saleTypeChanged();
     }
@@ -1048,6 +1067,7 @@
       var q  = document.getElementById("qty");     if (q)  q.value  = it.qty;
       var rm = document.getElementById("remark");  if (rm) rm.value = it.remark || "";
       var g  = document.getElementById("isGift");  if (g)  g.checked = !!it.isGift;
+      var rp = document.getElementById("repPrice"); if (rp) rp.checked = !!it.repPrice;
       if (typeof calculateItemTotal === "function") calculateItemTotal();
 
       deleteRow(btn);   // remove the old row; user re-adds with Add Item
