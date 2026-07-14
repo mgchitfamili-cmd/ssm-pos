@@ -109,6 +109,8 @@
 
     /* ── Fields ── */
     .field{ margin:0 0 12px 0; }
+    .field-row{ display:flex; gap:10px; }
+    .field-row .field{ flex:1; min-width:0; }
     .field:last-child{ margin-bottom:0; }
     .lbl{
       display:block; font-size:12.5px; font-weight:600; color:var(--ink-2);
@@ -156,7 +158,7 @@
     }
     .gift-remark{ flex:1; min-width:0; }
     .gift-label input{ width:19px; height:19px; accent-color:var(--brand); margin:0; flex:none; }
-    .saletype-row{ align-items:stretch; }
+    .saletype-row{ align-items:stretch; flex-wrap:wrap; }
     .saletype-row > select{ flex:1; min-width:0; }
     .saletype-row > .gift-label{ flex:none; }
     .seg-toggle{ display:flex; flex:1; min-width:0; gap:3px; padding:3px;
@@ -572,6 +574,10 @@
               <input type="checkbox" id="isGift" onchange="giftChanged()">
               <span>ဈေးနှုန်း (0 Ks)</span>
             </label>
+            <label class="gift-label" id="repPriceWrap">
+              <input type="checkbox" id="repPrice" onchange="calculateItemTotal()">
+              <span>ကိုယ်စားလှယ်ဈေး</span>
+            </label>
           </div>
         </div>
 
@@ -631,9 +637,6 @@
       <section class="card">
         <p class="eyebrow"><span class="dot"></span>လျှော့ဈေး & ပေးချေမှု</p>
 
-        <div class="field">
-          <input id="delivery" placeholder="Delivery Fee" oninput="calculateNet()">
-        </div>
         <div class="oppay-box">
           <p class="oppay-head">💵 Payment</p>
           <input type="hidden" id="payStatusSel" value="Prepaid">
@@ -671,20 +674,15 @@
             <p id="depConfirmNote" class="oppay-note">⚠️ Confirm မလုပ်ရင် Deposit က invoice မှာ မပါပါ</p>
           </div>
         </div>
-        <div class="disc-box">
-          <div class="row">
-            <div>
-              <select id="discountType" onchange="calculateNet()">
-                <option value="none">Discount မရှိ</option>
-                <option value="amount">Amount (ငွေပမာဏ)</option>
-                <option value="percent">Percent (%)</option>
-              </select>
-            </div>
-            <div>
-              <input id="discountValue" placeholder="ပမာဏ" oninput="calculateNet()" disabled>
-            </div>
+        <div class="field-row">
+          <div class="field">
+            <label class="lbl">လျော့ပေး (Discount)</label>
+            <input id="discountValue" placeholder="Discount ပမာဏ" inputmode="numeric" oninput="calculateNet()">
           </div>
-          <p id="discountNote"></p>
+          <div class="field">
+            <label class="lbl">ပို့ခ (Delivery Fee)</label>
+            <input id="delivery" placeholder="Delivery Fee" oninput="calculateNet()">
+          </div>
         </div>
         <div class="field">
           <textarea id="note" placeholder="📝 Delivery မှတ်ချက် (receipt အောက်ခြေ)"></textarea>
@@ -842,7 +840,8 @@
     }
     // total = (ပြည့်တဲ့ ပိဿာ × price1viss) + (ကျန်ကျပ်သား × extraVissPrice)
     //         ၁ ပိဿာ မပြည့်ရင် → size ဈေး × qty
-    function weightTotal(product, sizeVal, qty){
+    //         ကိုယ်စားလှယ်ဈေး (repPrice) ✓ ရင် → ၁ပိဿာ ပြည့်/မပြည့် ဆက်စပ်မရှိ၊ ပိဿာဈေးအတိုင်း အချိုးကျ ရေတွက်
+    function weightTotal(product, sizeVal, qty, repPrice){
       var sizePriceMap = {
         "5": product.price5, "10": product.price10, "15": product.price15,
         "25": product.price25, "50": product.price50, "1viss": product.price1viss
@@ -854,7 +853,9 @@
       var fullV   = Math.floor(totalKy / KYATTHA_PER_VISS);
       var rem     = totalKy - fullV * KYATTHA_PER_VISS;
       var total;
-      if (product.vissFrom50 && totalKy >= 50) {
+      if (repPrice) {
+        total = totalKy * (vissP / KYATTHA_PER_VISS);   // ကိုယ်စားလှယ်ဈေး — ပိဿာဈေး အချိုးကျ (qty မရွေး)
+      } else if (product.vissFrom50 && totalKy >= 50) {
         total = totalKy * extraP;            // Special: 50 ကျပ်သားကနေ → ပိဿာပိုဈေး(/ကျပ်သား) × စုစုပေါင်းကျပ်သား
       } else if (fullV >= 1) {
         total = fullV * vissP + rem * extraP; // ပုံမှန် ၁ ပိဿာ+
@@ -874,13 +875,20 @@
         var pName = document.getElementById("product").value;
         var product = products.find(function (p) { return p.name == pName; });
         var sizeVal = document.getElementById("size").value;
-        var t = product ? weightTotal(product, sizeVal, qty) : { total: 0 };
+        var repPriceEl = document.getElementById("repPrice");
+        var repPrice = repPriceEl ? repPriceEl.checked : false;
+        var t = product ? weightTotal(product, sizeVal, qty, repPrice) : { total: 0 };
         document.getElementById("itemTotal").value = t.total;
         return;
       }
 
       var price = Number(document.getElementById("price").value) || 0;
-      document.getElementById("itemTotal").value = price * qty;
+      var total = price * qty;
+      var repPriceElU = document.getElementById("repPrice");
+      if (saleType === "unit" && repPriceElU && repPriceElU.checked && !document.getElementById("isGift").checked) {
+        total = total * 0.9;   // ကိုယ်စားလှယ်ဈေး — Unit ဆို 10% လျှော့
+      }
+      document.getElementById("itemTotal").value = Math.round(total);
     }
 
     // ── Fill Price ────────────────────────────────────────────────
@@ -946,9 +954,11 @@
     }
 
     function addItem() {
-      let product  = document.getElementById("product").value;
-      let saleType = document.getElementById("saleType").value;
-      let isGift   = document.getElementById("isGift").checked;
+      let product   = document.getElementById("product").value;
+      let saleType  = document.getElementById("saleType").value;
+      let isGift    = document.getElementById("isGift").checked;
+      let repPriceEl = document.getElementById("repPrice");
+      let repPrice  = repPriceEl ? repPriceEl.checked : false;
       let price    = Number(document.getElementById("price").value);
       let qty      = Number(document.getElementById("qty").value);
       let remark   = document.getElementById("remark").value;
@@ -986,13 +996,15 @@
         product, saleType, size: sizeLabel,
         price, qty, remark, total,
         weightText: weightText,
-        isGift: isGift
+        isGift: isGift,
+        repPrice: repPrice
       };
 
       items.push(item);
       grandTotal += total;
 
       let giftTag = isGift ? " 🎁" : "";
+      let repTag  = repPrice ? " 🏷️" : "";
 
       var _sub = (saleType === "weight")
         ? weightText
@@ -1000,7 +1012,7 @@
       document.getElementById("saleTable").innerHTML += `
         <div class="rcart-item" data-id="${item.id}" data-total="${total}">
           <div class="rcart-main">
-            <div class="item-name">${product}${giftTag}</div>
+            <div class="item-name">${product}${giftTag}${repTag}</div>
             <div class="item-sub"><span>${_sub}</span><span>${total}</span></div>
             ${remark ? `<div class="item-remark">→ ${remark}</div>` : ""}
           </div>
@@ -1018,6 +1030,7 @@
       document.getElementById("remark").value    = "";
       document.getElementById("itemTotal").value = "";
       document.getElementById("isGift").checked  = false;
+      if (document.getElementById("repPrice")) document.getElementById("repPrice").checked = false;
       setSaleTypeAvail(true, true);   // toggle ပြန် fresh (Weight, both enable)
       saleTypeChanged();
     }
@@ -1048,6 +1061,7 @@
       var q  = document.getElementById("qty");     if (q)  q.value  = it.qty;
       var rm = document.getElementById("remark");  if (rm) rm.value = it.remark || "";
       var g  = document.getElementById("isGift");  if (g)  g.checked = !!it.isGift;
+      var rp = document.getElementById("repPrice"); if (rp) rp.checked = !!it.repPrice;
       if (typeof calculateItemTotal === "function") calculateItemTotal();
 
       deleteRow(btn);   // remove the old row; user re-adds with Add Item
@@ -1087,31 +1101,7 @@
     function calculateNet() {
       let delivery = Number(document.getElementById("delivery").value);
       let deposit  = effectiveDeposit();
-      let discType = document.getElementById("discountType").value;
-      var _dvEl = document.getElementById("discountValue");
-      if (_dvEl) {
-        if (discType === "none") { _dvEl.disabled = true; if (_dvEl.value) _dvEl.value = ""; }
-        else { _dvEl.disabled = false; }
-      }
-      let discVal  = Number(document.getElementById("discountValue").value) || 0;
-
-      let discountAmount = 0;
-      let note = "";
-
-      if (discType === "amount") {
-        discountAmount = discVal;
-      } else if (discType === "percent") {
-        // % က unit item ပါမှ ခွင့်ပြု
-        if (hasUnitItem()) {
-          discountAmount = Math.round(unitItemsTotal() * discVal / 100);
-          note = discVal + "% = " + discountAmount + " ကျပ်";
-        } else {
-          discountAmount = 0;
-          note = "⚠️ % discount က Unit ရောင်းမှသာ ရပါတယ်";
-        }
-      }
-
-      document.getElementById("discountNote").innerText = note;
+      let discountAmount = Number(document.getElementById("discountValue").value) || 0;
 
       let discountShow = document.getElementById("discountShow");
       if (discountAmount > 0) {
@@ -1126,14 +1116,7 @@
 
     // ── Get Discount Amount (save အတွက်) ──────────────────────────
     function getDiscountAmount() {
-      let discType = document.getElementById("discountType").value;
-      let discVal  = Number(document.getElementById("discountValue").value) || 0;
-
-      if (discType === "amount") return discVal;
-      if (discType === "percent" && hasUnitItem()) {
-        return Math.round(unitItemsTotal() * discVal / 100);
-      }
-      return 0;
+      return Number(document.getElementById("discountValue").value) || 0;
     }
 
     // ── Deposit online-payment screenshot ──
@@ -1282,7 +1265,6 @@
         orderApp:        document.getElementById("orderapp").value,
         items:           items,
         grandTotal:      grandTotal,
-        discountType:    document.getElementById("discountType").value,
         discountValue:   document.getElementById("discountValue").value,
         discountAmount:  discountAmount,
         delivery:        document.getElementById("delivery").value,
@@ -1495,8 +1477,7 @@
         });
       }
       document.getElementById("note").value            = receipt.note            || "";
-      document.getElementById("discountType").value    = receipt.discountType    || "none";
-      document.getElementById("discountValue").value   = receipt.discountValue   || "";
+      document.getElementById("discountValue").value   = receipt.discountAmount  || receipt.discountValue || "";
 
       receipt.items.forEach(function (item) {
         if (!item.id) item.id = Date.now() + Math.random();
@@ -1992,7 +1973,7 @@
       }
 
       var discLine = discount > 0
-        ? '<div class="line"><span>Discount</span><span>-' + fmt(discount) + '</span></div>' : '';
+        ? '<div class="line"><span>လျော့ပေး (Discount)</span><span>-' + fmt(discount) + '</span></div>' : '';
       var logoHtml = logo ? '<img src="' + logo + '" style="width:' + lsize + 'px;height:auto;flex-shrink:0;">' : '';
       var now = new Date();
       var dt = now.toLocaleDateString() + '  ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
@@ -2009,7 +1990,7 @@
         (itemHtml || '<div class="item-sub mm" style="justify-content:center;color:#999;">\u2014 item \u1019\u101B\u103E\u102D\u101E\u1031\u1038 \u2014</div>') + '<hr>' +
         '<div class="line"><span>Total</span><span>' + fmt(itemsSum) + '</span></div>' + discLine +
         '<div class="line"><span>Deposit</span><span>' + fmt(deposit) + '</span></div>' +
-        (delivery > 0 ? '<div class="line"><span>Delivery Fee</span><span>' + fmt(delivery) + '</span></div>' : '') +
+        (delivery > 0 ? '<div class="line"><span>ပို့ခ (Delivery Fee)</span><span>' + fmt(delivery) + '</span></div>' : '') +
         '<div class="net-box mm">' + payLabelLive + ' : ' + fmt(net) + '</div>' +
         (note ? '<div class="rcpt-note">' + note + '</div>' : '') +
         '<div class="footer-mm">' + (S.thankYou ? S.thankYou.replace(/\n/g, '<br>') : "\u1005\u102F\u1036\u1005\u102F\u1036\u1019\u102C\u1019\u102E\u101B\u1032\u1037 \u101C\u1000\u103A\u101B\u102C\u101C\u1031\u1038\u1000\u102D\u102F \u1019\u103C\u100A\u103A\u1038\u1005\u1019\u103A\u1038\u1000\u103C\u100A\u103A\u1037\u1015\u1031\u1038\u101C\u102D\u102F\u1037 \u1000\u103B\u1031\u1038\u1007\u1030\u1038\u1010\u1004\u103A\u1015\u102B\u1010\u101A\u103A \uD83D\uDE4F<br>\u1005\u102C\u1038\u1019\u103C\u102D\u1014\u103A\u1015\u102B\u1005\u1031\u1014\u1031\u102C\u103A \uD83D\uDC9B") + '</div>';
@@ -2017,7 +1998,7 @@
     window.renderLivePreview = renderLivePreview;
 
     // re-render on field changes
-    ['name','phone','address','township','orderapp','deliveryService','staff','delivery','deposit','discountType','discountValue','note']
+    ['name','phone','address','township','orderapp','deliveryService','staff','delivery','deposit','discountValue','note']
       .forEach(function(id){
         var e = document.getElementById(id);
         if (e){ e.addEventListener('input', renderLivePreview); e.addEventListener('change', renderLivePreview); }
