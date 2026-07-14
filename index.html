@@ -949,6 +949,26 @@
     }
 
     // ── Add Item ──────────────────────────────────────────────────
+    // Beep sound (Web Audio API — external file မလို၊ offline မှာလည်း အလုပ်လုပ်)
+    function ssmBeep(freq, duration) {
+      try {
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        var ctx = window._ssmAudioCtx || (window._ssmAudioCtx = new Ctx());
+        if (ctx.state === "suspended") ctx.resume();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq || 880;
+        gain.gain.value = 0.18;
+        osc.connect(gain); gain.connect(ctx.destination);
+        var t = ctx.currentTime;
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + (duration || 0.12));
+        osc.start(t);
+        osc.stop(t + (duration || 0.12) + 0.02);
+      } catch (e) {}
+    }
+
     function updateCartCount() {
       var c = document.getElementById("cartCount");
       if (c) c.textContent = items.length;
@@ -1003,6 +1023,7 @@
 
       items.push(item);
       grandTotal += total;
+      ssmBeep(700, 0.08);   // Add Item အသံ (တိုတို/မြင့်မြင့်)
 
       let giftTag = isGift ? " 🎁" : "";
       let repTag  = repPrice ? " 🏷️" : "";
@@ -1344,6 +1365,7 @@
       document.getElementById("saveBtn").innerText = "✅ Saved";
       var _asa = document.getElementById("afterSaveActions");
       _asa.style.display = "block";
+      ssmBeep(1000, 0.16);   // Save အောင်မြင်ကြောင်း အသံ (မြင့်ပြီး အနည်းငယ်ရှည်)
       showSaveMsg("✅ ဘောင်ချာ သိမ်းပြီးပါပြီ — " + savedData.orderNo, false);
       // edit ပြီးရင် identity ရှင်း → နောက် order အသစ်မှာ stale edit မဖြစ်အောင်
       if (isEditMode) { editIndex = null; window.editOrderNo = null; window.editOrderDate = null; try { sessionStorage.removeItem("ssm_editOrderNo"); sessionStorage.removeItem("ssm_editOrderNoT"); } catch (e) {} }
