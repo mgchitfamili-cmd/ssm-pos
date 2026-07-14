@@ -1200,6 +1200,7 @@
       depositConfirmed = true;
       var b = document.getElementById("depConfirmBtn");
       if (b) { b.classList.add("on"); b.textContent = "✓ ငွေ လက်ခံရရှိပြီး"; }
+      ssmBeep(1000, 0.16);
       calculateNet();
     }
     function resetDepConfirm() {
@@ -1421,6 +1422,7 @@
         // print.html အတွက် data သိမ်းပြီး သွားမယ်
         localStorage.setItem("printReceipt", JSON.stringify(salesHistory[last]));
       }
+      ssmBeep(900, 0.1);
       location.href = "print.html";
     }
 
@@ -1432,6 +1434,7 @@
       window.ssmRenderReceipt(box, savedData);   // print.html နဲ့ တူညီတဲ့ template
       html2canvas(box, { backgroundColor: "#ffffff", scale: 2 }).then(function (canvas) {
         box.remove();
+        ssmBeep(900, 0.1);
         canvas.toBlob(function (blob) {
           let file = new File([blob], "receipt.png", { type: "image/png" });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1449,6 +1452,7 @@
 
     // ── New Receipt ───────────────────────────────────────────────
     function newReceipt() {
+      ssmBeep(700, 0.08);
       location.href = "index.html";
     }
 
