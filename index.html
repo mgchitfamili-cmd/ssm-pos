@@ -1959,7 +1959,7 @@
         if (it.remark) itemHtml += '<div class="item-remark mm">\u2192 ' + it.remark + '</div>';
       });
 
-      var discount = num(gt('discountShow'));
+      var discount = num(gv('discountValue'));
       var note = gv('note');
       var _ps = (document.getElementById('payStatusSel')||{}).value || 'COD';
       var payLabelLive = _ps === 'Prepaid' ? 'ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး' : (_ps === 'Partial' ? 'ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်' : 'အိမ်ရောက်ငွေချေ');

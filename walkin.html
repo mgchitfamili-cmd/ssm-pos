@@ -1950,7 +1950,7 @@
         if (it.remark) itemHtml += '<div class="item-remark mm">\u2192 ' + it.remark + '</div>';
       });
 
-      var discount = num(gt('discountShow'));
+      var discount = num(gv('discountValue'));
       var note = gv('note');
       var _wiM = document.getElementById('wiPayMode');
       var payLabelLive = _wiM ? _wiM.options[_wiM.selectedIndex].text : 'လက်ငင်း (Cash)';
