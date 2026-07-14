@@ -638,6 +638,20 @@
       <section class="card">
         <p class="eyebrow"><span class="dot"></span>လျှော့ဈေး & ပေးချေမှု</p>
 
+        <div class="field-row">
+          <div class="field">
+            <label class="lbl">လျော့ပေး (Discount)</label>
+            <input id="discountValue" placeholder="Discount ပမာဏ" inputmode="numeric" oninput="calculateNet()">
+          </div>
+          <div class="field">
+            <label class="lbl">ပို့ခ (Delivery Fee)</label>
+            <input id="delivery" placeholder="Delivery Fee" oninput="calculateNet()">
+          </div>
+        </div>
+        <div class="field">
+          <textarea id="note" placeholder="📝 Delivery မှတ်ချက် (receipt အောက်ခြေ)"></textarea>
+        </div>
+
         <div class="oppay-box">
           <p class="oppay-head">💵 Payment</p>
           <label class="oppay-lbl">Payment အခြေအနေ <span style="font-weight:500;color:var(--ink-3);">(receipt အောက် label)</span></label>
@@ -673,19 +687,6 @@
             <button type="button" id="depConfirmBtn" class="oppay-confirm" onclick="confirmDeposit()">💰 ငွေ လက်ခံရရှိပါသည် (Confirm)</button>
             <p id="depConfirmNote" class="oppay-note">⚠️ Confirm မလုပ်ရင် Deposit က invoice မှာ မပါပါ</p>
           </div>
-        </div>
-        <div class="field-row">
-          <div class="field">
-            <label class="lbl">လျော့ပေး (Discount)</label>
-            <input id="discountValue" placeholder="Discount ပမာဏ" inputmode="numeric" oninput="calculateNet()">
-          </div>
-          <div class="field">
-            <label class="lbl">ပို့ခ (Delivery Fee)</label>
-            <input id="delivery" placeholder="Delivery Fee" oninput="calculateNet()">
-          </div>
-        </div>
-        <div class="field">
-          <textarea id="note" placeholder="📝 Delivery မှတ်ချက် (receipt အောက်ခြေ)"></textarea>
         </div>
 
         <h3 id="discountShow"></h3>
