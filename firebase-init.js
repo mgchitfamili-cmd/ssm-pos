@@ -388,17 +388,10 @@
             }
           });
 
-          if (isInitial) {
-            local = local.filter(function (s) {
-              var sid = sidOf(s);
-              if (byId[sid]) return true;
-              var t = new Date(s.orderDate || 0).getTime();
-              if (isNaN(t) || t < sinceMs) return true;
-              if (!syncedIds[sid]) return true;
-              if (isOldSale(s)) return true;
-              return false;
-            });
-          }
+          // ⚠️ NOTE: windowed query ဖြစ်လာလို့ "cloud မှာ မတွေ့ရင် တခြား device ဖျက်တယ်" ဆိုတဲ့ heuristic ကို
+          // ဖယ်ရှားလိုက်ပါတယ် — query က တစ်စိတ်တစ်ပိုင်းသာ (20ရက်) ဆွဲတာမို့၊ orderDate field မှားနေတာမျိုး/
+          // query timing စတာတွေကြောင့် doc တစ်ခု ခဏ မပါလာရင်တောင် local ကို အမှား ဖျက်မိနိုင်လို့ပါ။
+          // (Explicit delete လုပ်ရင် ssmPushSales/trackedSids diff ကနေ cloud ကို သီးခြား ဖျက်ပေးပါတယ် — ဒါက မထိခိုက်ပါ)
 
           var extras = [];
           Object.keys(byId).forEach(function (sid) { if (!seenL[sid]) extras.push(byId[sid]); });
