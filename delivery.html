@@ -106,6 +106,10 @@
     .field input:focus, .field select:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
     .field-row{ display:flex; gap:10px; }
     .field-row .field{ flex:1; min-width:0; }
+    .delivery-code-input.code-orange{ border-color:#f59e0b; }
+    .delivery-code-input.code-orange:focus{ border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.18); }
+    .delivery-code-input.code-green{ border-color:var(--green-line); color:var(--green); font-weight:700; }
+    .delivery-code-input.code-green:focus{ border-color:var(--green-line); box-shadow:0 0 0 3px rgba(22,163,74,.15); }
 
     .info-line{ font-size:13px; margin:7px 0; color:var(--ink-2); }
     .info-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
@@ -437,8 +441,9 @@
                 <div class="field">
                   <label>Delivery Code</label>
                   <input
+                    class="delivery-code-input ${(sale.deliveryCode && sale.deliveryCode.length === 9) ? 'code-green' : 'code-orange'}"
                     value="${sale.deliveryCode || ""}"
-                    oninput="saveCode(${index}, this.value)"
+                    oninput="saveCode(${index}, this.value, this)"
                     placeholder="ABC123456"
                     maxlength="9"
                     style="text-transform:uppercase"
@@ -548,8 +553,15 @@
     }
 
     // ── Save Code ─────────────────────────────────────────────────
-    function saveCode(index, code) {
-      salesHistory[index].deliveryCode = code.toUpperCase();
+    function saveCode(index, code, inputEl) {
+      code = (code || "").toUpperCase();
+      var complete = code.length === 9;   // ABC123456 — အပြည့် ၉ လုံး
+      if (inputEl) {
+        inputEl.classList.remove("code-orange", "code-green");
+        inputEl.classList.add(complete ? "code-green" : "code-orange");
+      }
+      if (!complete) return;   // အပြည့်မထည့်ရသေးရင် Save မဖြစ်ပါ (အစိမ်းရောင် မပြောင်းပါ)
+      salesHistory[index].deliveryCode = code;
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
       updateNoCodeBanner();   // count live update (typing focus မပျက်)
       // render မလုပ်ဘူး — typing အဆင်ပြေအောင်
