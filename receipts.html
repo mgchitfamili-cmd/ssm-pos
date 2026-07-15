@@ -300,18 +300,18 @@
     <div class="modal-box">
       <h2>💵 Payment ထည့်ရန်</h2>
 
-      <label>Payment အခြေအနေ</label>
+      <label>Payment အခြေအနေ <span style="font-weight:500;color:var(--ink-3);">(receipt အောက် label)</span></label>
       <select id="payStatus">
         <option value="COD">အိမ်ရောက်ငွေချေ (COD)</option>
-        <option value="Prepaid">ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး</option>
         <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်</option>
+        <option value="Prepaid">ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး</option>
       </select>
 
-      <label>ငွေ ပမာဏ (Deposit)</label>
+      <label>ကြိုတင်ပေးငွေ ပမာဏ (Deposit)</label>
       <input id="payAmount" placeholder="0" type="number" oninput="togglePrepaidFields()">
 
       <div id="prepaidFields">
-        <label>Payment Type</label>
+        <label>Online Payment Type</label>
         <select id="payType">
           <option value="">ရွေးပါ</option>
           <option value="KPay">KPay</option>
@@ -537,7 +537,22 @@
     }
 
     // COD ဆို prepaid fields ဖျောက်
-    document.getElementById("payStatus").addEventListener("change", togglePrepaidFields);
+    document.getElementById("payStatus").addEventListener("change", function () {
+      autoFillPayAmount();
+      togglePrepaidFields();
+    });
+    // Payment status ရွေးလိုက်ရင် Deposit ကို auto ဖြည့်ပေးမယ် (COD ဆို ပုံမှန်အတိုင်း မပြောင်း) — Index page အတိုင်း
+    function autoFillPayAmount() {
+      var status = document.getElementById("payStatus").value;
+      if (status !== "Partial" && status !== "Prepaid") return;
+      if (payingIndex == null) return;
+      var sale = salesHistory[payingIndex];
+      if (!sale) return;
+      var itemsNet = Number(sale.grandTotal || 0) - Number(sale.discountAmount || 0);   // Delivery မပါတဲ့ ဘောင်ချာ တန်ဖိုး
+      var delivery = Number(sale.delivery || 0);
+      var amt = (status === "Partial") ? itemsNet : itemsNet + delivery;
+      document.getElementById("payAmount").value = Math.round(amt);
+    }
     function togglePrepaidFields() {
       let status = document.getElementById("payStatus").value;
       let amt = Number(document.getElementById("payAmount").value) || 0;
