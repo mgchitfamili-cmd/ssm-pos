@@ -412,9 +412,14 @@
           ssmPushSales(JSON.stringify(local));
         }
 
-        db.collection(SALES).where("orderDate", ">=", ssmSinceISO(salesWindowDays)).get()
+        db.collection(SALES).where("orderDate", ">=", ssmSinceISO(salesWindowDays)).get({ source: "server" })
           .then(function (snap) { ssmHandleSalesBatch(snap, Date.now() - salesWindowDays * 86400000, true); })
-          .catch(function (err) { console.warn("[sales] initial fetch failed:", err); });
+          .catch(function (err) {
+            console.warn("[sales] initial fetch (server) failed, falling back to cache/default:", err);
+            db.collection(SALES).where("orderDate", ">=", ssmSinceISO(salesWindowDays)).get()
+              .then(function (snap) { ssmHandleSalesBatch(snap, Date.now() - salesWindowDays * 86400000, true); })
+              .catch(function (err2) { console.warn("[sales] initial fetch failed:", err2); });
+          });
 
         var salesLoadMoreBusy = false;
         window.ssmLoadMoreSales = function (cb) {
@@ -426,7 +431,7 @@
           db.collection(SALES)
             .where("orderDate", ">=", ssmSinceISO(newDays))
             .where("orderDate", "<",  ssmSinceISO(oldDays))
-            .get()
+            .get({ source: "server" })
             .then(function (snap) {
               salesWindowDays = newDays;
               ssmHandleSalesBatch(snap, Date.now() - newDays * 86400000, false);
