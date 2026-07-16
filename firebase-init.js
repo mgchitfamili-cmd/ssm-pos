@@ -374,7 +374,12 @@
 
           if (isInitial) {
             ssmPruneOldSales(byId);
-            if (lastPush["__sales"]) return;
+            // NOTE: previously "if (lastPush['__sales']) return;" skipped the ENTIRE merge whenever this
+            // device had written salesHistory even once before the initial fetch resolved (e.g. delivery.html's
+            // auto-fix-on-render calling localStorage.setItem during page load) — this silently blocked cloud
+            // updates from OTHER devices from EVER being pulled in on that device. Removed: the per-record
+            // "_u" timestamp check below already protects a fresh local edit from being overwritten by a
+            // stale cloud snapshot, so this blanket guard was unnecessary and actively harmful.
           }
 
           var local; try { local = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) { local = []; }
