@@ -111,8 +111,13 @@
     .delivery-code-input.code-green{ border-color:var(--green-line); color:var(--green); font-weight:700; }
     .delivery-code-input.code-green:focus{ border-color:var(--green-line); box-shadow:0 0 0 3px rgba(22,163,74,.15); }
     .parcel-field{ margin-top:8px; }
+    .parcel-label{ display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+    .parcel-label label{ display:inline; font-size:12.5px; font-weight:600; color:var(--ink-2); margin:0; cursor:pointer; }
+    .parcel-ship-cb{ width:16px; height:16px; accent-color:var(--green); cursor:pointer; margin:0; flex:none; }
+    .parcel-input-row{ display:flex; gap:8px; align-items:center; }
+    .parcel-input-row .parcel-code-input{ width:auto; flex:1 1 auto; max-width:170px; min-width:0; }
     .parcel-add-btn{
-      margin-top:8px; padding:8px 14px; font-size:12.5px; font-weight:700;
+      flex:none; white-space:nowrap; padding:11px 14px; font-size:12.5px; font-weight:700;
       color:var(--brand); background:var(--brand-tint); border:1px solid var(--brand-line);
       border-radius:999px; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:4px;
     }
@@ -551,51 +556,65 @@
 
     // ── Parcel Tracking Codes (Parcel 1, 2, 3... same order/receipt, ကုန်ပစ္စည်း/COD မခွဲ) ─
     // sale.deliveryCodes = ["ABC123456", "XYZ987654", ...] — sale.deliveryCode (ဟောင်း) ကို parcel 1 အဖြစ် backward-compat ထိန်း
+    // sale.parcelShipped = [true, false, ...] — parcel တစ်ခုချင်းစီ ထုတ်ပြီး/မပြီး checkbox state
     function parcelCodesOf(sale) {
       if (Array.isArray(sale.deliveryCodes) && sale.deliveryCodes.length) return sale.deliveryCodes;
       return [sale.deliveryCode || ""];   // ဟောင်း data — parcel 1 တစ်ခုတည်း
     }
+    function parcelShippedOf(sale) {
+      return Array.isArray(sale.parcelShipped) ? sale.parcelShipped : [];
+    }
 
-    function renderParcel1Field(sale, index) {
+    function renderParcelRow(sale, index, pIdx, isLast) {
       var codes = parcelCodesOf(sale);
-      var code = codes[0] || "";
+      var shipped = parcelShippedOf(sale);
+      var code = codes[pIdx] || "";
       var complete = code.length === 9;
+      var title = pIdx === 0 ? "Delivery Code" : "Delivery Code (Parcel " + (pIdx + 1) + ")";
       return `
-                <div class="field">
-                  <label>Delivery Code</label>
+              <div class="field parcel-field">
+                <div class="parcel-label" onclick="event.stopPropagation();">
+                  <input type="checkbox" class="parcel-ship-cb" id="parcel-ship-${index}-${pIdx}"
+                    ${shipped[pIdx] ? "checked" : ""}
+                    onchange="toggleParcelShipped(${index}, ${pIdx}, this.checked)">
+                  <label for="parcel-ship-${index}-${pIdx}">${title}</label>
+                </div>
+                <div class="parcel-input-row">
                   <input
-                    class="delivery-code-input ${complete ? "code-green" : "code-orange"}"
+                    class="delivery-code-input parcel-code-input ${complete ? "code-green" : "code-orange"}"
                     value="${code}"
-                    oninput="saveParcelCode(${index}, 0, this.value, this)"
+                    oninput="saveParcelCode(${index}, ${pIdx}, this.value, this)"
                     placeholder="ABC123456"
                     maxlength="9"
                     style="text-transform:uppercase"
                   >
-                </div>`;
+                  ${isLast ? `<button type="button" class="parcel-add-btn" onclick="addParcel(${index})">+ Parcel</button>` : ""}
+                </div>
+              </div>`;
+    }
+
+    function renderParcel1Field(sale, index) {
+      var codes = parcelCodesOf(sale);
+      return renderParcelRow(sale, index, 0, codes.length === 1);
     }
 
     function renderExtraParcels(sale, index) {
       var codes = parcelCodesOf(sale);
       var html = "";
       for (var pIdx = 1; pIdx < codes.length; pIdx++) {
-        var code = codes[pIdx] || "";
-        var complete = code.length === 9;
-        html += `
-              <div class="field parcel-field">
-                <label>Delivery Code (Parcel ${pIdx + 1})</label>
-                <input
-                  class="delivery-code-input ${complete ? "code-green" : "code-orange"}"
-                  value="${code}"
-                  oninput="saveParcelCode(${index}, ${pIdx}, this.value, this)"
-                  placeholder="ABC123456"
-                  maxlength="9"
-                  style="text-transform:uppercase"
-                >
-              </div>`;
+        html += renderParcelRow(sale, index, pIdx, pIdx === codes.length - 1);
       }
-      html += `
-              <button type="button" class="parcel-add-btn" onclick="addParcel(${index})">+ Parcel ${codes.length + 1}</button>`;
       return html;
+    }
+
+    // ── Parcel Shipped checkbox ───────────────────────────────────
+    function toggleParcelShipped(index, parcelIdx, checked) {
+      var sale = salesHistory[index];
+      var shipped = parcelShippedOf(sale).slice();
+      shipped[parcelIdx] = checked;
+      sale.parcelShipped = shipped;
+      localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+      // render မလုပ်ဘူး — checkbox state ကိုယ်တိုင်က visual ပြောင်းပေးပြီးသားမို့
     }
 
     // ── Save Parcel Code (parcel တစ်ခုချင်းစီ) ──────────────────────
@@ -627,8 +646,11 @@
     function addParcel(index) {
       var sale = salesHistory[index];
       var codes = parcelCodesOf(sale).slice();
+      var shipped = parcelShippedOf(sale).slice();
       codes.push("");
+      shipped.push(false);
       sale.deliveryCodes = codes;
+      sale.parcelShipped = shipped;
       sale.deliveryCode  = codes[0] || "";
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
       openCardIndex = index;
