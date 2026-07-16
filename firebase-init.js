@@ -243,6 +243,18 @@
         var syncedIds; try { syncedIds = JSON.parse(localStorage.getItem("ssm_syncedIds")) || {}; } catch (e) { syncedIds = {}; }
         function markSynced(id) { if (!syncedIds[id]) { syncedIds[id] = 1; try { origSet("ssm_syncedIds", JSON.stringify(syncedIds)); } catch (e) {} } }
 
+        // deletedIds: ဒီ device ကနေ ဖျက်ခဲ့တဲ့ orderNo → timestamp (tombstone) — cloud pull တစ်ခု delete push နဲ့ race
+        // ဖြစ်ပြီး cloud ကနေ ပြန်ရောက်လာရင်တောင် ဒီ list ထဲ ရှိနေရင် "extras" အနေနဲ့ ပြန်မထည့်ဘဲ ကာကွယ်ဖို့
+        var deletedIds; try { deletedIds = JSON.parse(localStorage.getItem("ssm_deletedIds")) || {}; } catch (e) { deletedIds = {}; }
+        var DELETED_TTL_MS = 60 * 86400000;   // ၆၀ ရက်ထက် ကြာရင် tombstone ဟောင်း ဖယ် (list မကြီးလွန်းအောင်)
+        function markDeleted(id) {
+          deletedIds[id] = Date.now();
+          var out = {}, now = Date.now();
+          for (var k in deletedIds) { if (now - deletedIds[k] < DELETED_TTL_MS) out[k] = deletedIds[k]; }
+          deletedIds = out;
+          try { origSet("ssm_deletedIds", JSON.stringify(deletedIds)); } catch (e) {}
+        }
+
         // delete baseline ကို current local ကနေ စ (merge မဖြစ်ခင် save ရင် တခြား sales မှားမဖျက်အောင်)
         try { (JSON.parse(localStorage.getItem("salesHistory")) || []).forEach(function (s) { trackedSids[sidOf(s)] = true; }); } catch (e) {}
 
@@ -324,9 +336,14 @@
             }
             db.collection(SALES).doc(sid).set(doc).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
           });
-          // delete: baseline မှာ ရှိပြီး အခု ပျောက် → cloud doc ဖျက်
+          // delete: baseline မှာ ရှိပြီး အခု ပျောက် → cloud doc ဖျက် + tombstone မှတ် (race-safe)
           Object.keys(trackedSids).forEach(function (sid) {
-            if (!seen[sid]) { db.collection(SALES).doc(sid).delete().catch(function () {}); db.collection(IMG_COL).doc(sid).delete().catch(function () {}); delete saleCache[sid]; }
+            if (!seen[sid]) {
+              db.collection(SALES).doc(sid).delete().catch(function () {});
+              db.collection(IMG_COL).doc(sid).delete().catch(function () {});
+              delete saleCache[sid];
+              markDeleted(sid);
+            }
           });
           trackedSids = seen;
         }
@@ -400,7 +417,17 @@
           // (Explicit delete လုပ်ရင် ssmPushSales/trackedSids diff ကနေ cloud ကို သီးခြား ဖျက်ပေးပါတယ် — ဒါက မထိခိုက်ပါ)
 
           var extras = [];
-          Object.keys(byId).forEach(function (sid) { if (!seenL[sid]) extras.push(byId[sid]); });
+          Object.keys(byId).forEach(function (sid) {
+            if (seenL[sid]) return;
+            if (deletedIds[sid]) {
+              // ဒီ device ကနေ ဖျက်ခဲ့ဖူးတာ — cloud က ပြန်ရောက်လာလည်း local ကို ပြန်မထည့်ဘူး
+              // (delete push ကနေ race ဖြစ်ပြီး cloud မှာ ကျန်ခဲ့ရင် ဒီနေရာက ပြန် self-heal ဖျက်ပေးမယ်)
+              db.collection(SALES).doc(sid).delete().catch(function () {});
+              db.collection(IMG_COL).doc(sid).delete().catch(function () {});
+              return;
+            }
+            extras.push(byId[sid]);
+          });
           extras.sort(function (a, b) { return String(a.orderDate || "").localeCompare(String(b.orderDate || "")); });
           if (isInitial) extras.forEach(function (s) { local.push(s); });
           else local = extras.concat(local);
