@@ -837,6 +837,12 @@
     // ── Init ──────────────────────────────────────────────────────
     renderCards();
 
+    // Cloud sync ပြီးတိုင်း (page ဖွင့်ပြီးနောက် background fetch) — card list ကို ချက်ချင်း ပြန် render
+    // (window.renderCards ကို firebase-init.js ကနေ တိုက်ရိုက်ခေါ်တာ အလုပ်မလုပ်ခဲ့ရင်တောင် ဒါက အမြဲ အလုပ်လုပ်မယ်)
+    document.addEventListener("ssm-sales-updated", function () {
+      renderCards();
+    });
+
   
     // ── Slide Menu ──
     function openMenu() {

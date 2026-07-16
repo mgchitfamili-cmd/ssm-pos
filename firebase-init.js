@@ -252,6 +252,7 @@
             else if (typeof window.renderCards === "function") window.renderCards();
             else if (typeof window.render === "function") window.render();
           } catch (e) {}
+          try { document.dispatchEvent(new CustomEvent("ssm-sales-updated")); } catch (e) {}
         }
 
         // ── PRUNE: ၃၆၅ ရက်ကျော် ဘောင်ချာဟောင်းကို cloud ကနေသာ ဖယ် (Blaze plan — တစ်နှစ်စာ cloud မှာ ထား)။ local + device အားလုံးမှာ အပြည့် ကျန် ──
