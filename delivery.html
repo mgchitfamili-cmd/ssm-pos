@@ -126,6 +126,7 @@
       border-radius:999px; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:4px;
     }
     .parcel-add-btn:active{ transform:scale(.96); }
+    .parcel-add-standalone{ margin-top:8px; }
 
     .info-line{ font-size:13px; margin:7px 0; color:var(--ink-2); }
     .info-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
@@ -574,7 +575,7 @@
       var shipped = parcelShippedOf(sale);
       var code = codes[pIdx] || "";
       var complete = code.length === 9;
-      var title = pIdx === 0 ? "Delivery Code" : "Delivery Code (Parcel " + (pIdx + 1) + ")";
+      var title = "Delivery Code (Parcel " + (pIdx + 1) + ")";
       return `
               <div class="field parcel-field">
                 <div class="parcel-label" onclick="event.stopPropagation();">
@@ -597,14 +598,35 @@
               </div>`;
     }
 
+    // Parcel 1 — checkbox/button မပါ (ဟောင်း pattern အတိုင်း ရိုးရိုး Delivery Code field)
     function renderParcel1Field(sale, index) {
       var codes = parcelCodesOf(sale);
-      return renderParcelRow(sale, index, 0, codes.length === 1);
+      var code = codes[0] || "";
+      var complete = code.length === 9;
+      return `
+                <div class="field">
+                  <label>Delivery Code</label>
+                  <input
+                    class="delivery-code-input ${complete ? "code-green" : "code-orange"}"
+                    value="${code}"
+                    oninput="saveParcelCode(${index}, 0, this.value, this)"
+                    placeholder="ABC123456"
+                    maxlength="9"
+                    style="text-transform:uppercase"
+                  >
+                </div>`;
     }
 
+    // Parcel 2+ — checkbox ပါ၊ "+Parcel" ခလုတ်က နောက်ဆုံး parcel row ဘေးမှာသာ
+    // Parcel 2 မရှိသေးရင် (codes.length === 1) → "+Parcel" ခလုတ် ကိုယ်တိုင် Status row အောက် သီးသန့် ပေါ်
     function renderExtraParcels(sale, index) {
       var codes = parcelCodesOf(sale);
       var html = "";
+      if (codes.length === 1) {
+        html += `
+              <button type="button" class="parcel-add-btn parcel-add-standalone" onclick="addParcel(${index})">+ Parcel</button>`;
+        return html;
+      }
       for (var pIdx = 1; pIdx < codes.length; pIdx++) {
         html += renderParcelRow(sale, index, pIdx, pIdx === codes.length - 1);
       }
