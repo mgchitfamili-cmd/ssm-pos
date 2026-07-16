@@ -420,7 +420,7 @@
             <div class="badge-row" onclick="toggleCard(${index})">
               <span class="status-badge badge-${status}">${status}</span>
               <span class="badge-parcel ${sale.deliveryParcel ? 'parcel-yes' : 'parcel-no'}">${sale.deliveryParcel ? '📦 ထုပ်ပြီး' : '📦 မထုပ်ရသေး'}</span>
-              ${(sale.deliveryService == "Royal" && !sale.deliveryCode) ? '<span class="badge-nocode">⚠️ Code ကျန်</span>' : ''}
+              ${(sale.deliveryService == "Royal" && !sale.deliveryCode) ? '<span class="badge-nocode" id="nocode-badge-' + index + '">⚠️ Code ကျန်</span>' : ''}
             </div>
 
             <!-- Detail -->
@@ -563,6 +563,8 @@
       if (!complete) return;   // အပြည့်မထည့်ရသေးရင် Save မဖြစ်ပါ (အစိမ်းရောင် မပြောင်းပါ)
       salesHistory[index].deliveryCode = code;
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+      var badge = document.getElementById("nocode-badge-" + index);
+      if (badge) badge.remove();   // ဒီ card ရဲ့ "Code ကျန်" tag ကို ချက်ချင်း ဖျောက် (typing focus မပျက်)
       updateNoCodeBanner();   // count live update (typing focus မပျက်)
       // render မလုပ်ဘူး — typing အဆင်ပြေအောင်
     }
