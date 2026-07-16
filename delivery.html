@@ -110,6 +110,13 @@
     .delivery-code-input.code-orange:focus{ border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.18); }
     .delivery-code-input.code-green{ border-color:var(--green-line); color:var(--green); font-weight:700; }
     .delivery-code-input.code-green:focus{ border-color:var(--green-line); box-shadow:0 0 0 3px rgba(22,163,74,.15); }
+    .parcel-field{ margin-top:8px; }
+    .parcel-add-btn{
+      margin-top:8px; padding:8px 14px; font-size:12.5px; font-weight:700;
+      color:var(--brand); background:var(--brand-tint); border:1px solid var(--brand-line);
+      border-radius:999px; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:4px;
+    }
+    .parcel-add-btn:active{ transform:scale(.96); }
 
     .info-line{ font-size:13px; margin:7px 0; color:var(--ink-2); }
     .info-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
@@ -437,19 +444,9 @@
                   </select>
                 </div>
 
-                ${sale.deliveryService == "Royal" ? `
-                <div class="field">
-                  <label>Delivery Code</label>
-                  <input
-                    class="delivery-code-input ${(sale.deliveryCode && sale.deliveryCode.length === 9) ? 'code-green' : 'code-orange'}"
-                    value="${sale.deliveryCode || ""}"
-                    oninput="saveCode(${index}, this.value, this)"
-                    placeholder="ABC123456"
-                    maxlength="9"
-                    style="text-transform:uppercase"
-                  >
-                </div>` : ""}
+                ${sale.deliveryService == "Royal" ? renderParcel1Field(sale, index) : ""}
               </div>
+              ${sale.deliveryService == "Royal" ? renderExtraParcels(sale, index) : ""}
 
               <!-- Real Delivery Fee + Received (တစ်တန်းထဲ) -->
               <div class="field-row">
@@ -552,8 +549,57 @@
       renderCards();  // reload အစား render ပဲ
     }
 
-    // ── Save Code ─────────────────────────────────────────────────
-    function saveCode(index, code, inputEl) {
+    // ── Parcel Tracking Codes (Parcel 1, 2, 3... same order/receipt, ကုန်ပစ္စည်း/COD မခွဲ) ─
+    // sale.deliveryCodes = ["ABC123456", "XYZ987654", ...] — sale.deliveryCode (ဟောင်း) ကို parcel 1 အဖြစ် backward-compat ထိန်း
+    function parcelCodesOf(sale) {
+      if (Array.isArray(sale.deliveryCodes) && sale.deliveryCodes.length) return sale.deliveryCodes;
+      return [sale.deliveryCode || ""];   // ဟောင်း data — parcel 1 တစ်ခုတည်း
+    }
+
+    function renderParcel1Field(sale, index) {
+      var codes = parcelCodesOf(sale);
+      var code = codes[0] || "";
+      var complete = code.length === 9;
+      return `
+                <div class="field">
+                  <label>Delivery Code</label>
+                  <input
+                    class="delivery-code-input ${complete ? "code-green" : "code-orange"}"
+                    value="${code}"
+                    oninput="saveParcelCode(${index}, 0, this.value, this)"
+                    placeholder="ABC123456"
+                    maxlength="9"
+                    style="text-transform:uppercase"
+                  >
+                </div>`;
+    }
+
+    function renderExtraParcels(sale, index) {
+      var codes = parcelCodesOf(sale);
+      var html = "";
+      for (var pIdx = 1; pIdx < codes.length; pIdx++) {
+        var code = codes[pIdx] || "";
+        var complete = code.length === 9;
+        html += `
+              <div class="field parcel-field">
+                <label>Delivery Code (Parcel ${pIdx + 1})</label>
+                <input
+                  class="delivery-code-input ${complete ? "code-green" : "code-orange"}"
+                  value="${code}"
+                  oninput="saveParcelCode(${index}, ${pIdx}, this.value, this)"
+                  placeholder="ABC123456"
+                  maxlength="9"
+                  style="text-transform:uppercase"
+                >
+              </div>`;
+      }
+      html += `
+              <button type="button" class="parcel-add-btn" onclick="addParcel(${index})">+ Parcel ${codes.length + 1}</button>`;
+      return html;
+    }
+
+    // ── Save Parcel Code (parcel တစ်ခုချင်းစီ) ──────────────────────
+    function saveParcelCode(index, parcelIdx, code, inputEl) {
       code = (code || "").toUpperCase();
       var complete = code.length === 9;   // ABC123456 — အပြည့် ၉ လုံး
       if (inputEl) {
@@ -561,12 +607,32 @@
         inputEl.classList.add(complete ? "code-green" : "code-orange");
       }
       if (!complete) return;   // အပြည့်မထည့်ရသေးရင် Save မဖြစ်ပါ (အစိမ်းရောင် မပြောင်းပါ)
-      salesHistory[index].deliveryCode = code;
+
+      var sale = salesHistory[index];
+      var codes = parcelCodesOf(sale).slice();   // copy
+      codes[parcelIdx] = code;
+      sale.deliveryCodes = codes;
+      sale.deliveryCode  = codes[0] || "";        // parcel 1 ကို ဟောင်း field မှာလည်း sync ထား (backward-compat)
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
-      var badge = document.getElementById("nocode-badge-" + index);
-      if (badge) badge.remove();   // ဒီ card ရဲ့ "Code ကျန်" tag ကို ချက်ချင်း ဖျောက် (typing focus မပျက်)
-      updateNoCodeBanner();   // count live update (typing focus မပျက်)
+
+      if (parcelIdx === 0) {
+        var badge = document.getElementById("nocode-badge-" + index);
+        if (badge) badge.remove();   // ဒီ card ရဲ့ "Code ကျန်" tag ကို ချက်ချင်း ဖျောက် (typing focus မပျက်)
+        updateNoCodeBanner();        // count live update (typing focus မပျက်)
+      }
       // render မလုပ်ဘူး — typing အဆင်ပြေအောင်
+    }
+
+    // ── Parcel အသစ် ထပ်ထည့် (2, 3, 4... အကန့်အသတ်မရှိ) ──────────────
+    function addParcel(index) {
+      var sale = salesHistory[index];
+      var codes = parcelCodesOf(sale).slice();
+      codes.push("");
+      sale.deliveryCodes = codes;
+      sale.deliveryCode  = codes[0] || "";
+      localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+      openCardIndex = index;
+      renderCards();   // field အသစ် DOM ထဲ ထည့်ရမှာမို့ ဒီတစ်ခါတော့ render လိုအပ်ပါတယ် (card ဖွင့်ထားတာ ဆက်ဖွင့်ပေးမယ်)
     }
 
     // ── Save Note ─────────────────────────────────────────────────
