@@ -679,8 +679,12 @@
           </div>
           <div id="depExtra" style="display:none;">
             <input type="file" id="depSSInput" accept="image/*" style="display:none" onchange="loadDepSS(event)">
+            <input type="file" id="depSSInputCam" accept="image/*" capture="environment" style="display:none" onchange="loadDepSS(event)">
             <div class="oppay-row">
-              <button type="button" class="oppay-upload" onclick="document.getElementById('depSSInput').click()">📷 ငွေလွှဲ SS ထည့်ရန်</button>
+              <button type="button" class="oppay-upload" style="flex:1;" onclick="document.getElementById('depSSInputCam').click()">📷 ဓာတ်ပုံ ရိုက်ရန်</button>
+              <button type="button" class="oppay-upload" style="flex:1;" onclick="document.getElementById('depSSInput').click()">🖼️ Folder ကနေ ရွေးရန်</button>
+            </div>
+            <div class="oppay-row">
               <input id="depCode" maxlength="6" placeholder="Transaction Code (နောက်ဆုံး ၆ လုံး)" oninput="resetDepConfirm()">
             </div>
             <img id="depSSPreview" class="oppay-ss-img" style="display:none;">

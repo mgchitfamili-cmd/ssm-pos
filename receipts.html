@@ -294,6 +294,7 @@
 
   <!-- Hidden SS file input -->
   <input type="file" id="ssInput" accept="image/*" style="display:none" onchange="loadSS(event)">
+  <input type="file" id="ssInputCam" accept="image/*" capture="environment" style="display:none" onchange="loadSS(event)">
 
   <!-- Payment Modal -->
   <div id="payModal">
@@ -322,7 +323,10 @@
         </select>
 
         <label>ငွေလွှဲ Screenshot (ပုံ ထည့်မှ Code ထည့်လို့ရ)</label>
-        <button class="btn btn-payment" style="flex:none; width:auto;" onclick="document.getElementById('ssInput').click()">📷 ပုံ ထည့်ရန်</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-payment" style="flex:1;" onclick="document.getElementById('ssInputCam').click()">📷 ဓာတ်ပုံ ရိုက်ရန်</button>
+          <button class="btn btn-payment" style="flex:1;" onclick="document.getElementById('ssInput').click()">🖼️ Folder ကနေ ရွေးရန်</button>
+        </div>
         <img id="ssPreview">
 
         <label>Transaction Code (နောက်ဆုံး ၆ လုံး)</label>
