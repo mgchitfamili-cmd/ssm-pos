@@ -113,9 +113,13 @@
     .parcel-field{ margin-top:8px; }
     .parcel-label{ display:flex; align-items:center; gap:6px; margin-bottom:5px; }
     .parcel-label label{ display:inline; font-size:12.5px; font-weight:600; color:var(--ink-2); margin:0; cursor:pointer; }
-    .parcel-ship-cb{ width:16px; height:16px; accent-color:var(--green); cursor:pointer; margin:0; flex:none; }
+    .field .parcel-label input.parcel-ship-cb{
+      -webkit-appearance:checkbox; appearance:checkbox;
+      width:16px; height:16px; padding:0; border:none; border-radius:0;
+      accent-color:var(--green); cursor:pointer; margin:0; flex:none; box-shadow:none;
+    }
     .parcel-input-row{ display:flex; gap:8px; align-items:center; }
-    .parcel-input-row .parcel-code-input{ width:auto; flex:1 1 auto; max-width:170px; min-width:0; }
+    .parcel-input-row .parcel-code-input{ width:auto; flex:1 1 auto; max-width:180px; min-width:0; }
     .parcel-add-btn{
       flex:none; white-space:nowrap; padding:11px 14px; font-size:12.5px; font-weight:700;
       color:var(--brand); background:var(--brand-tint); border:1px solid var(--brand-line);
