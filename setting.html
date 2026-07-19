@@ -261,6 +261,10 @@
       <button class="btn-reset" onclick="resetSettings()">↺ Default ပြန်ထား</button>
     </section>
 
+        <section class="card admin-only">
+      <button class="btn-reset" style="background:#dc2626;color:#fff;border-color:#dc2626;" onclick="ssmLogout()">🚪 Logout (ထွက်မယ်)</button>
+    </section>
+
   </div>
 
   <script>
@@ -393,6 +397,11 @@
   <script>
   /* ── Admin role gate (Staff / Admin via PIN) ── */
   (function () {
+    window.ssmLogout = function(){
+      var go = function(){ location.replace("login.html"); };
+      if (window.fb && window.fb.logout) { window.fb.logout().then(go).catch(go); }
+      else { go(); }
+    };
     function role(){ return localStorage.getItem('ssm_role') || 'staff'; }
     function pin(){ return localStorage.getItem('ssm_admin_pin') || '1234'; }
     window.adminToggle = function(){

@@ -154,15 +154,6 @@
     .modal-btns{ margin-top:20px; display:flex; gap:12px; }
     .modal-btns button{ padding:12px 24px; border-radius:var(--r-sm); border:none; font-size:15px;
       font-weight:600; color:#fff; font-family:inherit; cursor:pointer; }
-    #parcelPhotoModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:9999;
-      flex-direction:column; align-items:center; justify-content:center; padding:20px; }
-    #parcelModalImage{ max-width:100%; max-height:75vh; object-fit:contain; border-radius:12px; }
-    .parcel-photo-btn{
-      flex:none; width:44px; height:44px; padding:0; font-size:18px; line-height:1;
-      color:var(--brand); background:var(--brand-tint); border:1px solid var(--brand-line);
-      border-radius:var(--r-sm); cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
-    }
-    .parcel-photo-btn:active{ transform:scale(.94); }
 
     /* popup */
     .popup-overlay{ position:fixed; inset:0; z-index:10001; padding:24px; display:none;
@@ -378,19 +369,6 @@
     </div>
   </div>
 
-  <!-- Hidden file input — parcel photo -->
-  <input type="file" id="parcelPhotoInput" accept="image/*" capture="environment"
-         style="display:none" onchange="saveParcelPhoto(event)">
-
-  <!-- Parcel Photo Modal -->
-  <div id="parcelPhotoModal">
-    <img id="parcelModalImage">
-    <div class="modal-btns">
-      <button class="btn-delete" style="background:#dc2626" onclick="deleteParcelPhoto()">🗑️ Delete</button>
-      <button style="background:#6b7280" onclick="closeParcelPhoto()">✖ Close</button>
-    </div>
-  </div>
-
   <script>
 
     let salesHistory      = JSON.parse(localStorage.getItem("salesHistory")) || [];
@@ -591,22 +569,13 @@
     function parcelShippedOf(sale) {
       return Array.isArray(sale.parcelShipped) ? sale.parcelShipped : [];
     }
-    function parcelPhotosOf(sale) {
-      return Array.isArray(sale.parcelPhotos) ? sale.parcelPhotos : [];
-    }
-    function parcelPhotoFlagsOf(sale) {
-      return Array.isArray(sale.parcelPhotoFlags) ? sale.parcelPhotoFlags : [];
-    }
 
     function renderParcelRow(sale, index, pIdx, isLast) {
       var codes = parcelCodesOf(sale);
       var shipped = parcelShippedOf(sale);
-      var photos = parcelPhotosOf(sale);
-      var flags = parcelPhotoFlagsOf(sale);
       var code = codes[pIdx] || "";
       var complete = code.length === 9;
       var title = "Delivery Code (Parcel " + (pIdx + 1) + ")";
-      var photoIcon = photos[pIdx] ? "👁" : (flags[pIdx] ? "☁️" : "📷");
       return `
               <div class="field parcel-field">
                 <div class="parcel-label" onclick="event.stopPropagation();">
@@ -624,7 +593,6 @@
                     maxlength="9"
                     style="text-transform:uppercase"
                   >
-                  <button type="button" class="parcel-photo-btn" onclick="uploadParcelPhoto(${index}, ${pIdx})" title="ပါဆယ် ပုံ">${photoIcon}</button>
                   ${isLast ? `<button type="button" class="parcel-add-btn" onclick="addParcel(${index})">+ Parcel</button>` : ""}
                 </div>
               </div>`;
@@ -843,115 +811,6 @@
         closePhoto();
         openCardIndex = currentViewIndex;
         renderCards();  // reload အစား
-      });
-    }
-
-    // ── Parcel Photo (parcel တစ်ခုချင်းစီ ကိုယ်ပိုင် ပုံ — inline သိမ်း, cloud sync အတူပါ) ──
-    var currentParcelPhoto = null;   // { index, pIdx } — upload/view/delete ဘယ် parcel လဲ မှတ်ထား
-    function uploadParcelPhoto(index, pIdx) {
-      var sale = salesHistory[index];
-      var photos = parcelPhotosOf(sale);
-      var flags  = parcelPhotoFlagsOf(sale);
-      if (photos[pIdx] || flags[pIdx]) { viewParcelPhoto(index, pIdx); return; }
-      currentParcelPhoto = { index: index, pIdx: pIdx };
-      var el = document.getElementById("parcelPhotoInput");
-      el.value = "";
-      el.click();
-    }
-
-    function saveParcelPhoto(event) {
-      var input = event.target;
-      var file = input.files[0];
-      if (!file || !currentParcelPhoto) return;
-      var target = currentParcelPhoto;
-
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        var img = new Image();
-        img.onload = function () {
-          var MAX = 800;
-          var w = img.width, h = img.height;
-          if (w > h && w > MAX)      { h = Math.round(h * MAX / w); w = MAX; }
-          else if (h >= w && h > MAX){ w = Math.round(w * MAX / h); h = MAX; }
-          var canvas = document.createElement("canvas");
-          canvas.width = w; canvas.height = h;
-          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-          var dataUrl = canvas.toDataURL("image/jpeg", 0.5);
-
-          var sale = salesHistory[target.index];
-          var photos = parcelPhotosOf(sale).slice();
-          while (photos.length <= target.pIdx) photos.push("");
-          var prev = photos[target.pIdx];
-          photos[target.pIdx] = dataUrl;
-          sale.parcelPhotos = photos;
-          try {
-            localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
-          } catch (err) {
-            photos[target.pIdx] = prev || "";
-            sale.parcelPhotos = photos;
-            input.value = "";
-            alert("Storage ပြည့်နေလို့ photo မသိမ်းနိုင်ပါ။ ဟောင်းတဲ့ photo အချို့ ဖျက်ပြီး ပြန်ကြိုးစားပါ။");
-            return;
-          }
-          input.value = "";
-          openCardIndex = target.index;
-          renderCards();
-        };
-        img.onerror = function () {
-          input.value = "";
-          alert("ဓာတ်ပုံ ဖတ်လို့ မရပါ။ ပြန်ကြိုးစားပါ။");
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function viewParcelPhoto(index, pIdx) {
-      currentParcelPhoto = { index: index, pIdx: pIdx };
-      var sale = salesHistory[index];
-      var photos = parcelPhotosOf(sale);
-      var imgEl = document.getElementById("parcelModalImage");
-      var modal = document.getElementById("parcelPhotoModal");
-      if (photos[pIdx]) {
-        imgEl.src = photos[pIdx];
-        modal.style.display = "flex";
-        return;
-      }
-      // local မှာ မသိမ်း (cloud-only) — cloud ကနေ ဆွဲ
-      imgEl.removeAttribute("src");
-      imgEl.alt = "☁️ cloud ကနေ ဆွဲနေသည် ...";
-      modal.style.display = "flex";
-      if (window.ssmGetCloudImages) {
-        window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
-          var url = imgs && imgs["parcelPhoto_" + pIdx];
-          if (url) imgEl.src = url;
-          else imgEl.alt = "ပုံ မတွေ့ပါ — internet စစ်ပါ / Backup မှာ ကြည့်ပါ";
-        });
-      } else {
-        imgEl.alt = "cloud sync မရနိုင်ပါ";
-      }
-    }
-
-    function closeParcelPhoto() {
-      document.getElementById("parcelPhotoModal").style.display = "none";
-    }
-
-    function deleteParcelPhoto() {
-      if (!currentParcelPhoto) return;
-      var target = currentParcelPhoto;
-      showConfirm("ဒီ ပါဆယ်ပုံ ကို ဖျက်မှာလား?", function () {
-        var sale = salesHistory[target.index];
-        var photos = parcelPhotosOf(sale).slice();
-        var flags  = parcelPhotoFlagsOf(sale).slice();
-        photos[target.pIdx] = "";
-        flags[target.pIdx]  = false;
-        sale.parcelPhotos = photos;
-        sale.parcelPhotoFlags = flags;
-        if (window.ssmDeleteCloudImage) window.ssmDeleteCloudImage(sale.orderNo, "parcelPhoto_" + target.pIdx);
-        localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
-        closeParcelPhoto();
-        openCardIndex = target.index;
-        renderCards();
       });
     }
 
