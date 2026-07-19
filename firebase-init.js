@@ -95,20 +95,6 @@
             s.deliveryPhoto = ""; s.hasDel = true; if (!s.delV) s.delV = Date.now();
             changed = true;
           }
-          if (Array.isArray(s.parcelPhotos)) {
-            var flags = Array.isArray(s.parcelPhotoFlags) ? s.parcelPhotoFlags.slice() : [];
-            var any = false;
-            s.parcelPhotos.forEach(function (photo, i) {
-              if (!photo) return;
-              any = true;
-              var fkey = "parcelPhoto_" + i;
-              IMG_CACHE[sid] = IMG_CACHE[sid] || {}; IMG_CACHE[sid][fkey] = photo;
-              up = up || {}; up[fkey] = photo;
-              s.parcelPhotos[i] = "";
-              flags[i] = true;
-            });
-            if (any) { s.parcelPhotoFlags = flags; changed = true; }
-          }
           if (up) {
             if (_doPushImg) _doPushImg(sid, up);
             else { _pendImgs[sid] = _pendImgs[sid] || {}; for (var k in up) _pendImgs[sid][k] = up[k]; }
@@ -345,7 +331,7 @@
             lastPush["__sales"] = Date.now();
             var doc = content;
             if (js.length > 1000000) {                             // Firestore 1MB limit — ပုံ ဖြုတ်ပြီးမှ တင် (rare; compress ပြီးသား)
-              doc = {}; for (var k in content) doc[k] = content[k]; doc.paySS = ""; doc.deliveryPhoto = ""; doc.parcelPhotos = [];
+              doc = {}; for (var k in content) doc[k] = content[k]; doc.paySS = ""; doc.deliveryPhoto = "";
               console.warn("[sales] doc too big, image stripped →", sid);
             }
             db.collection(SALES).doc(sid).set(doc).catch(function (e) { console.warn("[sales] push failed:", sid, e); });
@@ -363,18 +349,19 @@
         }
 
         // ── ပုံ ကြည့်ရန် — memory cache → salesImages → (ဟောင်း) sales doc inline fallback ──
-        // NOTE: field အားလုံး ပြန်ပေးပါတယ် (paySS/deliveryPhoto/parcelPhoto_N…) — caller က လိုအပ်တဲ့ key ကိုပဲ ဖတ်ယူပါ
         window.ssmGetCloudImages = function (orderNo) {
           return new Promise(function (resolve) {
             try {
               var id = sidClean(orderNo);
               if (!id || !db) { resolve(null); return; }
               var c = IMG_CACHE[id];
-              if (c && Object.keys(c).length) { resolve(c); return; }
+              if (c && (c.paySS || c.deliveryPhoto)) { resolve({ paySS: c.paySS || "", deliveryPhoto: c.deliveryPhoto || "" }); return; }
               db.collection(IMG_COL).doc(id).get().then(function (snap) {
                 var d = (snap && snap.exists) ? (snap.data() || {}) : {};
-                delete d.updatedAt;
-                if (Object.keys(d).length) { IMG_CACHE[id] = d; resolve(d); return; }
+                if (d.paySS || d.deliveryPhoto) {
+                  IMG_CACHE[id] = { paySS: d.paySS || "", deliveryPhoto: d.deliveryPhoto || "" };
+                  resolve(IMG_CACHE[id]); return;
+                }
                 // legacy — ဗားရှင်းဟောင်းက sales doc ထဲ inline သိမ်းထားတာ
                 db.collection(SALES).doc(id).get().then(function (s2) {
                   if (!s2 || !s2.exists) { resolve(null); return; }
@@ -493,17 +480,11 @@
         _pendKeys = {};
       }
 
-      // ── Auth guard ──────────────────────────────────────────────
-      // login မဝင်ထားရင် login.html ကို ပို့။ Firebase ချိတ်လို့မရရင်တော့
-      // ဘာမှ မလုပ်ဘဲ app ကို ဆက်သုံးခွင့်ပေး (fail-open — app မပိတ်မိအောင်)။
-      var onLogin = /login\.html$/i.test(location.pathname);
-      window.fb.auth.onAuthStateChanged(function (user) {
-        window.fbUser = user || null;
-        if (!user && !onLogin) { location.replace("login.html"); return; }
-        if (user && onLogin)   { location.replace("index.html"); return; }
-        if (user) ssmStartSync();   // login ဝင်ပြီး → data sync စ
-        document.dispatchEvent(new Event("fb-ready"));
-      });
+      // ── Login မလို — app ကို တိုက်ရိုက်ဝင်ခွင့်ပြု ──────────────────
+      // (Firestore rules ကို public read/write ပြောင်းထားဖို့ လိုပါတယ်)
+      window.fbUser = null;
+      ssmStartSync();
+      document.dispatchEvent(new Event("fb-ready"));
     } catch (e) {
       console.error("Firebase init error:", e);
       document.dispatchEvent(new Event("fb-error"));

@@ -25,7 +25,7 @@
   }
 
   function start() {
-    if (!window.fb || !window.fb.db || !window.fbUser) return;
+    if (!window.fb || !window.fb.db) return;
     console.log("[SSM sync] v2 (push-only) loaded");
     var db = window.fb.db;
 
@@ -72,6 +72,6 @@
     });
   }
 
-  if (window.fb && window.fbUser) start();
+  if (window.fb) start();
   else document.addEventListener("fb-ready", start);
 })();
