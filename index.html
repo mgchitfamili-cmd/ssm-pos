@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sone Sone Mommy POS</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="receipt.js"></script>
+
+  <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
+  <script src="firebase-init.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6d28d9">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Sone Sone Mommy">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("service-worker.js").catch(function(){});});}</script>
+  <style>
+    :root{
+      --bg:#f4f5f8;
+      --surface:#ffffff;
+      --line:#eaecf1;
+      --line-2:#dcdfe7;
+      --ink:#15171c;
+      --ink-2:#5a616e;
+      --ink-3:#8b919e;
+      --brand:#6d28d9;
+      --brand-ink:#5b21b6;
+      --brand-tint:#f4f0fe;
+      --brand-line:#e7defb;
+      --green:#15803d;
+      --green-tint:#ecfaf1;
+      --green-line:#bfe9cd;
+      --red:#dc2626;
+      --red-line:#f3c5c5;
+      --amber-tint:#fff8e8;
+      --amber-line:#f3d488;
+      --amber-ink:#9a6b00;
+      --r:16px;
+      --r-sm:11px;
+      --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 18px rgba(16,24,40,.04);
+    }
+    *{ box-sizing:border-box; }
+    /* Buttons/popups/chrome — text select မဖြစ်အောင် (tap လုပ်ရင် စိမ်းပြာကွက် မပေါ်စေရန်) */
+    button, .oppay-confirm, .popup-card, .popup-icon, .popup-msg, .popup-actions,
+    .csel-btn, .checkout-bar, label, h1, h2, h3 {
+      -webkit-user-select:none; -moz-user-select:none; user-select:none;
+      -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
+    }
+    input, textarea, [contenteditable]{ -webkit-user-select:text; user-select:text; }
+    html,body{ margin:0; }
+    body{
+      font-family:system-ui,'Noto Sans Myanmar','Padauk','Myanmar Text','Segoe UI',sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      line-height:1.5;
+      padding:0 0 94px 0;
+      -webkit-text-size-adjust:100%;
+    }
+
+    /* ── App bar ── */
+    .top-bar{
+      position:sticky; top:0; z-index:50;
+      display:flex; align-items:center; gap:8px;
+      padding:11px 12px;
+      background:rgba(255,255,255,.85);
+      backdrop-filter:saturate(150%) blur(10px);
+      -webkit-backdrop-filter:saturate(150%) blur(10px);
+      border-bottom:1px solid var(--line);
+      margin:0;
+    }
+    #menuBtn{
+      background:none; border:none; font-size:23px; line-height:1; color:var(--ink);
+      cursor:pointer; padding:6px 9px; border-radius:10px;
+    }
+    #menuBtn:active{ background:var(--line); }
+    .top-bar h1{
+      margin:0; font-size:16px; font-weight:700; letter-spacing:-.01em;
+      flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    #orderNo{
+      margin:0; font-size:11.5px; font-weight:700; color:var(--brand-ink);
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+      padding:5px 11px; border-radius:999px; white-space:nowrap;
+    }
+    #orderNo:empty{ display:none; }
+
+    .wrap{ max-width:600px; margin:0 auto; padding:14px; }
+
+    /* ── Parcel alert ── */
+    #parcelAlert{
+      margin:0 0 14px 0; padding:11px 14px; border-radius:12px;
+      font-size:13px; font-weight:600; border:1px solid var(--amber-line);
+    }
+
+    /* ── Cards ── */
+    .card{
+      background:var(--surface); border:1px solid var(--line);
+      border-radius:var(--r); padding:16px; margin-bottom:14px; box-shadow:var(--shadow);
+    }
+    .eyebrow{
+      display:flex; align-items:center; gap:8px;
+      font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+      color:var(--ink-3); margin:0 0 14px 0;
+    }
+    .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--brand); flex:none; }
+
+    /* ── Fields ── */
+    .field{ margin:0 0 12px 0; }
+    .field-row{ display:flex; gap:10px; }
+    .field-row .field{ flex:1; min-width:0; }
+    .field:last-child{ margin-bottom:0; }
+    .lbl{
+      display:block; font-size:12.5px; font-weight:600; color:var(--ink-2);
+      margin:0 0 6px 2px;
+    }
+    .lbl .hint{ font-weight:500; color:var(--ink-3); font-size:11.5px; }
+
+    input:not([type=range]):not([type=checkbox]), select, textarea{
+      width:100%; padding:11px 12px; font-size:15px; line-height:1.45; color:var(--ink);
+      background:#fff; border:1px solid var(--line-2); border-radius:var(--r-sm);
+      font-family:inherit; outline:none; -webkit-appearance:none; appearance:none;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    select{
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%238b919e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 11px center; padding-right:38px;
+    }
+    input:focus, select:focus, textarea:focus{
+      border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13);
+    }
+    input[readonly]{ background:#f4f5f7; color:var(--ink-2); }
+    textarea{ min-height:62px; resize:vertical; }
+    ::placeholder{ color:var(--ink-3); }
+
+    .row{ display:flex; gap:10px; }
+    .row > *{ flex:1; min-width:0; }
+
+    /* ── Buttons ── */
+    button{
+      font-family:inherit; font-size:15px; font-weight:600; color:#fff;
+      background:var(--brand); border:none; border-radius:var(--r-sm);
+      padding:12px 16px; cursor:pointer; transition:filter .15s, transform .05s;
+    }
+    button:active{ transform:translateY(1px); }
+    button:disabled{ background:#c6b8e8; cursor:not-allowed; }
+    .btn-block{ width:100%; }
+    .add-btn{ width:100%; margin-top:2px; }
+
+    /* gift checkbox + remark inline row */
+    .gift-row{ display:flex; align-items:center; gap:10px; margin:0 0 10px 0; }
+    .gift-label{
+      display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500;
+      color:var(--ink); cursor:pointer; padding:10px 12px; margin:0; white-space:nowrap; flex:none;
+      background:var(--brand-tint); border:1px solid var(--brand-line); border-radius:var(--r-sm);
+    }
+    .gift-remark{ flex:1; min-width:0; }
+    .gift-label input{ width:19px; height:19px; accent-color:var(--brand); margin:0; flex:none; }
+    .saletype-row{ align-items:stretch; flex-wrap:wrap; }
+    .saletype-row > select{ flex:1; min-width:0; }
+    .saletype-row > .gift-label{ flex:none; }
+    /* Weight / Unit segmented switch */
+    .seg-toggle{ display:flex; flex:1; min-width:160px; gap:3px; padding:3px;
+      background:var(--bg); border:1px solid var(--line-2); border-radius:var(--r-sm); }
+    .seg-opt{ flex:1; border:none; background:transparent; color:var(--ink-3);
+      font-size:14px; font-weight:700; padding:9px 6px; border-radius:calc(var(--r-sm) - 3px);
+      cursor:pointer; white-space:nowrap; transition:background .15s, color .15s; }
+    .seg-opt.active{ background:var(--brand); color:#fff; box-shadow:0 2px 6px rgba(109,40,217,.28); }
+    .seg-opt.seg-disabled{ opacity:.32; pointer-events:none; }
+    html.dark .seg-toggle{ background-color:#12151c; }
+
+    /* ── Sale list (cart) ── */
+    .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -4px; }
+    table{ width:100%; border-collapse:collapse; font-size:13px; }
+    th{
+      text-align:left; font-size:10.5px; font-weight:700; letter-spacing:.04em;
+      text-transform:uppercase; color:var(--ink-3); white-space:nowrap;
+      padding:0 10px 10px; border-bottom:1px solid var(--line-2);
+    }
+    td{ padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
+    tr:last-child td{ border-bottom:none; }
+
+    .cart-prod{ min-width:120px; }
+    .cart-name{ font-size:14px; font-weight:700; color:var(--ink); line-height:1.3; }
+    .cart-sub{ font-size:12px; color:var(--ink-3); margin-top:3px; line-height:1.3; }
+    th.col-num, .cart-price, .cart-qty, .cart-total{ text-align:right; white-space:nowrap; }
+    th.col-qty, .cart-qty{ text-align:center; }
+    .cart-price{ color:var(--ink-2); }
+    .cart-total{ color:var(--brand-ink); font-weight:800; font-size:14px; }
+    .cart-act{ text-align:right; width:1%; white-space:nowrap; }
+    .cart-del{
+      background:#fff; color:var(--red); border:1px solid var(--red-line);
+      width:36px; height:36px; padding:0; font-size:16px; border-radius:10px; line-height:1;
+    }
+    .cart-del:active{ background:#fef2f2; }
+
+    /* cart footer */
+    .cart-foot{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-top:14px; padding-top:13px; border-top:1px solid var(--line-2);
+    }
+    .cart-foot .ci{ font-size:13px; font-weight:600; color:var(--ink-2); }
+    .cart-foot .ci b{ color:var(--brand-ink); }
+    #grandTotal{ margin:0; font-size:18px; font-weight:800; color:var(--brand-ink); letter-spacing:-.01em; }
+    #discountShow{ margin:11px 2px 0; font-size:13.5px; font-weight:700; color:var(--red); text-align:right; }
+    #discountShow:empty{ display:none; }
+
+    /* discount box — subtle violet, on-brand */
+    .disc-box{
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+      border-radius:var(--r-sm); padding:13px; margin:0 0 12px 0;
+    }
+    .disc-box .lbl{ color:var(--brand-ink); }
+    #discountNote{ font-size:12px; color:var(--brand-ink); margin:9px 2px 0; font-weight:500; }
+    #discountValue:disabled{ opacity:.45; cursor:not-allowed; }
+    #discountNote:empty{ display:none; }
+
+    /* deposit / online payment box */
+    .oppay-box{ background:var(--brand-tint); border:1px solid var(--brand-line); border-radius:var(--r-sm); padding:14px; margin:0 0 12px; }
+    .oppay-head{ margin:0 0 12px; font-size:14px; font-weight:800; color:var(--brand-ink); letter-spacing:-.01em; }
+    .oppay-lbl{ display:block; font-size:12px; font-weight:600; color:var(--brand-ink); margin:0 0 6px 2px; }
+    .oppay-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end; margin-bottom:12px; }
+    .oppay-row > div{ min-width:0; display:flex; flex-direction:column; }
+    .oppay-row .oppay-lbl{ min-height:32px; display:flex; align-items:flex-end; }
+    .oppay-row input, .oppay-row select, .oppay-row .oppay-upload{
+      margin:0 !important; height:46px; box-sizing:border-box; width:100%; }
+    .oppay-row .oppay-upload{ padding:0 6px; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.15; font-size:11.5px; white-space:nowrap; overflow:hidden; }
+    .oppay-upload{ width:100%; padding:12px; border:1.5px dashed var(--brand-line); border-radius:var(--r-sm);
+      background:var(--surface); color:var(--brand-ink); font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
+    .oppay-upload:active{ background:var(--brand-tint); }
+    .oppay-ss-img{ display:block; max-width:150px; border-radius:10px; margin:10px 0 0; border:1px solid var(--brand-line); }
+    .oppay-confirm{ width:100%; margin:12px 0 0; padding:14px; border-radius:var(--r-sm); border:none;
+      background:linear-gradient(135deg,#7c3aed,#6d28d9); color:#fff; font-family:inherit; font-weight:800; font-size:14px; cursor:pointer;
+      box-shadow:0 4px 12px rgba(109,40,217,.35); transition:transform .12s, box-shadow .12s; }
+    .oppay-confirm:active{ transform:scale(.98); box-shadow:0 2px 6px rgba(109,40,217,.3); }
+    .oppay-confirm.on{ background:#16a34a; border-color:#16a34a; color:#fff; }
+    .oppay-note{ margin:8px 0 0; font-size:11px; font-weight:600; color:#b45309; }
+    .oppay-confirm.on ~ .oppay-note{ display:none; }
+
+    /* after-save */
+    #afterSaveActions{
+      display:none; background:var(--green-tint); border:1px solid var(--green-line);
+      border-radius:var(--r); padding:16px; margin-bottom:14px;
+    }
+    #afterSaveActions h3{ margin:0 0 13px; font-size:15px; color:var(--green); }
+    .save-actions{ display:flex; flex-direction:column; gap:9px; }
+    .btn-print{ background:var(--brand); width:100%; }
+    .btn-share{ background:var(--green); width:100%; }
+    .btn-new{ background:#fff; color:var(--red); border:1px solid var(--red-line); width:100%; }
+
+    /* ── Sticky checkout bar ── */
+    .checkout-bar{
+      position:fixed; left:0; right:0; bottom:0; z-index:40;
+      display:flex; align-items:center; gap:12px;
+      padding:11px 14px calc(11px + env(safe-area-inset-bottom,0px));
+      background:rgba(255,255,255,.93);
+      backdrop-filter:saturate(150%) blur(10px);
+      -webkit-backdrop-filter:saturate(150%) blur(10px);
+      border-top:1px solid var(--line);
+    }
+    .checkout-bar .net{ flex:1; min-width:0; }
+    .checkout-bar .net small{
+      display:block; font-size:10.5px; font-weight:700; letter-spacing:.06em;
+      text-transform:uppercase; color:var(--ink-3);
+    }
+    #netTotal{ margin:1px 0 0; font-size:19px; font-weight:800; letter-spacing:-.02em; white-space:nowrap; }
+    #saveBtn{ flex:none; padding:13px 24px; }
+
+    /* ── Slide menu (matches app, brand-accented) ── */
+    #menuOverlay{
+      display:none; position:fixed; inset:0; background:rgba(15,17,25,.45); z-index:9998;
+    }
+    #sideMenu{
+      position:fixed; top:0; left:-300px; width:284px; height:100%;
+      background:var(--surface); z-index:9999; transition:left .25s ease;
+      overflow-y:auto; box-shadow:8px 0 34px rgba(16,24,40,.18);
+    }
+    #sideMenu.open{ left:0; }
+    #menuOverlay.open{ display:block; }
+    .menu-header{
+      padding:26px 20px 22px; color:#fff;
+      background:linear-gradient(135deg, var(--brand-ink), var(--brand));
+    }
+    .menu-header h2{ margin:0; font-size:18px; font-weight:800; letter-spacing:-.01em; }
+    .menu-header p{ margin:5px 0 0; font-size:12px; color:rgba(255,255,255,.82); }
+    .menu-item{
+      display:flex; align-items:center; gap:13px;
+      margin:5px 8px; padding:9px 11px; border-radius:12px;
+      color:var(--ink); cursor:pointer; font-size:15px; font-weight:500;
+    }
+    .menu-item:first-of-type{ margin-top:9px; }
+    .menu-item:active{ background:var(--line); }
+    .menu-item.active{ background:var(--brand-tint); color:var(--brand-ink); font-weight:700; }
+    .menu-item .ic{
+      width:38px; height:38px; flex:none; border-radius:10px;
+      display:flex; align-items:center; justify-content:center; font-size:18px;
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+    }
+    .menu-item.active .ic{ background:#fff; }
+
+
+    /* Receipt preview — Share image အတွက်ပဲ၊ screen မှာ မပြ */
+    #receiptPreview{
+      position:absolute; left:-9999px; top:0; width:340px;
+      border:2px solid #000; padding:20px; border-radius:10px; background:#fff;
+      font-family:'Courier New',monospace;
+    }
+
+    @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+    /* ── Custom Popup (alert/confirm) ── */
+    .popup-overlay{
+      position:fixed; inset:0; z-index:10000; padding:24px;
+      display:none; align-items:center; justify-content:center;
+      background:rgba(15,17,25,.5);
+      backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+    }
+    .popup-overlay.show{ display:flex; }
+    .popup-card{
+      width:100%; max-width:320px; background:var(--surface);
+      border:1px solid var(--line); border-radius:18px; padding:22px 20px 18px;
+      box-shadow:0 22px 55px rgba(0,0,0,.3); text-align:center;
+      transform:translateY(10px) scale(.96); opacity:0;
+      transition:transform .18s ease, opacity .18s ease;
+    }
+    .popup-overlay.show .popup-card{ transform:none; opacity:1; }
+    .popup-icon{
+      width:48px; height:48px; margin:0 auto 13px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; font-size:24px;
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+    }
+    .popup-msg{ font-size:15px; font-weight:600; color:var(--ink); line-height:1.55; margin:0 0 18px; }
+    .popup-actions{ display:flex; gap:9px; }
+    .popup-actions button{ flex:1; }
+    .popup-cancel{ background:var(--surface); color:var(--ink-2); border:1px solid var(--line-2); }
+    /* ── Custom select (bottom sheet, replaces native picker) ── */
+    .csel-native{ display:none !important; }
+    .csel-btn{
+      width:100%; text-align:left; font-family:inherit; font-size:15px; font-weight:500;
+      color:var(--ink); cursor:pointer;
+      background-color:#fff;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%238b919e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 11px center;
+      border:1px solid var(--line-2); border-radius:var(--r-sm);
+      padding:11px 40px 11px 12px; line-height:1.45;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      transition:border-color .15s, box-shadow .15s;
+    }
+    .csel-btn.is-placeholder{ color:var(--ink-3); }
+    .csel-btn:active{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+
+    .sheet-overlay{
+      position:fixed; inset:0; z-index:9000; display:none;
+      background:rgba(15,17,25,.5);
+      backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+    }
+    .sheet-overlay.show{ display:block; }
+    body.sheet-locked{ position:fixed; left:0; right:0; width:100%; overflow:hidden; }  /* sheet ဖွင့်ချိန် နောက်ခံ scroll lock */
+    .sheet{
+      position:fixed; left:0; right:0; bottom:0; z-index:9001;
+      background:var(--surface); border:1px solid var(--line); border-bottom:none;
+      border-top-left-radius:22px; border-top-right-radius:22px;
+      max-height:72vh; display:flex; flex-direction:column;
+      transform:translateY(101%); transition:transform .26s cubic-bezier(.32,.72,0,1);
+      padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -10px 40px rgba(0,0,0,.22);
+    }
+    .sheet.show{ transform:none; }
+    .sheet-grip{ width:40px; height:4px; border-radius:999px; background:var(--line-2); margin:10px auto 2px; flex:none; }
+    .sheet-title{
+      font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+      color:var(--ink-3); padding:8px 20px 10px; flex:none;
+    }
+    .sheet-list{ overflow-y:auto; -webkit-overflow-scrolling:touch; padding:2px 0 8px; }
+    .sheet-opt{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:15px 20px; font-size:15px; color:var(--ink); cursor:pointer;
+      border-top:1px solid var(--line);
+    }
+    .sheet-opt:first-child{ border-top:none; }
+    .sheet-opt:active{ background:var(--brand-tint); }
+    .sheet-opt.sel{ color:var(--brand-ink); font-weight:700; }
+    .sheet-opt .tick{ color:var(--brand); font-size:17px; opacity:0; }
+    .sheet-opt.sel .tick{ opacity:1; }
+
+    /* searchable sheet */
+    .sheet-search{ padding:4px 16px 10px; flex:none; }
+    .sheet-search input{ width:100%; }
+    .sheet-opt.custom{ color:var(--brand-ink); font-weight:600; }
+    .sheet-empty{ padding:20px; text-align:center; color:var(--ink-3); font-size:14px; }
+    /* ===== Dark mode (toggle via html.dark) ===== */
+    html.dark{
+      --bg:#0f1116; --surface:#181b22; --line:#252a33; --line-2:#333a46;
+      --ink:#e8eaef; --ink-2:#aab1bd; --ink-3:#727a87;
+      --brand:#8b5cf6; --brand-ink:#c4b5fd; --brand-tint:#1d1930; --brand-line:#352c57;
+      --green:#22c55e; --green-tint:#10271a; --green-line:#1f4a32;
+      --red:#f87171; --red-tint:#2a1414; --red-line:#5c2b2b;
+      --amber:#e0b84e; --amber-tint:#272010; --amber-line:#544619;
+      --blue:#93b4fb; --blue-tint:#172033; --blue-line:#2c3c5c;
+      --teal:#5fd0e6;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
+    }
+    html.dark .top-bar{ background:rgba(18,20,26,.82); }
+    html.dark .checkout-bar{ background:rgba(18,20,26,.92); }
+    html.dark input:not([type=range]):not([type=checkbox]),
+    html.dark select, html.dark textarea,
+    html.dark .field input, html.dark .field select,
+    html.dark .modal-box input, html.dark .modal-box select, html.dark .gift-remark,
+    html.dark #searchBox, html.dark .csel-btn{ background-color:#1e222a; }
+    html.dark select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23aeb6c2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; }
+    html.dark .csel-btn{ background-color:#1e222a; }
+    html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
+    html.dark #parcelAlert{ color:#7a5b00; }
+    html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
+    /* ── Live receipt preview + responsive form/preview layout ── */
+    @media (min-width:700px) and (orientation:landscape){
+      .layout{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:18px;
+        max-width:1000px; margin:0 auto; align-items:start; }
+      .layout .wrap{ max-width:none; margin:0; padding-left:0; padding-right:0; }
+      .preview-col{ position:sticky; top:64px; padding:14px 0; }
+    }
+    .preview-col{ padding:0 14px 8px; }
+    .rcpt-eyebrow{ display:flex; align-items:center; justify-content:center; gap:8px;
+      font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+      color:var(--ink-3); margin:0 0 10px; }
+    .rcpt-eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--brand); }
+    .rcpt{ width:300px; max-width:100%; margin:0 auto; background:#fff; color:#000;
+      padding:14px; border:1px solid var(--line-2); border-radius:12px;
+      font-family:'Courier New', monospace; font-size:11px; line-height:1.3; box-shadow:var(--shadow); }
+    /* live preview wrapper — chrome only; receipt styling comes from receipt.js (.ssm-receipt) so it matches receipts/print exactly */
+    .rcpt-card{ margin:0 auto; max-width:100%; border:1px solid var(--line-2); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; }
+    .rcpt hr{ border:none; border-top:1px dashed #000; margin:5px 0; }
+    .rcpt .line{ display:flex; justify-content:space-between; margin:2px 0; font-family:Arial,sans-serif; }
+    .rcpt .mm{ font-family:Arial,sans-serif; }
+    .rcpt .town-mid{ font-family:Arial,sans-serif; font-size:14px; font-weight:bold; }
+    .rcpt .cus-mid{ font-family:Arial,sans-serif; font-size:13px; font-weight:bold; }
+    .rcpt .phone-clear{ font-weight:bold; font-size:12px; }
+    .rcpt .addr-mm{ font-family:Arial,sans-serif; font-size:10px; }
+    .rcpt .item-name{ font-weight:bold; margin-top:4px; }
+    .rcpt .item-sub{ display:flex; justify-content:space-between; font-size:10px; color:#333; }
+    .rcpt .item-remark{ font-size:10px; color:#000; margin-left:4px; }
+    .rcpt .net-box{ text-align:center; font-size:13px; font-weight:bold; border:1.5px solid #000; padding:5px; margin:5px 0; }
+    .rcpt .footer-mm{ font-family:Arial,sans-serif; text-align:center; font-size:11px; margin-top:6px; line-height:1.4; }
+    .rcpt .rcpt-note{ text-align:center; font-family:Arial,sans-serif; font-size:11px; margin:4px 0 2px; color:#000; }
+    /* receipt-style editable cart */
+    .rcart{ margin-top:2px; }
+    .rcart-item{ display:flex; align-items:flex-start; gap:8px; padding:9px 0; border-bottom:1px dashed var(--line-2); }
+    .rcart-item:last-child{ border-bottom:none; }
+    .rcart-main{ flex:1; min-width:0; }
+    .rcart .item-name{ font-weight:700; font-size:14px; color:var(--ink); }
+    .rcart .item-sub{ display:flex; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--ink-2); margin-top:2px; }
+    .rcart .item-sub span:last-child{ font-weight:700; color:var(--brand-ink); white-space:nowrap; }
+    .rcart .item-remark{ font-size:12px; color:var(--ink-3); margin-top:2px; }
+    .rcart .cart-del{ flex:none; background:none; border:none; font-size:16px; cursor:pointer; padding:4px 2px; line-height:1; color:var(--red); }
+    .rcart-act{ display:flex; flex-direction:column; gap:2px; flex:none; }
+    .rcart-act .cart-edit{ background:none; border:none; font-size:15px; cursor:pointer; padding:3px 2px; line-height:1; }
+    /* Inline autocomplete — field ထဲ ရိုက်၊ အောက်မှာ themed list */
+    .ac-wrap{ position:relative; }
+    .ac-list{ position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:60;
+      background:var(--surface); border:1px solid var(--line-2); border-radius:12px;
+      box-shadow:0 12px 30px rgba(0,0,0,.16); max-height:240px; overflow-y:auto;
+      -webkit-overflow-scrolling:touch; display:none; }
+    .ac-list.show{ display:block; }
+    .ac-opt{ padding:11px 14px; font-size:15px; color:var(--ink); cursor:pointer; border-top:1px solid var(--line); }
+    .ac-opt:first-child{ border-top:none; }
+    .ac-opt:active, .ac-opt.active{ background:var(--brand-tint); color:var(--brand-ink); }
+    .ac-opt.custom{ color:var(--brand-ink); font-weight:600; }
+    .ac-empty{ padding:14px 16px; text-align:center; color:var(--ink-3); font-size:14px; }
+    html.dark .ac-list{ background-color:#1e222a; }
+  </style>
+</head>
+
+<body>
+
+  <!-- Slide Menu -->
+  <div id="menuOverlay" onclick="closeMenu()"></div>
+  <div id="sideMenu">
+    <div class="menu-header">
+      <h2>Sone Sone Mommy</h2>
+      <p>POS System</p>
+    </div>
+    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> online အရောင်း</div>
+    <div class="menu-item" data-page="walkin.html" onclick="location.href='walkin.html'"><span class="ic">🏪</span> ဆိုင်ရောင်း</div>
+    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
+    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
+    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
+    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+  </div>
+
+  <!-- App bar -->
+  <div class="top-bar no-print">
+    <button id="menuBtn" onclick="openMenu()">☰</button>
+    <h1>Online Selling</h1>
+    <h3 id="orderNo"></h3>
+  </div>
+
+  <div class="layout">
+  <div class="wrap">
+
+    <h3 id="parcelAlert" class="no-print"></h3>
+
+    <div class="no-print">
+
+      <!-- Order info -->
+      <section class="card">
+        <p class="eyebrow"><span class="dot"></span>အော်ဒါ အချက်အလက်</p>
+
+        <div class="field">
+          <select id="staff">
+            <option value="">Order လက်ခံသူ (Staff)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <input id="name" placeholder="Customer အမည်">
+        </div>
+        <div class="field">
+          <input id="phone" placeholder="ဖုန်း">
+        </div>
+        <div class="field">
+          <input id="address" placeholder="လိပ်စာ">
+        </div>
+        <div class="field">
+          <div class="row">
+            <div>
+              <input id="township" placeholder="မြို့ ရွေး / ရိုက်ထည့်ပါ" autocomplete="off">
+            </div>
+            <div>
+              <select id="orderapp">
+                <option value="">Order App ရွေးပါ</option>
+                <option value="Facebook">Facebook</option>
+                <option value="Viber">Viber</option>
+                <option value="TikTok">TikTok</option>
+                <option value="Telegram">Telegram</option>
+                <option value="Phone">Phone</option>
+                <option value="ဆိုင်လာဝယ်">ဆိုင်လာဝယ်</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <select id="deliveryService">
+            <option value="">Delivery Service ရွေးပါ</option>
+            <option value="Royal">Royal</option>
+            <option value="Ko Nyein Chan Aung">Ko Nyein Chan Aung</option>
+            <option value="Ninja Van">Ninja Van</option>
+            <option value="Own Rider">Own Rider</option>
+            <option value="အိမ်လာယူ">အိမ်လာယူ</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Add item -->
+      <section class="card">
+        <p class="eyebrow"><span class="dot"></span>ပစ္စည်း ထည့်ရန်</p>
+
+        <div class="field">
+          <input id="product" onchange="productChanged()" placeholder="ပစ္စည်း ရွေး / ရိုက်ထည့်ပါ" autocomplete="off">
+          <datalist id="productList"></datalist>
+        </div>
+
+        <div class="field">
+          <div class="row saletype-row">
+            <div class="seg-toggle" id="saleTypeToggle">
+              <button type="button" class="seg-opt active" data-v="weight" onclick="setSaleType('weight')">Weight</button>
+              <button type="button" class="seg-opt" data-v="unit" onclick="setSaleType('unit')">Unit</button>
+            </div>
+            <input type="hidden" id="saleType" value="weight">
+            <label class="gift-label">
+              <input type="checkbox" id="isGift" onchange="giftChanged()">
+              <span>ဈေးနှုန်း (0 Ks)</span>
+            </label>
+            <label class="gift-label" id="repPriceWrap">
+              <input type="checkbox" id="repPrice" onchange="calculateItemTotal()">
+              <span>ကိုယ်စားလှယ်ဈေး</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="row">
+            <div id="sizeBox">
+              <select id="size" onchange="fillPrice()">
+                <option value="5">5 ကျပ်သား</option>
+                <option value="10">10 ကျပ်သား</option>
+                <option value="15">15 ကျပ်သား</option>
+                <option value="25">25 ကျပ်သား</option>
+                <option value="50">50 ကျပ်သား</option>
+                <option value="1viss">1 ပိဿာ</option>
+              </select>
+            </div>
+            <div id="unitBox" style="display:none;">
+              <select id="unitChoice" onchange="fillPrice()">
+                <option value="A">Unit A</option>
+                <option value="B">Unit B</option>
+              </select>
+            </div>
+            <div>
+              <input id="price" placeholder="ဈေးနှုန်း" inputmode="numeric" oninput="calculateItemTotal()">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="row">
+            <div>
+              <input id="qty" placeholder="အရေအတွက်" oninput="calculateItemTotal()">
+            </div>
+            <div>
+              <input id="itemTotal" placeholder="Total" readonly>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <input id="remark" placeholder="Remark">
+        </div>
+
+        <button class="add-btn" onclick="addItem()">＋ Add Item</button>
+      </section>
+
+      <!-- Sale list -->
+      <section class="card">
+        <p class="eyebrow"><span class="dot"></span>ရောင်းရ စာရင်း</p>
+        <div id="saleTable" class="rcart"></div>
+        <div class="cart-foot">
+          <span class="ci">Total Items: <b id="cartCount">0</b></span>
+          <h3 id="grandTotal">Total : 0</h3>
+        </div>
+      </section>
+
+      <!-- Discount & payment -->
+      <section class="card">
+        <p class="eyebrow"><span class="dot"></span>လျှော့ဈေး & ပေးချေမှု</p>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="lbl">လျော့ပေး (Discount)</label>
+            <input id="discountValue" placeholder="Discount ပမာဏ" inputmode="numeric" oninput="calculateNet()">
+          </div>
+          <div class="field">
+            <label class="lbl">ပို့ခ (Delivery Fee)</label>
+            <input id="delivery" placeholder="Delivery Fee" oninput="calculateNet()">
+          </div>
+        </div>
+        <div class="field">
+          <textarea id="note" placeholder="📝 Delivery မှတ်ချက် (receipt အောက်ခြေ)"></textarea>
+        </div>
+
+        <div class="oppay-box">
+          <p class="oppay-head">💵 Payment</p>
+          <label class="oppay-lbl">Payment အခြေအနေ <span style="font-weight:500;color:var(--ink-3);">(receipt အောက် label)</span></label>
+          <select id="payStatusSel" onchange="autoFillDeposit(); toggleDepFields(); calculateNet();">
+            <option value="COD">အိမ်ရောက်ငွေချေ (COD)</option>
+            <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်</option>
+            <option value="Prepaid">ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး</option>
+          </select>
+          <div class="oppay-row">
+            <div>
+              <label class="oppay-lbl">ကြိုတင်ပေးငွေ ပမာဏ (Deposit)</label>
+              <input id="deposit" oninput="resetDepConfirm(); toggleDepFields();" placeholder="0">
+            </div>
+            <div id="depTypeWrap" style="display:none;">
+              <label class="oppay-lbl">Online Payment Type</label>
+              <select id="depPayType" onchange="resetDepConfirm()">
+                <option value="">— ရွေးပါ —</option>
+                <option value="KPay">KPay</option>
+                <option value="Wave Pay">Wave Pay</option>
+                <option value="AYA Pay">AYA Pay</option>
+                <option value="CB Pay">CB Pay</option>
+                <option value="Mobile Banking">Mobile Banking</option>
+              </select>
+            </div>
+          </div>
+          <div id="depExtra" style="display:none;">
+            <input type="file" id="depSSInput" accept="image/*" style="display:none" onchange="loadDepSS(event)">
+            <input type="file" id="depSSInputCam" accept="image/*" capture="environment" style="display:none" onchange="loadDepSS(event)">
+            <div class="oppay-row">
+              <button type="button" class="oppay-upload" style="flex:1;" onclick="document.getElementById('depSSInputCam').click()">📷 ဓာတ်ပုံ ရိုက်ရန်</button>
+              <button type="button" class="oppay-upload" style="flex:1;" onclick="document.getElementById('depSSInput').click()">🖼️ Folder ကနေ ရွေးရန်</button>
+            </div>
+            <div class="oppay-row">
+              <input id="depCode" maxlength="6" placeholder="Transaction Code (နောက်ဆုံး ၆ လုံး)" oninput="resetDepConfirm()">
+            </div>
+            <img id="depSSPreview" class="oppay-ss-img" style="display:none;">
+            <button type="button" id="depConfirmBtn" class="oppay-confirm" onclick="confirmDeposit()">💰 ငွေ လက်ခံရရှိပါသည် (Confirm)</button>
+            <p id="depConfirmNote" class="oppay-note">⚠️ Confirm မလုပ်ရင် Deposit က invoice မှာ မပါပါ</p>
+          </div>
+        </div>
+
+        <h3 id="discountShow"></h3>
+      </section>
+
+    </div>
+
+    <!-- After save -->
+    <div id="afterSaveActions" class="no-print">
+      <h3>✅ Receipt သိမ်းပြီးပါပြီ</h3>
+      <div class="save-actions">
+        <button class="btn-print" onclick="printReceipt()">🖨️ Print</button>
+        <button class="btn-share" onclick="shareReceipt()">📤 Share</button>
+        <button class="btn-new" onclick="newReceipt()">➕ New Receipt</button>
+      </div>
+    </div>
+
+  </div>
+
+    <aside class="preview-col no-print">
+      <div class="rcpt-eyebrow"><span class="dot"></span>Live Preview</div>
+      <div id="livePreview" class="rcpt-card"></div>
+    </aside>
+  </div>
+
+  <!-- Sticky checkout bar -->
+  <div class="checkout-bar no-print">
+    <div class="net">
+      <small>Grand Total</small>
+      <h2 id="netTotal">Grand Total : 0</h2>
+    </div>
+    <button id="saveBtn" onclick="saveReceipt()">💾 Save</button>
+  </div>
+
+  <!-- Receipt Preview (Share image အတွက်ပဲ၊ screen မှာ မပြ) -->
+  <div id="receiptPreview">
+    <h2 style="text-align:center;">Sone Sone Mommy</h2>
+    <p id="rp-orderNo"></p>
+    <p id="rp-date"></p>
+    <p id="rp-staff"></p>
+    <hr>
+    <p id="rp-customer"></p>
+    <p id="rp-phone"></p>
+    <p id="rp-address"></p>
+    <p id="rp-township"></p>
+    <p id="rp-orderApp"></p>
+    <p id="rp-deliveryService"></p>
+    <hr>
+    <div id="rp-items"></div>
+    <hr>
+    <p id="rp-grandTotal"></p>
+    <p id="rp-discount"></p>
+    <p id="rp-delivery"></p>
+    <p id="rp-deposit"></p>
+    <h3 id="rp-netTotal"></h3>
+  </div>
+
+
+    <script>
+
+    let grandTotal = 0;
+    let items      = [];
+    let savedData  = null;
+    let editIndex  = null;
+    let orderNo    = Number(localStorage.getItem("orderNo")) || 1;
+
+    // order number မှာ device code ထည့် (device အလိုက် unique — sync collision မဖြစ်အောင်)
+    function ssmOrderNo(n){
+      var dc = (localStorage.getItem("ssm_deviceCode") || "").trim();
+      return "SSM-" + (dc ? dc + "-" : "") + String(n).padStart(4, "0");
+    }
+
+    document.getElementById("orderNo").innerHTML =
+      "Order No : " + ssmOrderNo(orderNo);
+
+    // ── Load Staff Dropdown ───────────────────────────────────────
+    function loadStaffDropdown() {
+      let staffList = JSON.parse(localStorage.getItem("staffList")) || [];
+      let html = '<option value="">Order လက်ခံသူ (Staff)</option>';
+      staffList.forEach(function (s) {
+        html += `<option value="${s.name}">${s.name}</option>`;
+      });
+      document.getElementById("staff").innerHTML = html;
+    }
+
+    // ── Load Product Dropdown ─────────────────────────────────────
+    function loadProductsDropdown() {
+      let products = JSON.parse(localStorage.getItem("products")) || [];
+      let html = "";
+      products.forEach(function (p) {
+        html += '<option value="' + p.name + '"></option>';
+      });
+      document.getElementById("productList").innerHTML = html;
+    }
+
+    // ── Sale Type toggle (Weight / Unit switch) ───────────────────
+    function ssmSyncSaleToggle() {
+      var v = document.getElementById("saleType").value;
+      var t = document.getElementById("saleTypeToggle");
+      if (!t) return;
+      t.querySelectorAll(".seg-opt").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-v") === v);
+      });
+    }
+    function setSaleType(v) {
+      var t = document.getElementById("saleTypeToggle");
+      var btn = t ? t.querySelector('[data-v="' + v + '"]') : null;
+      if (btn && btn.classList.contains("seg-disabled")) return;   // disabled → မရွေး
+      document.getElementById("saleType").value = v;
+      saleTypeChanged();
+    }
+    function setSaleTypeAvail(aw, au) {
+      var t = document.getElementById("saleTypeToggle");
+      if (!t) return;
+      var bw = t.querySelector('[data-v="weight"]'), bu = t.querySelector('[data-v="unit"]');
+      if (bw) bw.classList.toggle("seg-disabled", !aw);
+      if (bu) bu.classList.toggle("seg-disabled", !au);
+      document.getElementById("saleType").value = aw ? "weight" : "unit";
+    }
+
+    // ── Sale Type Changed (Weight / Unit box ပြောင်း) ─────────────
+    function saleTypeChanged() {
+      ssmSyncSaleToggle();
+      let saleType = document.getElementById("saleType").value;
+      document.getElementById("sizeBox").style.display = saleType === "weight" ? "block" : "none";
+      document.getElementById("unitBox").style.display = saleType === "unit"   ? "block" : "none";
+      fillPrice();
+    }
+    // ── Gift Changed ──────────────────────────────────────────────
+    function giftChanged() {
+      let isGift = document.getElementById("isGift").checked;
+      if (isGift) {
+        document.getElementById("price").value = 0;
+        calculateItemTotal();
+      } else {
+        fillPrice();
+      }
+    }
+
+    // ── Weight (ပိဿာ/ကျပ်သား) pricing helpers ─────────────────────
+    var KYATTHA_PER_VISS = 100;   // ၁ ပိဿာ = ၁၀၀ ကျပ်သား
+    function sizeKyattha(sizeVal){
+      var m = { "5":5, "10":10, "15":15, "25":25, "50":50, "1viss":100 };
+      return m[sizeVal] || 0;
+    }
+    function fmtWeight(ky){
+      var v = Math.floor(ky / KYATTHA_PER_VISS), r = ky - v * KYATTHA_PER_VISS;
+      var parts = [];
+      if (v > 0) parts.push(v + " ပိဿာ");
+      if (r > 0) parts.push(r + " ကျပ်သား");
+      return parts.length ? parts.join(" ") : "0 ကျပ်သား";
+    }
+    // total = (ပြည့်တဲ့ ပိဿာ × price1viss) + (ကျန်ကျပ်သား × extraVissPrice)
+    //         ၁ ပိဿာ မပြည့်ရင် → size ဈေး × qty
+    //         ကိုယ်စားလှယ်ဈေး (repPrice) ✓ ရင် → ၁ပိဿာ ပြည့်/မပြည့် ဆက်စပ်မရှိ၊ ပိဿာဈေးအတိုင်း အချိုးကျ ရေတွက်
+    function weightTotal(product, sizeVal, qty, repPrice){
+      var sizePriceMap = {
+        "5": product.price5, "10": product.price10, "15": product.price15,
+        "25": product.price25, "50": product.price50, "1viss": product.price1viss
+      };
+      var totalKy = sizeKyattha(sizeVal) * qty;
+      var vissP   = Number(product.price1viss)    || 0;
+      var extraP  = Number(product.extraVissPrice) || 0;
+      var sizeP   = Number(sizePriceMap[sizeVal])  || 0;
+      var fullV   = Math.floor(totalKy / KYATTHA_PER_VISS);
+      var rem     = totalKy - fullV * KYATTHA_PER_VISS;
+      var total;
+      if (repPrice) {
+        total = totalKy * (vissP / KYATTHA_PER_VISS);   // ကိုယ်စားလှယ်ဈေး — ပိဿာဈေး အချိုးကျ (qty မရွေး)
+      } else if (product.vissFrom50 && totalKy >= 50) {
+        total = totalKy * extraP;            // Special: 50 ကျပ်သားကနေ → ပိဿာပိုဈေး(/ကျပ်သား) × စုစုပေါင်းကျပ်သား
+      } else if (fullV >= 1) {
+        total = fullV * vissP + rem * extraP; // ပုံမှန် ၁ ပိဿာ+
+      } else {
+        total = qty * sizeP;                  // ၁ ပိဿာ မပြည့် → size ဈေး
+      }
+      return { totalKy: totalKy, total: Math.round(total) };
+    }
+
+    // ── Item Total ────────────────────────────────────────────────
+    function calculateItemTotal() {
+      var saleType = document.getElementById("saleType").value;
+      var qty = Number(document.getElementById("qty").value) || 0;
+
+      if (saleType === "weight" && !document.getElementById("isGift").checked) {
+        var products = JSON.parse(localStorage.getItem("products")) || [];
+        var pName = document.getElementById("product").value;
+        var product = products.find(function (p) { return p.name == pName; });
+        var sizeVal = document.getElementById("size").value;
+        var repPriceEl = document.getElementById("repPrice");
+        var repPrice = repPriceEl ? repPriceEl.checked : false;
+        var t = product ? weightTotal(product, sizeVal, qty, repPrice) : { total: 0 };
+        document.getElementById("itemTotal").value = t.total;
+        return;
+      }
+
+      var price = Number(document.getElementById("price").value) || 0;
+      var total = price * qty;
+      if (saleType === "unit" && !document.getElementById("isGift").checked) {
+        var repPriceElU = document.getElementById("repPrice");
+        if (repPriceElU && repPriceElU.checked) total = total * 0.9;   // ကိုယ်စားလှယ်ဈေး — Unit ဆို 10% လျှော့
+      }
+      document.getElementById("itemTotal").value = Math.round(total);
+    }
+
+    // ── Fill Price ────────────────────────────────────────────────
+    function fillPrice() {
+      // လက်ဆောင်ဆို price 0
+      if (document.getElementById("isGift").checked) {
+        document.getElementById("price").value = 0;
+        calculateItemTotal();
+        return;
+      }
+
+      let products    = JSON.parse(localStorage.getItem("products")) || [];
+      let productName = document.getElementById("product").value;
+      let saleType    = document.getElementById("saleType").value;
+      let product     = products.find(function (p) { return p.name == productName; });
+
+      if (!product) return;
+
+      if (saleType == "unit") {
+        let choice = document.getElementById("unitChoice").value;
+        document.getElementById("price").value =
+          choice === "A" ? (product.unitPriceA || 0) : (product.unitPriceB || 0);
+        calculateItemTotal();
+        return;
+      }
+
+      // weight
+      let size = document.getElementById("size").value;
+      let priceMap = {
+        "5":     product.price5,
+        "10":    product.price10,
+        "15":    product.price15,
+        "25":    product.price25,
+        "50":    product.price50,
+        "1viss": product.price1viss
+      };
+      if (priceMap[size] !== undefined) {
+        document.getElementById("price").value = priceMap[size] || 0;
+      }
+      calculateItemTotal();
+    }
+
+    // ── Product Changed ───────────────────────────────────────────
+    function productChanged() {
+      let products    = JSON.parse(localStorage.getItem("products")) || [];
+      let productName = document.getElementById("product").value;
+      let product     = products.find(function (p) { return p.name == productName; });
+
+      if (!product) return;
+
+      if (product.allowWeight && product.allowUnit) setSaleTypeAvail(true, true);
+      else if (product.allowWeight) setSaleTypeAvail(true, false);
+      else if (product.allowUnit) setSaleTypeAvail(false, true);
+      else setSaleTypeAvail(true, true);
+
+      saleTypeChanged();
+    }
+
+    // ── Add Item ──────────────────────────────────────────────────
+    // Beep sound (Web Audio API — external file မလို၊ offline မှာလည်း အလုပ်လုပ်)
+    function ssmBeep(freq, duration) {
+      try {
+        var Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        var ctx = window._ssmAudioCtx || (window._ssmAudioCtx = new Ctx());
+        if (ctx.state === "suspended") ctx.resume();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq || 880;
+        gain.gain.value = 0.18;
+        osc.connect(gain); gain.connect(ctx.destination);
+        var t = ctx.currentTime;
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + (duration || 0.12));
+        osc.start(t);
+        osc.stop(t + (duration || 0.12) + 0.02);
+      } catch (e) {}
+    }
+
+    function updateCartCount() {
+      var c = document.getElementById("cartCount");
+      if (c) c.textContent = items.length;
+    }
+
+    function addItem() {
+      let product   = document.getElementById("product").value;
+      let saleType  = document.getElementById("saleType").value;
+      let isGift    = document.getElementById("isGift").checked;
+      let repPriceEl = document.getElementById("repPrice");
+      let repPrice  = repPriceEl ? repPriceEl.checked : false;
+      let price     = Number(document.getElementById("price").value);
+      let qty       = Number(document.getElementById("qty").value);
+      let remark    = document.getElementById("remark").value;
+      let total     = Number(document.getElementById("itemTotal").value);
+
+      // Size / Unit label
+      let sizeLabel = "";
+      if (saleType === "weight") {
+        sizeLabel = document.getElementById("size").options[document.getElementById("size").selectedIndex].text;
+      } else {
+        sizeLabel = "Unit " + document.getElementById("unitChoice").value;
+      }
+
+      // Weight items — ပိဿာ/ကျပ်သား breakdown label
+      let weightText = "";
+      if (saleType === "weight") {
+        var _sv = document.getElementById("size").value;
+        var _ky = sizeKyattha(_sv) * qty;
+        weightText = sizeLabel + " × " + qty + " ထုပ် = " + fmtWeight(_ky);
+      }
+
+      // Validation
+      if (!product) { alert("Product ရွေးပါ"); return; }
+      if (!qty)     { alert("Qty ထည့်ပါ");    return; }
+      if (!isGift) {
+        if (saleType === "weight") {
+          if (!total) { alert("ဈေးနှုန်း သတ်မှတ်ထားခြင်း မရှိပါ"); return; }
+        } else if (!price) {
+          alert("Price မရှိပါ"); return;
+        }
+      }
+
+      let item = {
+        id: Date.now() + Math.random(),
+        product, saleType, size: sizeLabel,
+        price, qty, remark, total,
+        weightText: weightText,
+        isGift: isGift,
+        repPrice: repPrice
+      };
+
+      items.push(item);
+      grandTotal += total;
+      ssmBeep(700, 0.08);   // Add Item အသံ (တိုတို/မြင့်မြင့်)
+
+      let giftTag = isGift ? " 🎁" : "";
+      let repTag  = repPrice ? " 🏷️" : "";
+
+      var _sub = (saleType === "weight")
+        ? weightText
+        : ((isGift ? "လက်ဆောင် | " : "") + qty + " x " + price);
+      document.getElementById("saleTable").innerHTML += `
+        <div class="rcart-item" data-id="${item.id}" data-total="${total}">
+          <div class="rcart-main">
+            <div class="item-name">${product}${giftTag}${repTag}</div>
+            <div class="item-sub"><span>${_sub}</span><span>${total}</span></div>
+            ${remark ? `<div class="item-remark">→ ${remark}</div>` : ""}
+          </div>
+          <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">✏️</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">🗑️</button></span>
+        </div>`;
+      updateCartCount();
+
+      document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
+      calculateNet();
+
+      // Reset
+      document.getElementById("product").value   = "";
+      document.getElementById("qty").value       = "";
+      document.getElementById("price").value     = "";
+      document.getElementById("remark").value    = "";
+      document.getElementById("itemTotal").value = "";
+      document.getElementById("isGift").checked  = false;
+      if (document.getElementById("repPrice")) document.getElementById("repPrice").checked = false;
+      setSaleTypeAvail(true, true);   // toggle ပြန် fresh (Weight, both enable)
+      saleTypeChanged();
+    }
+
+    // ── Edit Row (load back into form, remove row) ────
+    function editRow(btn) {
+      var row = btn.closest("[data-id]");
+      if (!row) return;
+      var id = String(row.dataset.id);
+      var it = items.find(function (x) { return String(x.id) === id; });
+      if (!it) return;
+
+      var prod = document.getElementById("product");
+      if (prod) { prod.value = it.product; if (typeof productChanged === "function") productChanged(); }
+
+      var st = document.getElementById("saleType");
+      if (st) { st.value = it.saleType; if (typeof saleTypeChanged === "function") saleTypeChanged(); }
+
+      if (it.saleType === "weight") {
+        var size = document.getElementById("size");
+        if (size) { for (var i = 0; i < size.options.length; i++) { if (size.options[i].text === it.size) { size.selectedIndex = i; break; } } }
+      } else {
+        var uc = document.getElementById("unitChoice");
+        if (uc) { uc.value = String(it.size || "").replace("Unit ", ""); }
+      }
+
+      var pr = document.getElementById("price");   if (pr) pr.value = it.price;
+      var q  = document.getElementById("qty");     if (q)  q.value  = it.qty;
+      var rm = document.getElementById("remark");  if (rm) rm.value = it.remark || "";
+      var g  = document.getElementById("isGift");  if (g)  g.checked = !!it.isGift;
+      var rp = document.getElementById("repPrice"); if (rp) rp.checked = !!it.repPrice;
+      if (typeof calculateItemTotal === "function") calculateItemTotal();
+
+      deleteRow(btn);   // remove the old row; user re-adds with Add Item
+      if (prod) prod.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    // ── Delete Row ────────────────────────────────────────────────
+    function deleteRow(btn) {
+      let row    = btn.closest("[data-id]");
+      let itemId = String(row.dataset.id);
+
+      items = items.filter(function (item) { return String(item.id) !== itemId; });
+
+      grandTotal -= Number(row.dataset.total || 0);
+      row.remove();
+      updateCartCount();
+
+      document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
+      calculateNet();
+    }
+
+    // ── Check if any unit item exists ─────────────────────────────
+    function hasUnitItem() {
+      return items.some(function (item) { return item.saleType === "unit"; });
+    }
+
+    // ── Calculate Net (Discount အပါအဝင်) ──────────────────────────
+    // ── Unit-sold items total (for % discount base) ──
+    function unitItemsTotal() {
+      var sum = 0;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].saleType === "unit") sum += Number(items[i].total) || 0;
+      }
+      return sum;
+    }
+
+    function calculateNet() {
+      let delivery = Number(document.getElementById("delivery").value);
+      let deposit  = effectiveDeposit();
+      let discountAmount = Number(document.getElementById("discountValue").value) || 0;
+
+      let discountShow = document.getElementById("discountShow");
+      if (discountAmount > 0) {
+        discountShow.innerText = "Discount : -" + discountAmount;
+      } else {
+        discountShow.innerText = "";
+      }
+
+      let net = grandTotal - discountAmount + delivery - deposit;
+      document.getElementById("netTotal").innerHTML = "Grand Total : " + net;
+    }
+
+    // ── Get Discount Amount (save အတွက်) ──────────────────────────
+    function getDiscountAmount() {
+      return Number(document.getElementById("discountValue").value) || 0;
+    }
+
+    // ── Deposit online-payment screenshot ──
+    var depSSData = "";
+    // Payment status ရွေးလိုက်ရင် Deposit ကို auto ဖြည့်ပေးမယ် (COD ဆို ပုံမှန်အတိုင်း မပြောင်း)
+    function autoFillDeposit() {
+      var v = document.getElementById("payStatusSel").value;
+      if (v !== "Partial" && v !== "Prepaid") return; // COD → မထိ
+      var delivery = Number(document.getElementById("delivery").value) || 0;
+      var discountAmount = getDiscountAmount();
+      var itemsNet = grandTotal - discountAmount; // Delivery မပါဘဲ ဘောင်ချာ တန်ဖိုး
+      var depEl = document.getElementById("deposit");
+      if (v === "Partial") {
+        depEl.value = itemsNet;               // ပစ္စည်းဖိုးသာ ရှင်း → ပို့ခ ကျန်
+      } else if (v === "Prepaid") {
+        depEl.value = itemsNet + delivery;     // အားလုံး ရှင်း → ဘောင်ချာတန်ဖိုး အပြည့်
+      }
+      resetDepConfirm();
+    }
+    function toggleDepFields() {
+      var v = document.getElementById("payStatusSel").value;
+      var dep = Number(document.getElementById("deposit").value) || 0;
+      var show = ((v && v !== "COD") || dep > 0);
+      document.getElementById("depExtra").style.display = show ? "block" : "none";
+      var tw = document.getElementById("depTypeWrap"); if (tw) tw.style.display = show ? "block" : "none";
+    }
+    var depositConfirmed = false;
+    function effectiveDeposit() {
+      return depositConfirmed ? (Number(document.getElementById("deposit").value) || 0) : 0;
+    }
+    function confirmDeposit() {
+      var amt = Number(document.getElementById("deposit").value) || 0;
+      if (amt <= 0) { alert("Deposit ပမာဏ ထည့်ပါ။"); return; }
+      if (!document.getElementById("depPayType").value) { alert("Online Payment Type ရွေးပါ။"); return; }
+      if (!depSSData) { alert("ငွေလွှဲ Screenshot ထည့်ပါ။"); return; }
+      var _dc = (document.getElementById("depCode").value || "").trim();
+      if (_dc.length !== 6) { alert("Transaction Code ၆ လုံး အပြည့် ထည့်ပါ။"); return; }
+
+      // ── Duplicate transaction-code check (confirm-time — receipts လိုပဲ) ──
+      var _hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      var _myNo = window.editOrderNo || ssmOrderNo(orderNo);
+      var _dup = null;
+      for (var _i = 0; _i < _hist.length; _i++) {
+        var _h = _hist[_i];
+        if (_h && _h.payCode && String(_h.payCode).trim() === _dc && _h.orderNo !== _myNo) { _dup = _h; break; }
+      }
+      if (_dup) {
+        showConfirm(
+          "ယခုထည့်ထားသော " + _dc + " မှာ " + (_dup.orderNo || "-") + " တွင် အသုံးပြုပြီးဖြစ်ပါသည်။\n\nသေချာအောင် ပြန်လည်စစ်ဆေးပါ။",
+          function () { applyDepConfirm(); },   // သေချာပါသည် → confirm လုပ်မယ်
+          null,                                  // ပြန်စစ်ပါမည် → confirm မလုပ်ဘူး
+          { yes: "သေချာပါသည်", no: "ပြန်စစ်ပါမည်" }
+        );
+        return;
+      }
+      applyDepConfirm();
+    }
+    function applyDepConfirm() {
+      depositConfirmed = true;
+      var b = document.getElementById("depConfirmBtn");
+      if (b) { b.classList.add("on"); b.textContent = "✓ ငွေ လက်ခံရရှိပြီး"; }
+      ssmBeep(1000, 0.16);
+      calculateNet();
+    }
+    function resetDepConfirm() {
+      depositConfirmed = false;
+      var b = document.getElementById("depConfirmBtn");
+      if (b) { b.classList.remove("on"); b.textContent = "💰 ငွေ လက်ခံရရှိပါသည် (Confirm)"; }
+      calculateNet();
+    }
+    function resizeImageFile(file, cb) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          var MAX = 800, w = img.width, h = img.height;
+          if (w > h && w > MAX)      { h = Math.round(h * MAX / w); w = MAX; }
+          else if (h >= w && h > MAX){ w = Math.round(w * MAX / h); h = MAX; }
+          var c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          cb(c.toDataURL("image/jpeg", 0.5));
+        };
+        img.onerror = function () { cb(null); };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    function loadDepSS(event) {
+      var input = event.target;
+      var file = input.files[0];
+      if (!file) return;
+      resizeImageFile(file, function (dataUrl) {
+        input.value = "";   // ဖိုင်တူ ပြန်ရွေးရင်ပါ onchange fire ဖို့
+        if (!dataUrl) { alert("ဓာတ်ပုံ ဖတ်လို့ မရပါ။ ပြန်ကြိုးစားပါ။"); return; }
+        depSSData = dataUrl;
+        var pv = document.getElementById("depSSPreview");
+        pv.src = depSSData; pv.style.display = "block";
+        resetDepConfirm();
+      });
+    }
+
+    // ── On-page message banner (alert() can be suppressed on mobile) ──
+    function showSaveMsg(msg, isError) {
+      var b = document.getElementById("saveMsgBanner");
+      if (!b) {
+        b = document.createElement("div");
+        b.id = "saveMsgBanner";
+        b.style.cssText = "position:fixed;left:12px;right:12px;top:12px;z-index:99999;"
+          + "padding:14px 16px;border-radius:12px;font-size:15px;font-weight:600;"
+          + "white-space:pre-line;box-shadow:0 8px 28px rgba(0,0,0,.28);text-align:center;";
+        b.onclick = function(){ b.style.display = "none"; };
+        document.body.appendChild(b);
+      }
+      b.style.background = isError ? "#dc2626" : "#16a34a";
+      b.style.color = "#fff";
+      b.textContent = msg + (isError ? "\n(တို့ပြီး ပိတ်ရန်)" : "");
+      b.style.display = "block";
+      if (isError) { try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {} }
+      if (!isError) setTimeout(function(){ if (b) b.style.display = "none"; }, 2500);
+    }
+
+    // ── Save Receipt ──────────────────────────────────────────────
+    function saveReceipt() {
+     try {
+      // ── Required fields (Discount / Payment / Delivery note only are optional) ──
+      var _req = [
+        ["staff", "Order လက်ခံသူ (Staff)"],
+        ["name", "Customer အမည်"],
+        ["phone", "ဖုန်း"],
+        ["address", "လိပ်စာ"],
+        ["township", "Township"],
+        ["orderapp", "Order App"],
+        ["deliveryService", "Delivery Service"],
+        ["delivery", "Delivery Fee"]
+      ];
+      var _miss = [];
+      _req.forEach(function (f) {
+        var el = document.getElementById(f[0]);
+        if (!el || !String(el.value || "").trim()) _miss.push(f[1]);
+      });
+      if (typeof items === "undefined" || !items || items.length === 0) _miss.push("ပစ္စည်း (အနည်းဆုံး ၁ ခု)");
+      if (_miss.length) {
+        showSaveMsg("⚠️ အောက်ပါတို့ ဖြည့်ပါ —\n• " + _miss.join("\n• "), true);
+        return;
+      }
+
+      let discountAmount = getDiscountAmount();
+
+      // Online payment (deposit) info
+      var depStatus = document.getElementById("payStatusSel").value || "COD";
+      var depType = document.getElementById("depPayType").value;
+      var depAmt  = effectiveDeposit();
+      var depCode = (document.getElementById("depCode").value || "").trim();
+      var depPayAmount = "", depPayDate = "";
+      if ((depType || depStatus !== "COD") && depAmt > 0) {
+        depPayAmount = depAmt;
+        depPayDate = new Date().toLocaleDateString();
+      }
+
+      // (Duplicate transaction-code check removed — it relied on prompt()/alert()
+      //  which mobile browsers suppress after repeated dialogs, silently blocking save.)
+
+      savedData = {
+        orderNo:         window.editOrderNo || ssmOrderNo(orderNo),
+        staff:           document.getElementById("staff").value,
+        customer:        document.getElementById("name").value,
+        phone:           document.getElementById("phone").value,
+        address:         document.getElementById("address").value,
+        township:        document.getElementById("township").value,
+        orderApp:        document.getElementById("orderapp").value,
+        items:           items,
+        grandTotal:      grandTotal,
+        discountValue:   document.getElementById("discountValue").value,
+        discountAmount:  discountAmount,
+        delivery:        document.getElementById("delivery").value,
+        deliveryService: document.getElementById("deliveryService").value,
+        deliveryStatus:  "Pending",
+        deliveryCode:    "",
+        deliveryParcel:  false,
+        deliveryFeeReal: "",
+        charge:          "",
+        deliveryPhoto:   "",
+        deposit:         depAmt,
+        depositBase:     depPayAmount ? 0 : depAmt,
+        payStatus:       depStatus,
+        payType:         depositConfirmed ? depType : "",
+        payCode:         depositConfirmed ? depCode : "",
+        paySS:           depositConfirmed ? (depSSData || "") : "",
+        payAmount:       depPayAmount,
+        payDate:         depPayDate,
+        note:            document.getElementById("note").value,
+        netTotal:        document.getElementById("netTotal").innerText,
+        printed:         false,
+        orderDate:       (editIndex != null && window.editOrderDate) ? window.editOrderDate : new Date().toISOString()
+      };
+
+      let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      // orderNo ရှိပြီးသားဆို update (edit/iOS safe) — မရှိဆို အသစ်ထည့်။ "ဘောင်ချာ ၂ ထပ် / edit မဝင်" ပြဿနာ ကာကွယ်
+      var _exist = salesHistory.findIndex(function (s) { return s && String(s.orderNo) === String(savedData.orderNo); });
+      var _prevSale = (_exist >= 0) ? salesHistory[_exist] : null;   // edit မှာ ပုံ reference ထိန်းရန်
+      if (_exist >= 0) salesHistory[_exist] = savedData;
+      else salesHistory.push(savedData);
+      let isEditMode = (editIndex != null) || (_exist >= 0);
+
+      // ပုံ — Firestore (salesImages) မှာသာ သိမ်း။ paySS inline ပါရင် sync layer က cloud တင်ပြီး ဖြုတ်ပေး။
+      // paySS အသစ် ပါလာရင် hasPay flag တင် (cloud ဖြုတ်ပြီးနောက် "☁️ SS ကြည့်ရန်" ပေါ်အောင်)
+      if (savedData.paySS) { savedData.hasPay = true; savedData.payV = Date.now(); }
+      else if (_prevSale && (_prevSale.hasPay || _prevSale._hadPay)) {
+        savedData.hasPay = true; if (_prevSale.payV) savedData.payV = _prevSale.payV;
+      }
+      if (!savedData.deliveryPhoto && _prevSale) {
+        if (_prevSale.deliveryPhoto) savedData.deliveryPhoto = _prevSale.deliveryPhoto;               // legacy inline (migrate မလုပ်ရသေး) → ဆက်သယ် (sync layer ဖြုတ်တင်မယ်)
+        else if (_prevSale.hasDel || _prevSale._hadDelivery) { savedData.hasDel = true; if (_prevSale.delV) savedData.delV = _prevSale.delV; }
+      }
+
+      localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+
+      if (!isEditMode) {
+        orderNo++;
+        localStorage.setItem("orderNo", orderNo);
+      }
+
+      document.getElementById("saveBtn").disabled  = true;
+      document.getElementById("saveBtn").innerText = "✅ Saved";
+      var _asa = document.getElementById("afterSaveActions");
+      _asa.style.display = "block";
+      ssmBeep(1000, 0.16);   // Save အောင်မြင်ကြောင်း အသံ (မြင့်ပြီး အနည်းငယ်ရှည်)
+      showSaveMsg("✅ ဘောင်ချာ သိမ်းပြီးပါပြီ — " + savedData.orderNo, false);
+      // edit ပြီးရင် identity ရှင်း → နောက် order အသစ်မှာ stale edit မဖြစ်အောင်
+      if (isEditMode) { editIndex = null; window.editOrderNo = null; window.editOrderDate = null; try { sessionStorage.removeItem("ssm_editOrderNo"); sessionStorage.removeItem("ssm_editOrderNoT"); } catch (e) {} }
+      try { _asa.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
+
+      try { buildReceiptPreview(savedData); }
+      catch (pe) { console.error("preview error", pe); }
+     } catch (err) {
+      showSaveMsg("⚠️ Save Error: " + (err && err.message ? err.message : err), true);
+     }
+    }
+
+    // ── Build Receipt Preview ─────────────────────────────────────
+    function buildReceiptPreview(data) {
+      document.getElementById("rp-orderNo").innerText         = "Order No : " + data.orderNo;
+      document.getElementById("rp-date").innerText            = "Date : " + new Date().toLocaleDateString();
+      document.getElementById("rp-staff").innerText           = "လက်ခံသူ : " + (data.staff || "-");
+      document.getElementById("rp-customer").innerText        = "Customer : " + data.customer;
+      document.getElementById("rp-phone").innerText           = "Phone : " + data.phone;
+      document.getElementById("rp-address").innerText         = "Address : " + data.address;
+      document.getElementById("rp-township").innerText        = "Township : " + data.township;
+      document.getElementById("rp-orderApp").innerText        = "Order App : " + data.orderApp;
+      document.getElementById("rp-deliveryService").innerText = "Delivery : " + data.deliveryService;
+      document.getElementById("rp-grandTotal").innerText      = "Total : " + data.grandTotal;
+      document.getElementById("rp-delivery").innerText        = "Delivery Fee : " + data.delivery;
+      document.getElementById("rp-deposit").innerText         = "Deposit : " + data.deposit;
+      document.getElementById("rp-netTotal").innerText        = data.netTotal;
+
+      // Discount line
+      if (data.discountAmount > 0) {
+        document.getElementById("rp-discount").innerText = "Discount : -" + data.discountAmount;
+      } else {
+        document.getElementById("rp-discount").innerText = "";
+      }
+
+      let itemHtml = "";
+      data.items.forEach(function (item) {
+        let giftTag = item.isGift ? " 🎁(လက်ဆောင်)" : "";
+        itemHtml += `<p>${item.product}${giftTag} | ${item.size} | ${item.qty} x ${item.price} = ${item.total}</p>`;
+      });
+      document.getElementById("rp-items").innerHTML = itemHtml;
+
+    }
+
+    // ── Print ─────────────────────────────────────────────────────
+    function printReceipt() {
+      let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      let last = salesHistory.length - 1;
+      if (editIndex != null) last = editIndex;
+      if (salesHistory[last]) {
+        salesHistory[last].printed = true;
+        localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+        // print.html အတွက် data သိမ်းပြီး သွားမယ်
+        localStorage.setItem("printReceipt", JSON.stringify(salesHistory[last]));
+      }
+      ssmBeep(900, 0.1);
+      location.href = "print.html";
+    }
+
+    // ── Share ─────────────────────────────────────────────────────
+    function shareReceipt() {
+      var box = document.createElement("div");
+      box.style.position = "fixed"; box.style.left = "-9999px"; box.style.top = "0";
+      document.body.appendChild(box);
+      window.ssmRenderReceipt(box, savedData);   // print.html နဲ့ တူညီတဲ့ template
+      html2canvas(box, { backgroundColor: "#ffffff", scale: 2 }).then(function (canvas) {
+        box.remove();
+        ssmBeep(900, 0.1);
+        canvas.toBlob(function (blob) {
+          let file = new File([blob], "receipt.png", { type: "image/png" });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: "Receipt - " + savedData.orderNo });
+          } else {
+            let link = document.createElement("a");
+            link.href = canvas.toDataURL();
+            link.download = "receipt-" + savedData.orderNo + ".png";
+            link.click();
+            alert("Share API မရှိပါ။ Image ကို Download လုပ်ပေးလိုက်ပါတယ်။");
+          }
+        });
+      }).catch(function (e) { box.remove(); alert("Share Error: " + e); });
+    }
+
+    // ── New Receipt ───────────────────────────────────────────────
+    function newReceipt() {
+      ssmBeep(700, 0.08);
+      location.href = "index.html";
+    }
+
+    // ── Load Edit Receipt ─────────────────────────────────────────
+    function loadEditReceipt() {
+      let idx = localStorage.getItem("editReceiptIndex");
+      let ono = localStorage.getItem("editReceiptOrderNo");
+      // iOS reload/auth-bounce ဖြစ်ရင် localStorage key ပျောက်တတ်လို့ — sessionStorage ကနေ ပြန်ယူ (15s အတွင်း)
+      if (ono == null) {
+        try {
+          var se = sessionStorage.getItem("ssm_editOrderNo");
+          var st = parseInt(sessionStorage.getItem("ssm_editOrderNoT") || "0", 10);
+          if (se && (Date.now() - st) < 15000) ono = se;
+        } catch (e) {}
+      }
+      if (idx == null && ono == null) return;
+
+      localStorage.removeItem("editReceiptIndex");
+      localStorage.removeItem("editReceiptOrderNo");
+
+      let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      let receipt = null;
+      if (ono != null) receipt = salesHistory.find(function (s) { return s && String(s.orderNo) === String(ono); });   // orderNo နဲ့ ရှာ (index ရွှေ့မှု safe)
+      if (!receipt && idx != null) receipt = salesHistory[idx];
+      if (!receipt) return;
+
+      editIndex = (idx != null ? idx : 0);          // isEditMode flag (save က orderNo နဲ့ update လုပ်တယ်)
+      window.editOrderNo   = receipt.orderNo;
+      window.editOrderDate = receipt.orderDate;
+      // edit identity ကို sessionStorage မှာ ထား → page reload/auth bounce ဖြစ်လည်း မပျောက် (iOS fix)
+      try { sessionStorage.setItem("ssm_editOrderNo", String(receipt.orderNo)); sessionStorage.setItem("ssm_editOrderNoT", String(Date.now())); } catch (e) {}
+
+      document.getElementById("staff").value           = receipt.staff           || "";
+      document.getElementById("name").value            = receipt.customer        || "";
+      document.getElementById("phone").value           = receipt.phone           || "";
+      document.getElementById("address").value         = receipt.address         || "";
+      document.getElementById("township").value        = receipt.township        || "";
+      document.getElementById("orderapp").value        = receipt.orderApp        || "";
+      document.getElementById("delivery").value        = receipt.delivery        || "";
+      document.getElementById("deliveryService").value = receipt.deliveryService || "";
+      document.getElementById("deposit").value         = receipt.deposit         || "";
+      document.getElementById("payStatusSel").value    = receipt.payStatus       || "COD";
+      document.getElementById("depPayType").value      = receipt.payType         || "";
+      depositConfirmed = (Number(receipt.deposit) > 0);
+      (function(){ var b=document.getElementById("depConfirmBtn"); if(b){ if(depositConfirmed){ b.classList.add("on"); b.textContent="✓ ငွေ လက်ခံရရှိပြီး"; } else { b.classList.remove("on"); b.textContent="💰 ငွေ လက်ခံရရှိပါသည် (Confirm)"; } } })();
+      if (typeof toggleDepFields === "function") toggleDepFields();
+      document.getElementById("depCode").value         = receipt.payCode         || "";
+      depSSData = receipt.paySS || "";
+      (function(){ var pv = document.getElementById("depSSPreview"); if (depSSData) { pv.src = depSSData; pv.style.display = "block"; } else { pv.style.display = "none"; } })();
+      // ပုံက cloud (salesImages) မှာသာ ရှိရင် — ဆွဲပြီး preview ပြ (edit မှာ ပုံ မပျောက်အောင် depSSData ထဲ ထည့်)
+      if (!depSSData && (receipt.hasPay || receipt._hadPay) && window.ssmGetCloudImages) {
+        window.ssmGetCloudImages(receipt.orderNo).then(function (imgs) {
+          if (imgs && imgs.paySS) {
+            depSSData = imgs.paySS;
+            var pv = document.getElementById("depSSPreview"); if (pv) { pv.src = depSSData; pv.style.display = "block"; }
+          }
+        });
+      }
+      document.getElementById("note").value            = receipt.note            || "";
+      document.getElementById("discountValue").value   = receipt.discountAmount  || receipt.discountValue || "";
+
+      receipt.items.forEach(function (item) {
+        if (!item.id) item.id = Date.now() + Math.random();
+        items.push(item);
+        grandTotal += Number(item.total);
+
+        let giftTag = item.isGift ? " 🎁" : "";
+        var _sub2 = (item.saleType === "weight")
+          ? (item.weightText ? item.weightText : ((item.size || "") + " | " + item.qty + " x " + item.price))
+          : ((item.isGift ? "လက်ဆောင် | " : "") + item.qty + " x " + item.price);
+        document.getElementById("saleTable").innerHTML += `
+          <div class="rcart-item" data-id="${item.id}" data-total="${item.total}">
+            <div class="rcart-main">
+              <div class="item-name">${item.product}${giftTag}</div>
+              <div class="item-sub"><span>${_sub2}</span><span>${item.total}</span></div>
+              ${item.remark ? `<div class="item-remark">→ ${item.remark}</div>` : ""}
+            </div>
+            <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">✏️</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">🗑️</button></span>
+          </div>`;
+      });
+
+      document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
+      calculateNet();
+    }
+
+    // ── Parcel Alert ──────────────────────────────────────────────
+    function loadParcelAlert() {
+      let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      let alertBox = document.getElementById("parcelAlert");
+
+      // Receipt တစ်ခုမှ မရှိရင် box ကို ဖျောက်ထားမယ်
+      if (salesHistory.length === 0) {
+        alertBox.style.display = "none";
+        return;
+      }
+
+      // walk-in (ဆိုင်ရောင်း — SSM-WI-) မပါ — parcel/print မလို
+      function _isWalkIn(s) { return /-WI-/.test(String(s.orderNo || "")) || s.payMode; }
+      var parcelPending = salesHistory.filter(function (sale) {
+        return !_isWalkIn(sale) && !sale.deliveryParcel;
+      }).length;
+      var printPending = salesHistory.filter(function (sale) {
+        return !_isWalkIn(sale) && !sale.printed;
+      }).length;
+
+      alertBox.style.display = "block";
+
+      if (parcelPending === 0 && printPending === 0) {
+        alertBox.style.background = "#d1fae5";
+        alertBox.innerHTML = "✅ Parcel & Print အားလုံး ပြီးပါပြီ";
+      } else {
+        alertBox.style.background = "#fef3c7";
+        alertBox.innerHTML = "⚠️ Parcel မထုတ်ရ " + parcelPending + " ခု · Print မထုတ်ရ " + printPending + " ခု";
+      }
+    }
+
+    // ── Init ──────────────────────────────────────────────────────
+    loadStaffDropdown();
+    loadProductsDropdown();
+    loadEditReceipt();
+    updateCartCount();
+    loadParcelAlert();
+
+
+    // ── Slide Menu ──
+    function openMenu() {
+      document.getElementById("sideMenu").classList.add("open");
+      document.getElementById("menuOverlay").classList.add("open");
+    }
+    function closeMenu() {
+      document.getElementById("sideMenu").classList.remove("open");
+      document.getElementById("menuOverlay").classList.remove("open");
+    }
+    // active page highlight
+    (function () {
+      let path = location.pathname.split("/").pop() || "index.html";
+      document.querySelectorAll(".menu-item").forEach(function (m) {
+        if (m.dataset.page === path) m.classList.add("active");
+      });
+    })();
+
+  </script>
+  <script>
+  /* ── Styled popup: replaces native alert(), adds showConfirm() ── */
+  (function () {
+    var ov = document.createElement("div");
+    ov.className = "popup-overlay";
+    ov.innerHTML =
+      '<div class="popup-card" role="dialog" aria-modal="true">' +
+        '<div class="popup-icon" id="popIcon">\u2139\ufe0f</div>' +
+        '<p class="popup-msg" id="popMsg"></p>' +
+        '<div class="popup-actions" id="popActions"></div>' +
+      '</div>';
+    document.body.appendChild(ov);
+
+    var msgEl  = ov.querySelector("#popMsg");
+    var iconEl = ov.querySelector("#popIcon");
+    var actEl  = ov.querySelector("#popActions");
+
+    function close() { ov.classList.remove("show"); }
+
+    function pickIcon(m) {
+      m = String(m);
+      if (/\u2705|\u1015\u103c\u102e\u1038|success/i.test(m)) return "\u2705";
+      if (/\u26a0|\u1019|\u1015\u102b|error|fail/i.test(m)) return "\u26a0\ufe0f";
+      return "\u2139\ufe0f";
+    }
+
+    window.alert = function (message) {
+      msgEl.textContent = message;
+      msgEl.style.whiteSpace = "normal";
+      iconEl.textContent = pickIcon(message);
+      actEl.innerHTML = "";
+      var ok = document.createElement("button");
+      ok.textContent = "\u101b\u1015\u103c\u102e";
+      ok.onclick = close;
+      actEl.appendChild(ok);
+      ov.classList.add("show");
+      ok.focus();
+    };
+
+    window.showConfirm = function (message, onYes, onNo, opts) {
+      opts = opts || {};
+      msgEl.textContent = message;
+      msgEl.style.whiteSpace = "pre-line";
+      iconEl.textContent = opts.icon || "\u2753";
+      actEl.innerHTML = "";
+      var cancel = document.createElement("button");
+      cancel.className = "popup-cancel";
+      cancel.textContent = opts.no || "\u1019\u101c\u102f\u1015\u103a\u1010\u1031\u102c\u1037";
+      cancel.onclick = function () { close(); if (onNo) onNo(); };
+      var yes = document.createElement("button");
+      yes.textContent = opts.yes || "\u101f\u102f\u1010\u103a\u1000\u1032\u1037";
+      yes.onclick = function () { close(); if (onYes) onYes(); };
+      actEl.appendChild(cancel);
+      actEl.appendChild(yes);
+      ov.classList.add("show");
+    };
+
+    // PIN / text input popup (styled — never suppressed like native prompt())
+    window.showPrompt = function (message, onSubmit, onCancel, opts) {
+      opts = opts || {};
+      var ov2 = document.createElement("div"); ov2.className = "popup-overlay";
+      ov2.innerHTML = '<div class="popup-card" role="dialog" aria-modal="true">' +
+        '<div class="popup-icon">\u26a0\ufe0f</div>' +
+        '<p class="popup-msg" style="white-space:pre-line"></p>' +
+        '<input class="popup-input" style="width:100%;margin:2px 0 14px;padding:11px 12px;font-size:15px;border:1px solid #dcdfe7;border-radius:11px;font-family:inherit;outline:none;box-sizing:border-box;background:#fff;color:#15171c;">' +
+        '<div class="popup-actions"></div></div>';
+      document.body.appendChild(ov2);
+      var m = ov2.querySelector(".popup-msg"), inp = ov2.querySelector(".popup-input"), act = ov2.querySelector(".popup-actions");
+      m.textContent = message;
+      inp.type = opts.type || "text"; if (opts.inputmode) inp.inputMode = opts.inputmode;
+      function done(){ ov2.remove(); }
+      var cancel = document.createElement("button"); cancel.className = "popup-cancel"; cancel.textContent = "\u1019\u101c\u102f\u1015\u103a\u1010\u1031\u102c\u1037";
+      cancel.onclick = function(){ done(); if (onCancel) onCancel(); };
+      var ok = document.createElement("button"); ok.textContent = "\u1021\u1010\u100a\u103a\u1015\u103c\u102f";
+      ok.onclick = function(){ var v = inp.value; done(); if (onSubmit) onSubmit(v); };
+      act.appendChild(cancel); act.appendChild(ok);
+      ov2.addEventListener("click", function(e){ if (e.target === ov2){ done(); if (onCancel) onCancel(); } });
+      inp.addEventListener("keydown", function(e){ if (e.key === "Enter") ok.click(); });
+      ov2.classList.add("show");
+      setTimeout(function(){ inp.focus(); }, 60);
+    };
+
+    ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+  })();
+  </script>
+  <script>
+  /* ── bottom-sheet ဖွင့်ချိန် နောက်ခံ scroll lock (mobile-safe: position:fixed + scroll restore) ── */
+  var __ssmScrollY = 0;
+  function ssmLockScroll() {
+    if (document.body.classList.contains("sheet-locked")) return;
+    __ssmScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.top = (-__ssmScrollY) + "px";
+    document.body.classList.add("sheet-locked");
+  }
+  function ssmUnlockScroll() {
+    if (document.querySelector(".sheet-overlay.show")) return;   // တခြား sheet ဖွင့်ထားသေး → ဆက်ထား
+    if (!document.body.classList.contains("sheet-locked")) return;
+    document.body.classList.remove("sheet-locked");
+    document.body.style.top = "";
+    window.scrollTo(0, __ssmScrollY);
+  }
+
+  /* ── Custom select → bottom sheet (native <select> picker replaced) ── */
+  (function () {
+    var ov = document.createElement("div"); ov.className = "sheet-overlay";
+    var sheet = document.createElement("div"); sheet.className = "sheet";
+    sheet.innerHTML =
+      '<div class="sheet-grip"></div>' +
+      '<div class="sheet-title" id="sheetTitle"></div>' +
+      '<div class="sheet-list" id="sheetList"></div>';
+    document.body.appendChild(ov);
+    document.body.appendChild(sheet);
+    var listEl  = sheet.querySelector("#sheetList");
+    var titleEl = sheet.querySelector("#sheetTitle");
+
+    function titleFor(sel) {
+      var lbl = sel.parentNode && sel.parentNode.querySelector ? sel.parentNode.querySelector(".lbl") : null;
+      if (!lbl) {
+        var box = sel.closest(".field, .discount-box");
+        lbl = box ? box.querySelector(".lbl") : null;
+      }
+      if (lbl) return lbl.textContent.replace(/\s+/g, " ").trim();
+      if (sel.options[0] && sel.options[0].value === "") return sel.options[0].text;
+      return "\u101b\u103d\u1031\u1038\u1015\u102b"; /* ရွေးပါ */
+    }
+
+    function openSheet(sel) {
+      titleEl.textContent = titleFor(sel);
+      listEl.innerHTML = "";
+      Array.prototype.forEach.call(sel.options, function (o, i) {
+        var row = document.createElement("div");
+        row.className = "sheet-opt" + (i === sel.selectedIndex ? " sel" : "");
+        var txt = document.createElement("span"); txt.textContent = o.text;
+        var tk  = document.createElement("span"); tk.className = "tick"; tk.textContent = "\u2713";
+        row.appendChild(txt); row.appendChild(tk);
+        row.addEventListener("click", function () {
+          if (sel.selectedIndex !== i) {
+            sel.selectedIndex = i;
+            sel.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          closeSheet();
+        });
+        listEl.appendChild(row);
+      });
+      ov.classList.add("show");
+      ssmLockScroll();
+      requestAnimationFrame(function () { sheet.classList.add("show"); });
+    }
+    function closeSheet() { sheet.classList.remove("show"); ov.classList.remove("show"); ssmUnlockScroll(); }
+    ov.addEventListener("click", closeSheet);
+
+    var pairs = [];
+    function enhance(sel) {
+      if (sel.dataset.csel) return;
+      sel.dataset.csel = "1";
+      sel.classList.add("csel-native");
+      var btn = document.createElement("button");
+      btn.type = "button"; btn.className = "csel-btn";
+      sel.parentNode.insertBefore(btn, sel.nextSibling);
+      btn.addEventListener("click", function (e) { e.preventDefault(); openSheet(sel); });
+      pairs.push({ sel: sel, btn: btn, last: null });
+    }
+    function enhanceAll() {
+      document.querySelectorAll("select:not([data-csel])").forEach(enhance);
+    }
+
+    function tick() {
+      for (var i = 0; i < pairs.length; i++) {
+        var p = pairs[i], o = p.sel.options[p.sel.selectedIndex];
+        var txt = o ? o.text : "";
+        var key = p.sel.selectedIndex + "|" + txt;
+        if (key !== p.last) {
+          p.last = key;
+          p.btn.textContent = txt;
+          p.btn.classList.toggle("is-placeholder", !p.sel.value);
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    enhanceAll();
+    setTimeout(enhanceAll, 400);
+    requestAnimationFrame(tick);
+  })();
+  </script>
+  <script>
+  /* ── Searchable picker for Township (type to filter, custom allowed) ── */
+  (function () {
+    var TOWNS = [
+      "မြစ်ကြီးနား","ဝိုင်းမော်","ဆင်ဘို","ဟိုပင်","မိုးကောင်း","မိုးညှင်း",
+      "အင်းတော်ကြီး","ဖားကန့်","ကာမိုင်း","ဗန်းမော်","ရွှေကူ","မိုးမောက်",
+      "မံစီ","ပူတာအို","မချမ်းဘော","ဆုမ်ပရာဘွမ်","နောင်မွန်","ပန်နန်းဒင်",
+      "ချီဗွေ","ဆော့လော်","အင်ဂျန်းယန်","တနိုင်း","ရှင်ဗွေယန်","ကန်ပိုက်တီ",
+      "လွယ်ဂျယ်","ดေါ့ဖုန်းယန်","ဆဒုံး","လွိုင်ကော်","လောပိတ","ဒီမောဆို",
+      "ဖရူးဆိုး","ရှားတော","ဘောလခဲ","ဖာဆောင်း","မယ်စဲ့","ကရင်စု",
+      "ရွာသစ်","ဘားအံ","လှိုင်းဘွဲ့","ပိုင်ကျုံ","ရှမ်းရွာသစ်","ဖာပွန်",
+      "ကမမောင်း","ကော့ကရိတ်","ကြာအင်းဆိပ်ကြီး","ကျုံဒိုး","ဘုရားသုံးဆူ","ဝေါလေမြိုင်",
+      "မြဝတီ","သံတောင်ကြီး","သံတောင်","လိပ်သို","ဘောဂလိ","စုကလိ",
+      "ဟားခါး","ထန်တလန်","ဖလမ်း","ရိခေါဒါရ်","တီးတိန်","တွန်းဇံ",
+      "ကျီခါး","မင်းတပ်","ကန်ပက်လက်","မတူပီ","ပလက်ဝ","ဆမီး",
+      "ရေဇွာ","လိုင်လင်းပီ","စစ်ကိုင်း","မြင်းမူ","မြောင်","ရွှေဘို",
+      "ခင်ဦး","ဝက်လက်","ကန့်ဘလူ","ကျွန်းလှ","ရေဦး","ดီပဲယင်း",
+      "တန့်ဆည်","မုံရွာ","ဘုတလင်","အယာတော်","ချောင်းဦး","ယင်းမာပင်",
+      "ကနီ","ဆားလင်းကြီး","ပုလဲ","ကသာ","အင်းတော်","ဗန်းမောက်",
+      "ထီးချိုင့်","ကောလင်း","ဝန်းသို","ပင်လည်ဘူး","ကလေး","ကလေးဝ",
+      "မင်းကင်း","တမူး","ခမ်းပတ်","ဟုမ္မလင်း","ခန္တီး","လဟယ်",
+      "လေရှီး","နန်းယွန်း","သောင်ဒွတ်","မော်လိုက်","ဖောင်းပြင်","ထားဝယ်",
+      "ရေဖြူ","သရက်ချောင်း","လောင်းလုံး","မြိတ်","ကျန်းစု","ပုလော",
+      "တနင်္သာရီ","ကော့သောင်း","ဘုတ်ပြင်","မေတ္တာ","ခမောက်ကြီး","ပုလောက်",
+      "ပဲခူး","ကဝ","သနပ်ပင်","ဝေါ","ညောင်လေးပင်","ပြွန်တန်ဆာ",
+      "မဒေါက်","ပိန်းဇလုပ်","ကျောက်တံခါး","ပဲနွယ်ကုန်း","ဒိုက်ဦး","ရွှေကျင်",
+      "တောင်ငူ","ရေတာရှည်","ကေတုမတီ","မြို့လှ","ထန်းတပင်","ကျောက်ကြီး",
+      "မုန်း","ဖြူး","ဇေယျဝတီ","ကညွတ်ကွင်း","ရွှေတောင်","ပြည်",
+      "ပေါက်ခေါင်း","ပေါင်းတည်","သဲကုန်း","ပန်းတောင်း","ဥသျှစ်ပင်","သာယာဝတီ",
+      "လက်ပံတန်း","မင်းလှ","မိုးညို","ကြို့ပင်ကောက်","ဇီဂုန်း","နတ်တလင်း",
+      "မကွေး","တောင်တွင်းကြီး","မြို့သစ်","နတ်မောက်","ဆင်ပေါင်ဝဲ","ရေနံချောင်း",
+      "ချောက်","စလေ","ပခုက္ကူ","ရေစကြို","မြိုင်","ပေါက်",
+      "ဆိပ်ဖြူ","မင်းဘူး","စကု","ပွင့်ဖြူ","ငဖဲ","စေတုတ္တရာ",
+      "သရက်","ကံမ","မင်းတုန်း","အောင်လံ","ဆော","ကျောက်ထု",
+      "ဂန့်ဂေါ","ထီးလင်း","မန္တလေး","ညောင်ဦး","ပုဂံ","ကျောက်ပန်းတောင်း",
+      "ပြင်ဦးလွင်","တကောင်း","မတ္တရာ","စဥ့်ကူး","သပိတ်ကျင်း","မိုးကုတ်",
+      "မြစ်ငယ်","အမရပူရ","ပုသိမ်ကြီး","ပြည်ကြီးတံခွန်","ချမ်းမြသာစည်","မဟာအောင်မြေ",
+      "ချမ်းအေးသာစံ","အောင်မြေသာစံ","မြင်းခြံ","နွားထိုးကြီး","တောင်သာ","ငါန်းဇွန်",
+      "မိတ္ထီလာ","မလှိုင်","သာစည်","ဝမ်းတွင်း","ရမည်းသင်း","ပျော်ဘွယ်",
+      "မော်လမြိုင်","မုဒုံ","ကမာဝက်","သံဖြူဇရပ်","ကျိုက္ခမီ","ရေး",
+      "ခေါဇာ","လမိုင်း","ချောင်းဆုံ","ကျိုက်မရော","သထုံ","ပေါင်",
+      "ဇင်းကျိုက်","မုတ္တမ","ကျိုက်ထို","သိမ်ဇရပ်","ဘီးလင်း","စစ်တွေ",
+      "ပုဏ္ဏားကျွန်း","ကျောက်တော်","မြောက်ဦး","ကျောက်ဖြူ","မာန်အောင်","ရမ်းဗြဲ",
+      "အမ်း","သံတွဲ","တောင်ကုတ်","ကျိန္တလီ","ဂွ","မောင်တော",
+      "ဘူးသီးတောင်","တောင်ပြိုလက်ဝဲ","မင်းပြား","မြေပုံ","ရသေ့တောင်","ကျောက်တံတား",
+      "ပန်းပဲတန်း","လသာ","လမ်းမတော်","ဒဂုံ","ဗဟန်း","စမ်းချောင်း",
+      "ကမာရွတ်","လှိုင်","မရမ်းကုန်း","အလုံ","ကြည့်မြင်တိုင်","လှိုင်သာယာ",
+      "ရွှေပြည်သာ","အင်းစိန်","မင်္ဂလာဒုံ","မြောက်ဥက္ကလာပ","တောင်ဥက္ကလာပ","သင်္ဃန်းကျွန်း",
+      "ရန်ကင်း","တာမွေ","မင်္ဂလာတောင်ညွန့်","ပုဇွန်တောင်","ဗိုလ်တထောင်","ဒေါပုံ",
+      "သာကေတ","ရော်ဘာခြံ","ဒဂုံမြို့သစ်မြောက်ပိုင်း","ဒဂုံမြို့သစ်တောင်ပိုင်း","ဒဂုံမြို့သစ်အရှေ့ပိုင်း","ဒဂုံမြို့သစ်ဆိပ်ကမ်း",
+      "သန်လျင်","ကျောက်တန်း","သုံးခွ","ခရမ်း","တွံတေး","ကော့မှူး",
+      "ကွမ်းခြံကုန်း","ဆိပ်ကြီးခနောင်တို","ဒလ","မှော်ဘီ","လှည်းကူး","တိုက်ကြီး",
+      "ဥက္ကံ","အဖျောက်","ကိုကိုးကျွန်း","တောင်ကြီး","အေးသာယာ","ရွှေညောင်",
+      "ညောင်ရွှေ","ဟိုပုန်း","ဆီဆိုင်","ဖယ်ခုံ","ပင်လောင်း","နောင်တရား",
+      "ပေါင်းလောင်း","လွိုင်လင်","ပန်ဆန်း","နမ့်စန်","ခိုလမ်","လဲချား",
+      "မိုင်းကိုင်","မိုင်းရှူး","မိုင်းဆန်း","ကျေးသီး","မိုင်းနောင်","ကွန်ဟိန်း",
+      "ကာလိ","လင်းခေး","မိုးနဲ","မိုင်းပန်","မောက်မယ်","ကလော",
+      "အောင်ပန်း","ပင်းတယ","ရွာငံ","လားရှိုး","သိန္နီ","ကွတ်ခိုင်",
+      "တာမိုးညဲ","မူဆယ်","၁၀၅ မိုင်","မုံးကိုး","ပန်ဆိုင်း","နမ့်ခမ်း",
+      "မဘိမ်း","မိုးမိတ်","ကျောက်မဲ","သီပေါ","နောင်ချို","နမ္မတူ",
+      "နမ့်ဆန်","မန်တုံ","ကွမ်းလုံ","ဟိုပန်","ပန်ဝိုင်","မိုင်းမော",
+      "နားဖန်း","မက်မန်း","ပန်ယန်း","တာချီလိတ်","မိုင်းဖုန်း","ကျိုင်းတုံ",
+      "မိုင်းခတ်","မိုင်းယန်း","မိုင်းပေါက်","မိုင်းဆတ်","မိုင်းတုံ","မုံထ",
+      "ပုံပါကျင်","မိုင်းယောင်း","မိုင်းယု","ပုသိမ်","ငပုတော","ဟိုင်းကြီးကျွန်း",
+      "ငရုတ်ကောင်း","သာပေါင်း","ကန်ကြီးထောင့်","ကျောင်းကုန်း","ရေကြည်","ငါသိုင်းချောင်း",
+      "ကျုံပျော်","ဟင်္သာတ","ဇလွန်","လေးမျက်နှာ","မြန်အောင်","အင်္ဂပူ",
+      "ကြံခင်း","မြောင်းမြ","ဝါးခယ်မ","အိမ်မဲ","မအူပင်","ပန်းတနော်",
+      "ဓနုဖြူ","ညောင်တုန်း","ဖျာပုံ","ဘိုကလေး","ကျိုက်လတ်","ဒေးဒရဲ",
+      "ဇေယျာသီရိ","ဇမ္ဗူသီရိ","တပ်ကုန်း","ပုဗ္ဗသီရိ","ပျဉ်းမနား","လယ်ဝေး",
+      "အောင်မြေသာစည်","ဥတ္တရသီရိ"
+    ];
+
+    var inp = document.getElementById("township");
+    if (!inp) return;
+    var wrap = inp.parentNode;
+    wrap.classList.add("ac-wrap");
+    var list = document.createElement("div");
+    list.className = "ac-list";
+    wrap.appendChild(list);
+
+    function pick(v) {
+      inp.value = v;
+      hide();
+      inp.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    function render() {
+      var q = inp.value.trim();
+      list.innerHTML = "";
+      if (q && TOWNS.indexOf(q) < 0) {
+        var c = document.createElement("div");
+        c.className = "ac-opt custom";
+        c.textContent = "「" + q + "」 ဒီအတိုင်း သုံးမည်";
+        c.addEventListener("mousedown", function (e) { e.preventDefault(); pick(q); });
+        list.appendChild(c);
+      }
+      var matches = TOWNS.filter(function (p) { return p.indexOf(q) >= 0; });
+      matches.sort(function (a, b) {
+        return (a.indexOf(q) === 0 ? 0 : 1) - (b.indexOf(q) === 0 ? 0 : 1);
+      });
+      matches.forEach(function (p) {
+        var o = document.createElement("div");
+        o.className = "ac-opt"; o.textContent = p;
+        o.addEventListener("mousedown", function (e) { e.preventDefault(); pick(p); });
+        list.appendChild(o);
+      });
+    }
+    function show() { render(); list.classList.add("show"); }
+    function hide() { list.classList.remove("show"); }
+
+    inp.addEventListener("focus", show);
+    inp.addEventListener("input", show);
+    inp.addEventListener("blur", function () { setTimeout(hide, 150); });
+  })();
+
+  // ── Product inline autocomplete (field ထဲ ရိုက်၊ အောက်မှာ list) ──
+  (function () {
+    var inp = document.getElementById("product");
+    if (!inp) return;
+    function getProducts() {
+      var a = JSON.parse(localStorage.getItem("products") || "[]");
+      return a.map(function (p) { return p.name; }).filter(Boolean);
+    }
+    var wrap = inp.parentNode;
+    wrap.classList.add("ac-wrap");
+    var list = document.createElement("div");
+    list.className = "ac-list";
+    wrap.appendChild(list);
+
+    function pick(v) {
+      inp.value = v;
+      hide();
+      inp.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    function render() {
+      var q = inp.value.trim();
+      list.innerHTML = "";
+      var prods = getProducts();
+      if (q && prods.indexOf(q) < 0) {
+        var c = document.createElement("div");
+        c.className = "ac-opt custom";
+        c.textContent = "「" + q + "」 ဒီအတိုင်း သုံးမည်";
+        c.addEventListener("mousedown", function (e) { e.preventDefault(); pick(q); });
+        list.appendChild(c);
+      }
+      var matches = prods.filter(function (p) { return p.indexOf(q) >= 0; });
+      matches.sort(function (a, b) {
+        return (a.indexOf(q) === 0 ? 0 : 1) - (b.indexOf(q) === 0 ? 0 : 1);
+      });
+      matches.forEach(function (p) {
+        var o = document.createElement("div");
+        o.className = "ac-opt"; o.textContent = p;
+        o.addEventListener("mousedown", function (e) { e.preventDefault(); pick(p); });
+        list.appendChild(o);
+      });
+      if (matches.length === 0 && !q) {
+        var e = document.createElement("div");
+        e.className = "ac-empty";
+        e.textContent = "ပစ္စည်း မရှိသေးပါ — ရိုက်ထည်နိုင်သည်";
+        list.appendChild(e);
+      }
+    }
+    function show() { render(); list.classList.add("show"); }
+    function hide() { list.classList.remove("show"); }
+
+    inp.addEventListener("focus", show);
+    inp.addEventListener("input", show);
+    inp.addEventListener("blur", function () { setTimeout(hide, 150); });
+  })();
+  </script>
+  <script>
+  /* ── Live receipt preview (mirrors print.html) ── */
+  (function () {
+    function gv(id){ var e=document.getElementById(id); return e?e.value:''; }
+    function gt(id){ var e=document.getElementById(id); return e?e.innerText:''; }
+    function num(s){ var n=Number(String(s==null?'':s).replace(/[^0-9.-]/g,'')); return isNaN(n)?0:n; }
+    function fmt(n){ return Number(n||0).toLocaleString(); }
+
+    function renderLivePreview(){
+      var box = document.getElementById('livePreview');
+      if (!box) return;
+      var S = {};
+      try { S = JSON.parse(localStorage.getItem('shopSettings')) || {}; } catch(e){}
+      var logo  = S.logo || '';
+      var addr  = S.address || 'စုံစုံမာမီ';
+      var ph    = S.phone || '';
+      var lsize = S.logoSize || 115;
+      var tsize = S.textSize || 9; var addrAlign = S.addrAlign || "left";
+
+      var customer = gv('name'), phone = gv('phone'), address = gv('address'),
+          township = gv('township'), staff = gv('staff'), orderApp = gv('orderapp'),
+          service  = gv('deliveryService'), orderNo = gt('orderNo');
+
+      var itemsSum = 0, itemHtml = '';
+      var list = (typeof items !== 'undefined' && items) ? items : [];
+      list.forEach(function(it){
+        itemsSum += num(it.total);
+        var gift = it.isGift ? ' \uD83C\uDF81' : '';
+        var sizeLabel = '';
+        if (it.saleType === 'weight') sizeLabel = (it.size || '') + ' | ';
+        else if (it.isGift) sizeLabel = '\u101C\u1000\u103A\u1006\u1031\u102C\u1004\u103A | ';
+        itemHtml += '<div class="item-name mm">' + (it.product || '') + gift + '</div>';
+        itemHtml += '<div class="item-sub mm"><span>' + sizeLabel + (it.qty || 0) + ' x ' + (it.price || 0) +
+                    '</span><span>' + fmt(it.total) + '</span></div>';
+        if (it.remark) itemHtml += '<div class="item-remark mm">\u2192 ' + it.remark + '</div>';
+      });
+
+      var discount = num(gv('discountValue'));
+      var note = gv('note');
+      var _ps = (document.getElementById('payStatusSel')||{}).value || 'COD';
+      var payLabelLive = _ps === 'Prepaid' ? 'ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး' : (_ps === 'Partial' ? 'ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်' : 'အိမ်ရောက်ငွေချေ');
+      var delivery = num(gv('delivery'));
+      var deposit  = num(gv('deposit'));
+      var net      = num(gt('netTotal'));
+      if (!net) net = itemsSum - discount - deposit + delivery;
+
+      // receipts/print နဲ့ တူညီတဲ့ shared template သုံး (single source of truth)
+      if (window.ssmRenderReceipt) {
+        window.ssmRenderReceipt(box, {
+          orderNo: orderNo, staff: staff,
+          customer: customer, phone: phone, address: address, township: township,
+          orderApp: orderApp, deliveryService: service,
+          items: list, grandTotal: itemsSum,
+          discountAmount: discount, deposit: deposit, delivery: delivery,
+          note: note, payStatus: _ps,
+          orderDate: new Date().toISOString()
+        });
+        return;
+      }
+
+      var discLine = discount > 0
+        ? '<div class="line"><span>လျော့ပေး (Discount)</span><span>-' + fmt(discount) + '</span></div>' : '';
+      var logoHtml = logo ? '<img src="' + logo + '" style="width:' + lsize + 'px;height:auto;flex-shrink:0;">' : '';
+      var now = new Date();
+      var dt = now.toLocaleDateString() + '  ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+      box.innerHTML =
+        '<div style="display:flex;align-items:center;gap:6px;">' + logoHtml +
+          '<div style="flex:1;">' +
+            '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.3;text-align:' + addrAlign + ';">' + addr + '<br>\uD83D\uDCDE ' + ph + '</div>' +
+            '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.5;margin-top:4px;border-top:1px solid #000;padding-top:3px;text-align:right;">' +
+              (orderNo || '') + '<br>\u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + (staff || '-') + '<br>' + (orderApp || '-') + '<br>' + (service || '-') + '</div>' +
+          '</div></div><hr>' +
+        '<div class="line" style="align-items:baseline;"><span class="town-mid">' + (township || '-') + '</span><span style="font-size:11px;">' + dt + '</span></div><hr>' +
+        '<div class="cus-mid">' + (customer || '-') + '</div><div class="phone-clear">' + (phone || '-') + '</div><div class="addr-mm">' + (address || '-') + '</div><hr>' +
+        (itemHtml || '<div class="item-sub mm" style="justify-content:center;color:#999;">\u2014 item \u1019\u101B\u103E\u102D\u101E\u1031\u1038 \u2014</div>') + '<hr>' +
+        '<div class="line"><span>Total</span><span>' + fmt(itemsSum) + '</span></div>' + discLine +
+        '<div class="line"><span>Deposit</span><span>' + fmt(deposit) + '</span></div>' +
+        '<div class="line"><span>ပို့ခ (Delivery Fee)</span><span>' + fmt(delivery) + '</span></div>' +
+        '<div class="net-box mm">' + payLabelLive + ' : ' + fmt(net) + '</div>' +
+        (note ? '<div class="rcpt-note">' + note + '</div>' : '') +
+        '<div class="footer-mm">' + (S.thankYou ? S.thankYou.replace(/\n/g, '<br>') : "\u1005\u102F\u1036\u1005\u102F\u1036\u1019\u102C\u1019\u102E\u101B\u1032\u1037 \u101C\u1000\u103A\u101B\u102C\u101C\u1031\u1038\u1000\u102D\u102F \u1019\u103C\u100A\u103A\u1038\u1005\u1019\u103A\u1038\u1000\u103C\u100A\u103A\u1037\u1015\u1031\u1038\u101C\u102D\u102F\u1037 \u1000\u103B\u1031\u1038\u1007\u1030\u1038\u1010\u1004\u103A\u1015\u102B\u1010\u101A\u103A \uD83D\uDE4F<br>\u1005\u102C\u1038\u1019\u103C\u102D\u1014\u103A\u1015\u102B\u1005\u1031\u1014\u1031\u102C\u103A \uD83D\uDC9B") + '</div>';
+    }
+    window.renderLivePreview = renderLivePreview;
+
+    // re-render on field changes
+    ['name','phone','address','township','orderapp','deliveryService','staff','delivery','deposit','discountValue','note']
+      .forEach(function(id){
+        var e = document.getElementById(id);
+        if (e){ e.addEventListener('input', renderLivePreview); e.addEventListener('change', renderLivePreview); }
+      });
+    // re-render after cart / total functions
+    ['addItem','deleteRow','calculateNet'].forEach(function(fn){
+      if (typeof window[fn] === 'function'){
+        var orig = window[fn];
+        window[fn] = function(){ var r = orig.apply(this, arguments); try{ renderLivePreview(); }catch(e){} return r; };
+      }
+    });
+
+    if (document.readyState !== 'loading') renderLivePreview();
+    else document.addEventListener('DOMContentLoaded', renderLivePreview);
+  })();
+  </script>
+  <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
+  <script src="menu-logo.js"></script>
+</body>
+</html>
