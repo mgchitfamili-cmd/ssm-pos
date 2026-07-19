@@ -70,6 +70,7 @@
       -webkit-backdrop-filter:saturate(150%) blur(10px);
       border-bottom:1px solid var(--line);
       margin:0;
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
     }
     #menuBtn{
       background:none; border:none; font-size:23px; line-height:1; color:var(--ink);
@@ -86,6 +87,24 @@
       padding:5px 11px; border-radius:999px; white-space:nowrap;
     }
     #orderNo:empty{ display:none; }
+
+    /* Online / Shop segmented switch (top bar) */
+    .mode-switch{
+      display:flex; align-items:center; gap:2px; flex:none;
+      padding:3px; margin-left:auto;
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+      border-radius:999px;
+    }
+    .mode-switch button{
+      border:none; background:transparent; cursor:pointer;
+      font-family:inherit; font-size:12px; font-weight:700;
+      color:var(--brand-ink); padding:6px 13px; border-radius:999px;
+      white-space:nowrap; transition:background .15s, color .15s;
+    }
+    .mode-switch button.active{
+      background:var(--brand); color:#fff;
+      box-shadow:0 2px 6px rgba(109,40,217,.28);
+    }
 
     .wrap{ max-width:600px; margin:0 auto; padding:14px; }
 
@@ -106,6 +125,35 @@
       color:var(--ink-3); margin:0 0 14px 0;
     }
     .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--brand); flex:none; }
+
+    /* ── Order Information collapsible header (Shop mode) ── */
+    .order-info-toggle-row{ display:flex; justify-content:flex-start; }
+    .order-info-toggle-btn{
+      display:none;
+      flex:none; white-space:nowrap;
+      align-items:center; gap:6px;
+      font-size:12.5px; font-weight:600;
+      padding:8px 13px;
+      border-radius:999px;
+      background:var(--brand); color:#fff; border:none;
+      cursor:pointer;
+    }
+    .order-info-toggle-btn:active{ transform:translateY(1px); }
+    .order-info-collapse{
+      display:grid;
+      grid-template-rows:0fr;
+      transition:grid-template-rows .28s ease;
+    }
+    .order-info-collapse.expanded{
+      grid-template-rows:1fr;
+    }
+    .order-info-collapse-inner{
+      overflow:hidden; min-height:0; min-width:0;
+      overflow-wrap:break-word; word-break:break-word;
+    }
+    .order-info-toggle-row + .order-info-collapse .order-info-collapse-inner{
+      padding-top:14px;
+    }
 
     /* ── Fields ── */
     .field{ margin:0 0 12px 0; }
@@ -132,7 +180,7 @@
       border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13);
     }
     input[readonly]{ background:#f4f5f7; color:var(--ink-2); }
-    textarea{ min-height:62px; resize:vertical; }
+    textarea{ min-height:62px; resize:vertical; display:block; }
     ::placeholder{ color:var(--ink-3); }
 
     .row{ display:flex; gap:10px; }
@@ -157,12 +205,93 @@
       background:var(--brand-tint); border:1px solid var(--brand-line); border-radius:var(--r-sm);
     }
     .gift-remark{ flex:1; min-width:0; }
-    .gift-label input{ width:19px; height:19px; accent-color:var(--brand); margin:0; flex:none; }
-    .saletype-row{ align-items:stretch; flex-wrap:wrap; }
+    .gift-label input{
+      -webkit-appearance:none; appearance:none;
+      width:19px; height:19px; margin:0; flex:none;
+      border:2px solid var(--ink-3); border-radius:50%;
+      background:#fff; cursor:pointer; position:relative;
+      transition:background .15s, border-color .15s;
+      color-scheme:light; /* keep native control base light so dark mode's UA ring doesn't overlay our custom fill */
+    }
+    .gift-label input:checked{ background:var(--brand); border-color:var(--brand); }
+    .gift-label input:focus-visible{ box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    html.dark .gift-label input:checked{ background-color:var(--brand); border-color:var(--brand); }
+    html.dark .gift-label input:focus-visible{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
+    .saletype-row{ align-items:stretch; flex-wrap:nowrap; }
     .saletype-row > select{ flex:1; min-width:0; }
-    .saletype-row > .gift-label{ flex:none; }
+    .saletype-row > .gift-label{
+      flex:none; padding:9px 10px; gap:6px; font-size:12px;
+      white-space:nowrap; overflow:hidden;
+    }
+    .saletype-row > .gift-label input{ width:16px; height:16px; }
+
+    /* iOS-style toggle switch (used for repPrice / ကိုယ်စားလှယ်ဈေး) */
+    .switch-row{
+      display:flex; align-items:center; gap:8px; cursor:pointer;
+      margin:0; padding:0; flex:none; white-space:nowrap;
+      -webkit-user-select:none; user-select:none;
+    }
+    .switch-label-text{ font-size:13px; font-weight:500; color:var(--ink); }
+    .ios-switch{ position:relative; display:inline-block; width:40px; height:23px; flex:none; }
+    .ios-switch input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+    .ios-slider{
+      position:absolute; inset:0; background:var(--line-2);
+      border-radius:999px; transition:background-color .18s ease;
+    }
+    .ios-slider::before{
+      content:""; position:absolute; left:2.5px; top:2.5px;
+      width:18px; height:18px; border-radius:50%; background:#fff;
+      box-shadow:0 1px 2px rgba(16,24,40,.25); transition:transform .18s ease;
+    }
+    .ios-switch input:checked + .ios-slider{ background:var(--brand); }
+    .ios-switch input:checked + .ios-slider::before{ transform:translateX(17px); }
+    .ios-switch input:focus-visible + .ios-slider{ box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+
+    /* Delivery Service row + recipient toggle button */
+    .deliveryservice-row{ align-items:stretch; flex-wrap:wrap; }
+    .deliveryservice-row > select{ flex:1; min-width:0; }
+    .recipient-btn-row{ display:flex; justify-content:flex-start; margin-top:8px; }
+
+    /* ── Quantity stepper ── */
+    .qty-stepper{
+      display:flex; align-items:center; justify-content:space-between; gap:5px;
+      height:45.75px; box-sizing:border-box;
+      background:#fff; border:1px solid var(--line-2); border-radius:var(--r-sm);
+      padding:0 6px;
+    }
+    .qty-btn{
+      flex:none; width:30px; height:30px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; font-weight:700; line-height:1;
+      color:var(--brand-ink); background:var(--brand-tint);
+      border:none; border-radius:8px; padding:0;
+      cursor:pointer; user-select:none; -webkit-user-select:none;
+      transition:background .15s, transform .05s;
+    }
+    .qty-btn:active{ background:var(--brand-line); transform:scale(.94); }
+    .qty-input{
+      flex:1; min-width:0; width:auto; height:100%; border:none; border-radius:0;
+      background:transparent;
+      text-align:center; font-size:15px; font-weight:700; padding:0 2px;
+    }
+    .qty-input:focus{ box-shadow:none; }
+    /* override global input styles (higher-specificity :not() selector) so no inner box appears */
+    #qty.qty-input, #qty.qty-input:focus{
+      border:none; background:transparent; box-shadow:none; border-radius:0;
+    }
+    .recipient-btn{
+      flex:none; white-space:nowrap;
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:12.5px; font-weight:600;
+      padding:8px 13px;
+      border-radius:999px;
+    }
+    .recipient-btn-icon{ flex:none; }
+    .recipient-btn-arrow{ flex:none; transition:transform .2s ease; }
+    .recipient-btn.active .recipient-btn-arrow{ transform:rotate(90deg); }
+    .recipient-btn.active{ background:var(--brand-ink); }
     /* Weight / Unit segmented switch */
-    .seg-toggle{ display:flex; flex:1; min-width:160px; gap:3px; padding:3px;
+    .seg-toggle{ display:flex; flex:1; min-width:120px; gap:3px; padding:3px;
       background:var(--bg); border:1px solid var(--line-2); border-radius:var(--r-sm); }
     .seg-opt{ flex:1; border:none; background:transparent; color:var(--ink-3);
       font-size:14px; font-weight:700; padding:9px 6px; border-radius:calc(var(--r-sm) - 3px);
@@ -224,12 +353,19 @@
     .oppay-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end; margin-bottom:12px; }
     .oppay-row > div{ min-width:0; display:flex; flex-direction:column; }
     .oppay-row .oppay-lbl{ min-height:32px; display:flex; align-items:flex-end; }
+    @media (max-width:360px){
+      .paytype-code-row{ grid-template-columns:1fr; }
+    }
     .oppay-row input, .oppay-row select, .oppay-row .oppay-upload{
       margin:0 !important; height:46px; box-sizing:border-box; width:100%; }
     .oppay-row .oppay-upload{ padding:0 6px; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.15; font-size:11.5px; white-space:nowrap; overflow:hidden; }
     .oppay-upload{ width:100%; padding:12px; border:1.5px dashed var(--brand-line); border-radius:var(--r-sm);
       background:var(--surface); color:var(--brand-ink); font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
     .oppay-upload:active{ background:var(--brand-tint); }
+    /* Compact Screenshot / Select-from-Folder buttons — scoped to this row only,
+       leaves other .oppay-row inputs/selects/buttons untouched */
+    .oppay-ss-row.oppay-row{ gap:8px; margin-bottom:10px; }
+    .oppay-ss-row.oppay-row .oppay-upload{ height:34px; padding:0 6px; font-size:11px; }
     .oppay-ss-img{ display:block; max-width:150px; border-radius:10px; margin:10px 0 0; border:1px solid var(--brand-line); }
     .oppay-confirm{ width:100%; margin:12px 0 0; padding:14px; border-radius:var(--r-sm); border:none;
       background:linear-gradient(135deg,#7c3aed,#6d28d9); color:#fff; font-family:inherit; font-weight:800; font-size:14px; cursor:pointer;
@@ -407,12 +543,22 @@
     html.dark select, html.dark textarea,
     html.dark .field input, html.dark .field select,
     html.dark .modal-box input, html.dark .modal-box select, html.dark .gift-remark,
-    html.dark #searchBox, html.dark .csel-btn{ background-color:#1e222a; }
+    html.dark #searchBox, html.dark .csel-btn, html.dark .qty-stepper{ background-color:#1e222a; }
     html.dark select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23aeb6c2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; }
     html.dark .csel-btn{ background-color:#1e222a; }
     html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
+    /* ── Quantity stepper — Dark Mode ── */
+    html.dark .qty-stepper{ border-color:var(--line-2); }
+    html.dark .qty-btn{
+      background:rgba(139,92,246,.16); color:var(--brand-ink);
+      transition:background .18s ease, transform .05s;
+    }
+    html.dark .qty-btn:hover{ background:rgba(139,92,246,.26); }
+    html.dark .qty-btn:active{ background:rgba(139,92,246,.36); transform:scale(.94); }
+    html.dark .qty-input{ color:var(--ink); }
     html.dark #parcelAlert{ color:#7a5b00; }
     html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
+    html.dark .ios-switch input:focus-visible + .ios-slider{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
     /* ── Live receipt preview + responsive form/preview layout ── */
     @media (min-width:700px) and (orientation:landscape){
       .layout{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:18px;
@@ -437,6 +583,7 @@
     .rcpt .cus-mid{ font-family:Arial,sans-serif; font-size:13px; font-weight:bold; }
     .rcpt .phone-clear{ font-weight:bold; font-size:12px; }
     .rcpt .addr-mm{ font-family:Arial,sans-serif; font-size:10px; }
+    .rcpt .recv-label{ font-size:9px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:#666; margin:0 0 2px; }
     .rcpt .item-name{ font-weight:bold; margin-top:4px; }
     .rcpt .item-sub{ display:flex; justify-content:space-between; font-size:10px; color:#333; }
     .rcpt .item-remark{ font-size:10px; color:#000; margin-left:4px; }
@@ -462,6 +609,10 @@
       box-shadow:0 12px 30px rgba(0,0,0,.16); max-height:240px; overflow-y:auto;
       -webkit-overflow-scrolling:touch; display:none; }
     .ac-list.show{ display:block; }
+    /* Fixed-position variant: escapes any clipping/overflow-hidden ancestor (e.g. the
+       collapsible Order Information panel). Position (top/left/width/max-height) is
+       set dynamically via JS to track the input's on-screen location. */
+    .ac-list.ac-fixed{ position:fixed; left:auto; right:auto; top:auto; z-index:9999; }
     .ac-opt{ padding:11px 14px; font-size:15px; color:var(--ink); cursor:pointer; border-top:1px solid var(--line); }
     .ac-opt:first-child{ border-top:none; }
     .ac-opt:active, .ac-opt.active{ background:var(--brand-tint); color:var(--brand-ink); }
@@ -481,8 +632,7 @@
       <p>POS System</p>
     </div>
     <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> online အရောင်း</div>
-    <div class="menu-item" data-page="walkin.html" onclick="location.href='walkin.html'"><span class="ic">🏪</span> ဆိုင်ရောင်း</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
     <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
     <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
@@ -493,9 +643,12 @@
 
   <!-- App bar -->
   <div class="top-bar no-print">
-    <button id="menuBtn" onclick="openMenu()">☰</button>
-    <h1>Online Selling</h1>
+    <button id="menuBtn" onclick="openMenu()">⋮</button>
     <h3 id="orderNo"></h3>
+    <div class="mode-switch" id="modeSwitch">
+      <button type="button" class="active" data-v="online" onclick="setAppMode('online')">Online</button>
+      <button type="button" data-v="shop" onclick="setAppMode('shop')">Shop</button>
+    </div>
   </div>
 
   <div class="layout">
@@ -506,13 +659,33 @@
     <div class="no-print">
 
       <!-- Order info -->
-      <section class="card">
+      <section class="card" id="orderInfoCard">
+        <div class="order-info-toggle-row">
+          <button type="button" id="orderInfoToggleBtn" class="order-info-toggle-btn" onclick="toggleOrderInfo()" aria-expanded="false">+ Order Information</button>
+        </div>
+        <div class="order-info-collapse" id="orderInfoCollapse">
+          <div class="order-info-collapse-inner">
         <p class="eyebrow"><span class="dot"></span>အော်ဒါ အချက်အလက်</p>
 
         <div class="field">
-          <select id="staff">
-            <option value="">Order လက်ခံသူ (Staff)</option>
-          </select>
+          <div class="row">
+            <div>
+              <select id="staff">
+                <option value="">Order လက်ခံသူ</option>
+              </select>
+            </div>
+            <div>
+              <select id="orderapp">
+                <option value="">Order App ရွေးပါ</option>
+                <option value="Facebook">Facebook</option>
+                <option value="Viber">Viber</option>
+                <option value="TikTok">TikTok</option>
+                <option value="Telegram">Telegram</option>
+                <option value="Phone">Phone</option>
+                <option value="ဆိုင်လာဝယ်">ဆိုင်လာဝယ်</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         <div class="field">
@@ -530,34 +703,50 @@
               <input id="township" placeholder="မြို့ ရွေး / ရိုက်ထည့်ပါ" autocomplete="off">
             </div>
             <div>
-              <select id="orderapp">
-                <option value="">Order App ရွေးပါ</option>
-                <option value="Facebook">Facebook</option>
-                <option value="Viber">Viber</option>
-                <option value="TikTok">TikTok</option>
-                <option value="Telegram">Telegram</option>
-                <option value="Phone">Phone</option>
-                <option value="ဆိုင်လာဝယ်">ဆိုင်လာဝယ်</option>
-              </select>
+              <div class="row deliveryservice-row">
+                <select id="deliveryService">
+                  <option value="">Delivery Service ရွေးပါ</option>
+                  <option value="Royal">Royal</option>
+                  <option value="Ko Nyein Chan Aung">Ko Nyein Chan Aung</option>
+                  <option value="Ninja Van">Ninja Van</option>
+                  <option value="Own Rider">Own Rider</option>
+                  <option value="အိမ်လာယူ">အိမ်လာယူ</option>
+                </select>
+              </div>
             </div>
+          </div>
+          <div class="recipient-btn-row">
+            <button type="button" id="recipientToggleBtn" class="recipient-btn" onclick="toggleRecipientBtn()"><svg class="recipient-btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"></path></svg><span class="recipient-btn-text">Receiver</span><svg class="recipient-btn-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
           </div>
         </div>
 
-        <div class="field">
-          <select id="deliveryService">
-            <option value="">Delivery Service ရွေးပါ</option>
-            <option value="Royal">Royal</option>
-            <option value="Ko Nyein Chan Aung">Ko Nyein Chan Aung</option>
-            <option value="Ninja Van">Ninja Van</option>
-            <option value="Own Rider">Own Rider</option>
-            <option value="အိမ်လာယူ">အိမ်လာယူ</option>
-          </select>
+        <div id="receiverSection" style="display:none;">
+          <div class="field">
+            <input id="receiverName" placeholder="လက်ခံသူ အမည်">
+          </div>
+          <div class="field">
+            <input id="receiverPhone" placeholder="လက်ခံသူ ဖုန်း">
+          </div>
+          <div class="field">
+            <input id="receiverAddress" placeholder="လက်ခံသူ လိပ်စာ">
+          </div>
+        </div>
+          </div>
         </div>
       </section>
 
       <!-- Add item -->
       <section class="card">
-        <p class="eyebrow"><span class="dot"></span>ပစ္စည်း ထည့်ရန်</p>
+        <p class="eyebrow" style="justify-content:space-between;">
+          <span style="display:flex;align-items:center;gap:8px;"><span class="dot"></span>ပစ္စည်း ထည့်ရန်</span>
+          <label class="switch-row" id="repPriceWrap" style="text-transform:none;letter-spacing:normal;">
+            <span class="switch-label-text">ကိုယ်စားလှယ်ဈေး</span>
+            <span class="ios-switch">
+              <input type="checkbox" id="repPrice" onchange="calculateItemTotal()">
+              <span class="ios-slider"></span>
+            </span>
+          </label>
+        </p>
 
         <div class="field">
           <input id="product" onchange="productChanged()" placeholder="ပစ္စည်း ရွေး / ရိုက်ထည့်ပါ" autocomplete="off">
@@ -574,10 +763,6 @@
             <label class="gift-label">
               <input type="checkbox" id="isGift" onchange="giftChanged()">
               <span>ဈေးနှုန်း (0 Ks)</span>
-            </label>
-            <label class="gift-label" id="repPriceWrap">
-              <input type="checkbox" id="repPrice" onchange="calculateItemTotal()">
-              <span>ကိုယ်စားလှယ်ဈေး</span>
             </label>
           </div>
         </div>
@@ -609,7 +794,11 @@
         <div class="field">
           <div class="row">
             <div>
-              <input id="qty" placeholder="အရေအတွက်" oninput="calculateItemTotal()">
+              <div class="qty-stepper">
+                <button type="button" class="qty-btn qty-btn-minus" onclick="stepQty(-1)" aria-label="Decrease quantity">−</button>
+                <input id="qty" class="qty-input" placeholder="0" inputmode="decimal" autocomplete="off" oninput="calculateItemTotal()">
+                <button type="button" class="qty-btn qty-btn-plus" onclick="stepQty(1)" aria-label="Increase quantity">+</button>
+              </div>
             </div>
             <div>
               <input id="itemTotal" placeholder="Total" readonly>
@@ -651,41 +840,48 @@
         <div class="field">
           <textarea id="note" placeholder="📝 Delivery မှတ်ချက် (receipt အောက်ခြေ)"></textarea>
         </div>
-
-        <div class="oppay-box">
-          <p class="oppay-head">💵 Payment</p>
-          <label class="oppay-lbl">Payment အခြေအနေ <span style="font-weight:500;color:var(--ink-3);">(receipt အောက် label)</span></label>
+        <div class="field">
           <select id="payStatusSel" onchange="autoFillDeposit(); toggleDepFields(); calculateNet();">
             <option value="COD">အိမ်ရောက်ငွေချေ (COD)</option>
             <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်</option>
             <option value="Prepaid">ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး</option>
+            <option value="Cash">လက်ငင်း (Cash)</option>
+            <option value="OnlinePayment">Online Payment</option>
+            <option value="SplitPayment">Split Payment</option>
+            <option value="CashDeliFee">Cash (ပို့ခသာကောက်ရန်)</option>
           </select>
-          <div class="oppay-row">
-            <div>
-              <label class="oppay-lbl">ကြိုတင်ပေးငွေ ပမာဏ (Deposit)</label>
-              <input id="deposit" oninput="resetDepConfirm(); toggleDepFields();" placeholder="0">
-            </div>
-            <div id="depTypeWrap" style="display:none;">
-              <label class="oppay-lbl">Online Payment Type</label>
-              <select id="depPayType" onchange="resetDepConfirm()">
-                <option value="">— ရွေးပါ —</option>
-                <option value="KPay">KPay</option>
-                <option value="Wave Pay">Wave Pay</option>
-                <option value="AYA Pay">AYA Pay</option>
-                <option value="CB Pay">CB Pay</option>
-                <option value="Mobile Banking">Mobile Banking</option>
-              </select>
+        </div>
+
+        <div class="oppay-box" id="oppayBox">
+          <p class="oppay-head">💵 Payment</p>
+          <div class="field">
+            <label class="oppay-lbl">စရံ / ကြိုတင်ပေးငွေပမာဏ (Deposit)</label>
+            <input id="deposit" oninput="resetDepConfirm(); toggleDepFields();" placeholder="0">
+          </div>
+          <div id="depTypeWrap" style="display:none;">
+            <div class="oppay-row paytype-code-row">
+              <div>
+                <label class="oppay-lbl">Online Payment Type</label>
+                <select id="depPayType" onchange="resetDepConfirm()">
+                  <option value="">— ရွေးပါ —</option>
+                  <option value="KPay">KPay</option>
+                  <option value="Wave Pay">Wave Pay</option>
+                  <option value="AYA Pay">AYA Pay</option>
+                  <option value="CB Pay">CB Pay</option>
+                  <option value="Mobile Banking">Mobile Banking</option>
+                </select>
+              </div>
+              <div>
+                <input id="depCode" maxlength="6" placeholder="Transaction Code (နောက်ဆုံး ၆ လုံး)" oninput="resetDepConfirm()">
+              </div>
             </div>
           </div>
           <div id="depExtra" style="display:none;">
             <input type="file" id="depSSInput" accept="image/*" style="display:none" onchange="loadDepSS(event)">
             <input type="file" id="depSSInputCam" accept="image/*" capture="environment" style="display:none" onchange="loadDepSS(event)">
-            <div class="oppay-row">
+            <div class="oppay-row oppay-ss-row">
               <button type="button" class="oppay-upload" style="flex:1;" onclick="document.getElementById('depSSInputCam').click()">📷 ဓာတ်ပုံ ရိုက်ရန်</button>
               <button type="button" class="oppay-upload" style="flex:1;" onclick="document.getElementById('depSSInput').click()">🖼️ Folder ကနေ ရွေးရန်</button>
-            </div>
-            <div class="oppay-row">
-              <input id="depCode" maxlength="6" placeholder="Transaction Code (နောက်ဆုံး ၆ လုံး)" oninput="resetDepConfirm()">
             </div>
             <img id="depSSPreview" class="oppay-ss-img" style="display:none;">
             <button type="button" id="depConfirmBtn" class="oppay-confirm" onclick="confirmDeposit()">💰 ငွေ လက်ခံရရှိပါသည် (Confirm)</button>
@@ -769,7 +965,7 @@
     // ── Load Staff Dropdown ───────────────────────────────────────
     function loadStaffDropdown() {
       let staffList = JSON.parse(localStorage.getItem("staffList")) || [];
-      let html = '<option value="">Order လက်ခံသူ (Staff)</option>';
+      let html = '<option value="">Order လက်ခံသူ</option>';
       staffList.forEach(function (s) {
         html += `<option value="${s.name}">${s.name}</option>`;
       });
@@ -784,6 +980,86 @@
         html += '<option value="' + p.name + '"></option>';
       });
       document.getElementById("productList").innerHTML = html;
+    }
+
+    // ── Top bar: Online / Shop mode switch ─────────────────────────
+    function setAppMode(v) {
+      var t = document.getElementById("modeSwitch");
+      if (!t) return;
+      t.querySelectorAll("button").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-v") === v);
+      });
+      updateOrderInfoForMode(v);
+
+      // Mode အလိုက် Payment Method default ချိန်ညှိမှု —
+      // Online → COD (အိမ်ရောက်ငွေချေ), Shop → Cash (လက်ငင်း)
+      var _payStatusSel = document.getElementById("payStatusSel");
+      if (_payStatusSel) {
+        _payStatusSel.value = (v === "shop") ? "Cash" : "COD";
+        try { if (typeof autoFillDeposit === "function") autoFillDeposit(); } catch (e) {}
+        try { if (typeof toggleDepFields === "function") toggleDepFields(); } catch (e) {}
+        try { if (typeof calculateNet === "function") calculateNet(); } catch (e) {}
+      }
+    }
+    function getAppMode() {
+      var t = document.getElementById("modeSwitch");
+      if (!t) return "online";
+      var b = t.querySelector("button.active");
+      return b ? (b.getAttribute("data-v") || "online") : "online";
+    }
+
+    // ── Order Information: collapsible section (Shop mode only) ───
+    // The collapse container needs overflow:hidden to animate/hide its content,
+    // but that same overflow:hidden clips the rounded corners and focus-ring
+    // box-shadow of the input fields once the panel is fully open. So we only
+    // keep it hidden while collapsed or mid-transition, and switch it to
+    // visible once the panel has settled open.
+    function syncOrderInfoOverflow(collapse, expanded) {
+      var inner = collapse.querySelector(".order-info-collapse-inner");
+      if (!inner) return;
+      clearTimeout(collapse._ssmOverflowTimer);
+      if (expanded) {
+        inner.style.overflow = "hidden"; // clip while growing…
+        collapse._ssmOverflowTimer = setTimeout(function () {
+          if (collapse.classList.contains("expanded")) inner.style.overflow = "visible"; // …then reveal fully rounded fields
+        }, 300); // matches .order-info-collapse's .28s transition + small buffer
+      } else {
+        inner.style.overflow = "hidden"; // clip immediately while collapsing
+      }
+    }
+    function updateOrderInfoForMode(mode) {
+      var toggleBtn = document.getElementById("orderInfoToggleBtn");
+      var collapse = document.getElementById("orderInfoCollapse");
+      if (!toggleBtn || !collapse) return;
+      if (mode === "shop") {
+        toggleBtn.style.display = "inline-flex";
+        collapse.classList.remove("expanded");        // collapsed by default in Shop mode
+        toggleBtn.textContent = "+ Order Information";
+        toggleBtn.setAttribute("aria-expanded", "false");
+      } else {
+        toggleBtn.style.display = "none";
+        collapse.classList.add("expanded");            // always visible in Online mode
+      }
+      syncOrderInfoOverflow(collapse, collapse.classList.contains("expanded"));
+    }
+    function toggleOrderInfo() {
+      var toggleBtn = document.getElementById("orderInfoToggleBtn");
+      var collapse = document.getElementById("orderInfoCollapse");
+      if (!toggleBtn || !collapse) return;
+      var expanded = collapse.classList.toggle("expanded");
+      toggleBtn.textContent = expanded ? "− Order Information" : "+ Order Information";
+      toggleBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+      syncOrderInfoOverflow(collapse, expanded);
+    }
+    updateOrderInfoForMode("online"); // initial state matches default active mode
+
+    // ── Delivery Service: recipient toggle button ─────────────────
+    function toggleRecipientBtn() {
+      var b = document.getElementById("recipientToggleBtn");
+      if (!b) return;
+      var active = b.classList.toggle("active");
+      var sec = document.getElementById("receiverSection");
+      if (sec) sec.style.display = active ? "" : "none";
     }
 
     // ── Sale Type toggle (Weight / Unit switch) ───────────────────
@@ -871,6 +1147,16 @@
     }
 
     // ── Item Total ────────────────────────────────────────────────
+    function stepQty(delta) {
+      var el = document.getElementById("qty");
+      if (!el) return;
+      var cur = Number(el.value) || 0;
+      var next = cur + delta;
+      if (next < 0) next = 0;
+      el.value = next;
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
     function calculateItemTotal() {
       var saleType = document.getElementById("saleType").value;
       var qty = Number(document.getElementById("qty").value) || 0;
@@ -1150,22 +1436,39 @@
     // Payment status ရွေးလိုက်ရင် Deposit ကို auto ဖြည့်ပေးမယ် (COD ဆို ပုံမှန်အတိုင်း မပြောင်း)
     function autoFillDeposit() {
       var v = document.getElementById("payStatusSel").value;
-      if (v !== "Partial" && v !== "Prepaid") return; // COD → မထိ
+      if (v === "CashDeliFee") {
+        // ပို့ခသာ ကောက်ရမယ့် Cash → Deposit/Online Payment အချက်အလက် အားလုံး ရှင်း
+        document.getElementById("deposit").value = "0";
+        var pt = document.getElementById("depPayType"); if (pt) pt.value = "";
+        var pc = document.getElementById("depCode");    if (pc) pc.value = "";
+        depSSData = "";
+        var pv = document.getElementById("depSSPreview"); if (pv) { pv.src = ""; pv.style.display = "none"; }
+        resetDepConfirm();
+        return;
+      }
+      if (v !== "Partial" && v !== "Prepaid" && v !== "OnlinePayment") return; // COD/Cash/SplitPayment → မထိ (manual entry)
       var delivery = Number(document.getElementById("delivery").value) || 0;
       var discountAmount = getDiscountAmount();
       var itemsNet = grandTotal - discountAmount; // Delivery မပါဘဲ ဘောင်ချာ တန်ဖိုး
       var depEl = document.getElementById("deposit");
       if (v === "Partial") {
         depEl.value = itemsNet;               // ပစ္စည်းဖိုးသာ ရှင်း → ပို့ခ ကျန်
-      } else if (v === "Prepaid") {
+      } else if (v === "Prepaid" || v === "OnlinePayment") {
         depEl.value = itemsNet + delivery;     // အားလုံး ရှင်း → ဘောင်ချာတန်ဖိုး အပြည့်
       }
       resetDepConfirm();
     }
     function toggleDepFields() {
       var v = document.getElementById("payStatusSel").value;
+      var box = document.getElementById("oppayBox");
+      if (v === "CashDeliFee" || v === "Cash") {
+        if (box) box.style.display = "none"; // Payment section တစ်ခုလုံး ဖျောက် (Cash / CashDeliFee)
+        return;
+      }
+      if (box) box.style.display = ""; // တခြား status ပြန်ရွေးရင် ပြန်ပြ
       var dep = Number(document.getElementById("deposit").value) || 0;
-      var show = ((v && v !== "COD") || dep > 0);
+      var isCashLike = (v === "COD" || v === "Cash"); // ငွေသား တိုက်ရိုက်ပေးချေမှု အမျိုးအစားများ → deposit/online fields မလို
+      var show = ((v && !isCashLike) || dep > 0);
       document.getElementById("depExtra").style.display = show ? "block" : "none";
       var tw = document.getElementById("depTypeWrap"); if (tw) tw.style.display = show ? "block" : "none";
     }
@@ -1269,7 +1572,8 @@
     function saveReceipt() {
      try {
       // ── Required fields (Discount / Payment / Delivery note only are optional) ──
-      var _req = [
+      // In Shop mode these Order Information fields are fully optional — no validation applied.
+      var _req = (getAppMode() === "shop") ? [] : [
         ["staff", "Order လက်ခံသူ (Staff)"],
         ["name", "Customer အမည်"],
         ["phone", "ဖုန်း"],
@@ -1306,14 +1610,23 @@
       // (Duplicate transaction-code check removed — it relied on prompt()/alert()
       //  which mobile browsers suppress after repeated dialogs, silently blocking save.)
 
+      // Shop mode: Township ရွေးမထားရင် "Walk In" ကို default city အဖြစ် အလိုအလျောက်ထည့်
+      var _shopModeNow = (getAppMode() === "shop");
+      var _townshipVal = document.getElementById("township").value;
+      if (_shopModeNow && !String(_townshipVal || "").trim()) _townshipVal = "Walk In";
+
       savedData = {
         orderNo:         window.editOrderNo || ssmOrderNo(orderNo),
         staff:           document.getElementById("staff").value,
         customer:        document.getElementById("name").value,
         phone:           document.getElementById("phone").value,
         address:         document.getElementById("address").value,
-        township:        document.getElementById("township").value,
+        township:        _townshipVal,
+        receiverName:    document.getElementById("receiverName").value,
+        receiverPhone:   document.getElementById("receiverPhone").value,
+        receiverAddress: document.getElementById("receiverAddress").value,
         orderApp:        document.getElementById("orderapp").value,
+        shopMode:        (getAppMode() === "shop"),
         items:           items,
         grandTotal:      grandTotal,
         discountValue:   document.getElementById("discountValue").value,
@@ -1494,6 +1807,15 @@
       document.getElementById("phone").value           = receipt.phone           || "";
       document.getElementById("address").value         = receipt.address         || "";
       document.getElementById("township").value        = receipt.township        || "";
+      document.getElementById("receiverName").value    = receipt.receiverName    || "";
+      document.getElementById("receiverPhone").value   = receipt.receiverPhone   || "";
+      document.getElementById("receiverAddress").value = receipt.receiverAddress || "";
+      if (receipt.receiverName || receipt.receiverPhone || receipt.receiverAddress) {
+        var _rBtn = document.getElementById("recipientToggleBtn");
+        var _rSec = document.getElementById("receiverSection");
+        if (_rBtn) _rBtn.classList.add("active");
+        if (_rSec) _rSec.style.display = "";
+      }
       document.getElementById("orderapp").value        = receipt.orderApp        || "";
       document.getElementById("delivery").value        = receipt.delivery        || "";
       document.getElementById("deliveryService").value = receipt.deliveryService || "";
@@ -1861,8 +2183,34 @@
     var wrap = inp.parentNode;
     wrap.classList.add("ac-wrap");
     var list = document.createElement("div");
-    list.className = "ac-list";
-    wrap.appendChild(list);
+    // ac-fixed: append straight to <body> and position with fixed coords so the
+    // dropdown can never be clipped by an ancestor's overflow:hidden (e.g. the
+    // Order Information collapsible panel), on mobile or desktop.
+    list.className = "ac-list ac-fixed";
+    document.body.appendChild(list);
+
+    function positionList() {
+      var r = inp.getBoundingClientRect();
+      var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      var margin = 8, gap = 6;
+      var spaceBelow = vh - r.bottom - margin;
+      var spaceAbove = r.top - margin;
+
+      list.style.left = Math.max(margin, r.left) + "px";
+      list.style.width = r.width + "px";
+
+      if (spaceBelow >= 150 || spaceBelow >= spaceAbove) {
+        // Open downward
+        list.style.top = (r.bottom + gap) + "px";
+        list.style.bottom = "auto";
+        list.style.maxHeight = Math.max(90, Math.min(240, spaceBelow)) + "px";
+      } else {
+        // Not enough room below (e.g. mobile keyboard open) — open upward instead
+        list.style.top = "auto";
+        list.style.bottom = (vh - r.top + gap) + "px";
+        list.style.maxHeight = Math.max(90, Math.min(240, spaceAbove)) + "px";
+      }
+    }
 
     function pick(v) {
       inp.value = v;
@@ -1890,12 +2238,19 @@
         list.appendChild(o);
       });
     }
-    function show() { render(); list.classList.add("show"); }
+    function show() { render(); positionList(); list.classList.add("show"); }
     function hide() { list.classList.remove("show"); }
+    function reposition() { if (list.classList.contains("show")) positionList(); }
 
     inp.addEventListener("focus", show);
     inp.addEventListener("input", show);
     inp.addEventListener("blur", function () { setTimeout(hide, 150); });
+
+    // Keep the dropdown glued to the input if the page scrolls, the window
+    // resizes/rotates, or the on-screen keyboard shows/hides.
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", reposition);
   })();
 
   // ── Product inline autocomplete (field ထဲ ရိုက်၊ အောက်မှာ list) ──
@@ -1975,6 +2330,8 @@
       var customer = gv('name'), phone = gv('phone'), address = gv('address'),
           township = gv('township'), staff = gv('staff'), orderApp = gv('orderapp'),
           service  = gv('deliveryService'), orderNo = gt('orderNo');
+      var receiverName = gv('receiverName'), receiverPhone = gv('receiverPhone'),
+          receiverAddress = gv('receiverAddress');
 
       var itemsSum = 0, itemHtml = '';
       var list = (typeof items !== 'undefined' && items) ? items : [];
@@ -1993,7 +2350,16 @@
       var discount = num(gv('discountValue'));
       var note = gv('note');
       var _ps = (document.getElementById('payStatusSel')||{}).value || 'COD';
-      var payLabelLive = _ps === 'Prepaid' ? 'ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး' : (_ps === 'Partial' ? 'ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်' : 'အိမ်ရောက်ငွေချေ');
+      var payStatusLabels = {
+        COD: 'အိမ်ရောက်ငွေချေ',
+        Partial: 'ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်',
+        Prepaid: 'ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး',
+        Cash: 'လက်ငင်း (Cash)',
+        OnlinePayment: 'Online Payment',
+        SplitPayment: 'Split Payment',
+        CashDeliFee: 'Cash (ပို့ခသာကောက်ရန်)'
+      };
+      var payLabelLive = payStatusLabels[_ps] || payStatusLabels.COD;
       var delivery = num(gv('delivery'));
       var deposit  = num(gv('deposit'));
       var net      = num(gt('netTotal'));
@@ -2004,10 +2370,12 @@
         window.ssmRenderReceipt(box, {
           orderNo: orderNo, staff: staff,
           customer: customer, phone: phone, address: address, township: township,
+          receiverName: receiverName, receiverPhone: receiverPhone, receiverAddress: receiverAddress,
           orderApp: orderApp, deliveryService: service,
           items: list, grandTotal: itemsSum,
           discountAmount: discount, deposit: deposit, delivery: delivery,
           note: note, payStatus: _ps,
+          shopMode: (typeof getAppMode === 'function') && getAppMode() === 'shop',
           orderDate: new Date().toISOString()
         });
         return;
@@ -2019,15 +2387,42 @@
       var now = new Date();
       var dt = now.toLocaleDateString() + '  ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
+      // Shop-mode: default Customer/Address, hide empty Phone/Order App/Delivery Service/Staff lines
+      var isShopMode = (typeof getAppMode === 'function') && getAppMode() === 'shop';
+      var infoLines = [orderNo || ''];
+      if (isShopMode) {
+        if (staff) infoLines.push('\u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + staff);
+        if (orderApp) infoLines.push(orderApp);
+        if (service) infoLines.push(service);
+      } else {
+        infoLines.push('\u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + (staff || '-'), (orderApp || '-'), (service || '-'));
+      }
+      var infoBlockHtml = infoLines.join('<br>');
+
+      var custDisplay = customer || (isShopMode ? 'Shop' : '-');
+      var custBlockHtml = '<div class="cus-mid">' + custDisplay + '</div>';
+      if (!isShopMode || phone) custBlockHtml += '<div class="phone-clear">' + (phone || '-') + '</div>';
+      if (!isShopMode || address) custBlockHtml += '<div class="addr-mm">' + (address || '-') + '</div>';
+
+      var hasReceiver = receiverName || receiverPhone || receiverAddress;
+      var receiverBlockHtml = '';
+      if (hasReceiver) {
+        receiverBlockHtml += '<hr>';
+        receiverBlockHtml += '<div class="recv-label mm">\u101C\u1000\u103A\u1001\u1036\u101E\u1030 (Receiver)</div>';
+        receiverBlockHtml += '<div class="cus-mid">' + (receiverName || '-') + '</div>';
+        if (receiverPhone) receiverBlockHtml += '<div class="phone-clear">' + receiverPhone + '</div>';
+        if (receiverAddress) receiverBlockHtml += '<div class="addr-mm">' + receiverAddress + '</div>';
+      }
+
       box.innerHTML =
         '<div style="display:flex;align-items:center;gap:6px;">' + logoHtml +
           '<div style="flex:1;">' +
             '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.3;text-align:' + addrAlign + ';">' + addr + '<br>\uD83D\uDCDE ' + ph + '</div>' +
             '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.5;margin-top:4px;border-top:1px solid #000;padding-top:3px;text-align:right;">' +
-              (orderNo || '') + '<br>\u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + (staff || '-') + '<br>' + (orderApp || '-') + '<br>' + (service || '-') + '</div>' +
+              infoBlockHtml + '</div>' +
           '</div></div><hr>' +
         '<div class="line" style="align-items:baseline;"><span class="town-mid">' + (township || '-') + '</span><span style="font-size:11px;">' + dt + '</span></div><hr>' +
-        '<div class="cus-mid">' + (customer || '-') + '</div><div class="phone-clear">' + (phone || '-') + '</div><div class="addr-mm">' + (address || '-') + '</div><hr>' +
+        custBlockHtml + receiverBlockHtml + '<hr>' +
         (itemHtml || '<div class="item-sub mm" style="justify-content:center;color:#999;">\u2014 item \u1019\u101B\u103E\u102D\u101E\u1031\u1038 \u2014</div>') + '<hr>' +
         '<div class="line"><span>Total</span><span>' + fmt(itemsSum) + '</span></div>' + discLine +
         '<div class="line"><span>Deposit</span><span>' + fmt(deposit) + '</span></div>' +
@@ -2039,7 +2434,7 @@
     window.renderLivePreview = renderLivePreview;
 
     // re-render on field changes
-    ['name','phone','address','township','orderapp','deliveryService','staff','delivery','deposit','discountValue','note']
+    ['name','phone','address','township','orderapp','deliveryService','staff','delivery','deposit','discountValue','note','receiverName','receiverPhone','receiverAddress']
       .forEach(function(id){
         var e = document.getElementById(id);
         if (e){ e.addEventListener('input', renderLivePreview); e.addEventListener('change', renderLivePreview); }

@@ -1,5 +1,5 @@
 /* Sone Sone Mommy POS — service worker. Bump CACHE on each deploy to push updates. */
-const CACHE = 'ssm-pos-v158';
+const CACHE = 'ssm-pos-v159';
 const ASSETS = [
   './', 'index.html', 'receipts.html', 'products.html', 'staff.html',
   'delivery.html', 'walkin.html', 'payments.html', 'report.html', 'setting.html', 'print.html',

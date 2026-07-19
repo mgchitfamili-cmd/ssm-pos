@@ -38,9 +38,12 @@
       backdrop-filter:saturate(150%) blur(10px); -webkit-backdrop-filter:saturate(150%) blur(10px);
       border-bottom:1px solid var(--line); }
     #menuBtn{ background:none; border:none; font-size:23px; line-height:1; color:var(--ink);
-      cursor:pointer; padding:6px 9px; border-radius:10px; }
+      cursor:pointer; padding:6px 9px; border-radius:10px;
+      -webkit-tap-highlight-color:transparent; outline:none; -webkit-user-select:none; user-select:none; }
     #menuBtn:active{ background:var(--line); }
-    .top-bar .top-title{ margin:0; font-size:16px !important; font-weight:700; letter-spacing:-.01em; }
+    #menuBtn:focus, #menuBtn:focus-visible{ outline:none; box-shadow:none; }
+    .top-bar .top-title{ margin:0; font-size:16px !important; font-weight:700; letter-spacing:-.01em;
+      flex:none; white-space:nowrap; }
 
     h1{ font-size:15px; font-weight:800; color:var(--ink); margin:14px 14px 12px; letter-spacing:-.01em; }
 
@@ -51,12 +54,24 @@
     .summary-card .value{ font-size:22px; font-weight:800; color:var(--green); margin-top:5px; letter-spacing:-.02em; }
     .summary-card .count{ font-size:12px; color:var(--ink-3); margin-top:3px; }
 
-    #searchBox{ display:block; width:calc(100% - 28px); margin:0 14px 12px; padding:12px 14px;
-      font-size:15px; color:var(--ink); background:var(--surface); border:1px solid var(--line-2);
-      border-radius:var(--r-sm); outline:none; -webkit-appearance:none; appearance:none;
-      transition:border-color .15s, box-shadow .15s; }
-    #searchBox:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    .header-search{
+      flex:1 1 auto; min-width:0; display:flex; align-items:center;
+      background:var(--surface); border:1px solid var(--line-2); border-radius:999px;
+      padding:3px; transition:border-color .15s, box-shadow .15s;
+    }
+    .header-search:focus-within{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    #searchBox{ flex:1 1 auto; min-width:0; display:block; width:auto; margin:0; padding:8px 4px 8px 14px;
+      font-size:14px; color:var(--ink); background:transparent; border:none;
+      outline:none; -webkit-appearance:none; appearance:none; }
+    #searchBtn{ flex:none; width:34px; height:34px; margin-right:1px; padding:0; border:none; border-radius:50%;
+      background:transparent; color:var(--ink); cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      -webkit-tap-highlight-color:transparent; outline:none; -webkit-user-select:none; user-select:none; }
+    #searchBtn svg{ width:19px; height:19px; display:block; }
+    #searchBtn:active{ opacity:.55; }
+    #searchBtn:focus, #searchBtn:focus-visible{ outline:none; box-shadow:none; }
     ::placeholder{ color:var(--ink-3); }
+
 
     .filter-row{ display:flex; flex-wrap:nowrap; gap:8px; margin:0 14px 14px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
     .filter-row::-webkit-scrollbar{ display:none; }
@@ -153,7 +168,7 @@
     html.dark select, html.dark textarea,
     html.dark .field input, html.dark .field select,
     html.dark .modal-box input, html.dark .modal-box select,
-    html.dark #searchBox, html.dark .csel-btn{ background-color:#1e222a; }
+    html.dark .header-search, html.dark .csel-btn{ background-color:#1e222a; }
     html.dark select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23aeb6c2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; }
     html.dark .csel-btn{ background-color:#1e222a; }
     html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
@@ -161,7 +176,7 @@
     html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
     /* WIDE-SCREEN — 2-column grid on tablets, 1-column on phones */
     @media (min-width:700px){
-      h1, .summary-row, #searchBox, .filter-row, .date-range { max-width:920px; margin-left:auto; margin-right:auto; }
+      h1, .summary-row, .filter-row, .date-range { max-width:920px; margin-left:auto; margin-right:auto; }
       #payList { max-width:920px; margin-left:auto; margin-right:auto;
         display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
       #payList > .card{ margin-bottom:0; }
@@ -193,8 +208,7 @@
       <p>POS System</p>
     </div>
     <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> online အရောင်း</div>
-    <div class="menu-item" data-page="walkin.html" onclick="location.href='walkin.html'"><span class="ic">🏪</span> ဆိုင်ရောင်း</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
     <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
     <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
@@ -204,8 +218,17 @@
   </div>
 
   <div class="top-bar">
-    <button id="menuBtn" onclick="openMenu()">☰</button>
+    <button id="menuBtn" onclick="openMenu()">⋮</button>
     <span class="top-title" style="font-size:18px;font-weight:bold;">ငွေလွှဲစာရင်း</span>
+    <div class="header-search">
+      <input id="searchBox" placeholder="Name / Code / Type ရှာရန်" oninput="render()">
+      <button type="button" id="searchBtn" aria-label="Search" onclick="render(); document.getElementById('searchBox').focus();">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="10.5" cy="10.5" r="6.5"></circle>
+          <line x1="20" y1="20" x2="15.3" y2="15.3"></line>
+        </svg>
+      </button>
+    </div>
   </div>
   <h1>💵 Online Payments</h1>
 
@@ -229,8 +252,6 @@
       <div class="count" id="monthCount">0 payments</div>
     </div>
   </div>
-
-  <input id="searchBox" placeholder="Name / Code / Type ရှာရန်" oninput="render()">
 
   <!-- Filters -->
   <div class="filter-row">

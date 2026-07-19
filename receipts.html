@@ -44,20 +44,32 @@
       border-bottom:1px solid var(--line);
     }
     #menuBtn{ background:none; border:none; font-size:23px; line-height:1; color:var(--ink);
-      cursor:pointer; padding:6px 9px; border-radius:10px; }
+      cursor:pointer; padding:6px 9px; border-radius:10px;
+      -webkit-tap-highlight-color:transparent; outline:none; -webkit-user-select:none; user-select:none; }
     #menuBtn:active{ background:var(--line); }
-    .top-bar .top-title{ margin:0; font-size:16px !important; font-weight:700; letter-spacing:-.01em; }
+    #menuBtn:focus, #menuBtn:focus-visible{ outline:none; box-shadow:none; }
+    .top-bar .top-title{ margin:0; font-size:16px !important; font-weight:700; letter-spacing:-.01em;
+      flex:none; white-space:nowrap; }
 
     h1{ font-size:13px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
       color:var(--ink-3); margin:16px 16px 8px; }
 
-    #searchBox{
-      display:block; width:calc(100% - 28px); margin:0 14px 14px; padding:12px 14px;
-      font-size:15px; color:var(--ink); background:var(--surface);
-      border:1px solid var(--line-2); border-radius:var(--r-sm); outline:none;
-      -webkit-appearance:none; appearance:none; transition:border-color .15s, box-shadow .15s;
+    .header-search{
+      flex:1 1 auto; min-width:0; display:flex; align-items:center;
+      background:var(--surface); border:1px solid var(--line-2); border-radius:999px;
+      padding:3px; transition:border-color .15s, box-shadow .15s;
     }
-    #searchBox:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    .header-search:focus-within{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    #searchBox{ flex:1 1 auto; min-width:0; display:block; width:auto; margin:0; padding:8px 4px 8px 14px;
+      font-size:14px; color:var(--ink); background:transparent; border:none;
+      outline:none; -webkit-appearance:none; appearance:none; }
+    #searchBtn{ flex:none; width:34px; height:34px; margin-right:1px; padding:0; border:none; border-radius:50%;
+      background:transparent; color:var(--ink); cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      -webkit-tap-highlight-color:transparent; outline:none; -webkit-user-select:none; user-select:none; }
+    #searchBtn svg{ width:19px; height:19px; display:block; }
+    #searchBtn:active{ opacity:.55; }
+    #searchBtn:focus, #searchBtn:focus-visible{ outline:none; box-shadow:none; }
     ::placeholder{ color:var(--ink-3); }
 
     #rfilter{ margin:0 14px 14px; }
@@ -123,6 +135,10 @@
     .btn-share{ background:var(--green); }
     .btn-edit{ background:#fff; color:var(--amber); border:1px solid var(--amber-line); }
     .btn-delete{ background:#fff; color:var(--red); border:1px solid var(--red-line); }
+    /* Compact Screenshot / Select-from-Folder buttons — scoped to this row only,
+       leaves other .btn/.btn-payment usages (Payment, Load More) untouched */
+    .ss-upload-row{ margin:0 0 4px; }
+    .ss-upload-row .btn{ padding:6px 8px; font-size:11px; min-width:0; }
 
     /* payment modal */
     #payModal{ display:none; position:fixed; inset:0; background:rgba(15,17,25,.5);
@@ -213,7 +229,7 @@
     html.dark select, html.dark textarea,
     html.dark .field input, html.dark .field select,
     html.dark .modal-box input, html.dark .modal-box select,
-    html.dark #searchBox, html.dark .csel-btn{ background-color:#1e222a; }
+    html.dark .header-search, html.dark .csel-btn{ background-color:#1e222a; }
     html.dark select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23aeb6c2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; }
     html.dark .csel-btn{ background-color:#1e222a; }
     html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
@@ -221,7 +237,7 @@
     html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
     /* WIDE-SCREEN — 2-column grid on tablets, 1-column on phones */
     @media (min-width:700px){
-      h1, #searchBox { max-width:920px; margin-left:auto; margin-right:auto; }
+      h1 { max-width:920px; margin-left:auto; margin-right:auto; }
       #historyList { max-width:920px; margin-left:auto; margin-right:auto;
         display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
       #historyList > .card{ margin-bottom:0; }
@@ -252,8 +268,7 @@
       <p>POS System</p>
     </div>
     <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> online အရောင်း</div>
-    <div class="menu-item" data-page="walkin.html" onclick="location.href='walkin.html'"><span class="ic">🏪</span> ဆိုင်ရောင်း</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
     <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
     <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
@@ -263,12 +278,19 @@
   </div>
 
   <div class="top-bar">
-    <button id="menuBtn" onclick="openMenu()">☰</button>
+    <button id="menuBtn" onclick="openMenu()">⋮</button>
     <span class="top-title" style="font-size:18px;font-weight:bold;">ဘောင်ချာများ</span>
+    <div class="header-search">
+      <input id="searchBox" placeholder="Search Order No / Customer" oninput="applyFilters()">
+      <button type="button" id="searchBtn" aria-label="Search" onclick="applyFilters(); document.getElementById('searchBox').focus();">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="10.5" cy="10.5" r="6.5"></circle>
+          <line x1="20" y1="20" x2="15.3" y2="15.3"></line>
+        </svg>
+      </button>
+    </div>
   </div>
   <h1>Receipt History</h1>
-
-  <input id="searchBox" placeholder="Search Order No / Customer" oninput="applyFilters()">
 
   <div id="rfilter">
     <div class="rchips">
@@ -323,7 +345,7 @@
         </select>
 
         <label>ငွေလွှဲ Screenshot (ပုံ ထည့်မှ Code ထည့်လို့ရ)</label>
-        <div style="display:flex; gap:8px;">
+        <div class="ss-upload-row" style="display:flex; gap:8px;">
           <button class="btn btn-payment" style="flex:1;" onclick="document.getElementById('ssInputCam').click()">📷 ဓာတ်ပုံ ရိုက်ရန်</button>
           <button class="btn btn-payment" style="flex:1;" onclick="document.getElementById('ssInput').click()">🖼️ Folder ကနေ ရွေးရန်</button>
         </div>
@@ -396,15 +418,19 @@
         }
 
         // Print badge
+        // Shop mode + Delivery Service မရွေးထား (ဆိုင်ရောက်ရောင်း/no-delivery) ဆိုရင်
+        // "🖨️ မထုတ်ရသေး" ဟု မပြပါ — Online mode နှင့် Delivery ရွေးထားသော Shop voucher များကို မထိခိုက်စေပါ။
+        var _noDeliveryShopVoucher = !!sale.shopMode && !sale.deliveryService;
         let printBadge = sale.printed
           ? `<span class="badge badge-printed">🖨️ Print ပြီး</span>`
-          : `<span class="badge badge-notprinted">🖨️ မထုတ်ရသေး</span>`;
+          : (_noDeliveryShopVoucher ? "" : `<span class="badge badge-notprinted">🖨️ မထုတ်ရသေး</span>`);
 
         // Payment badge
         let payBadge = "";
         let payStatus = sale.payStatus || "COD";
         var _isWI = /-WI-/.test(String(sale.orderNo || "")) || sale.payMode;
         if (_isWI) payStatus = "Cash";   // walk-in (ဆိုင်ရောင်း) = Cash
+        var _isShop = !!sale.shopMode;   // created while app was in Shop mode (index.html mode switch)
         if (payStatus === "Cash")         payBadge = `<span class="badge badge-cash">Cash</span>`;
         else if (payStatus === "Prepaid") payBadge = `<span class="badge badge-prepaid">Prepaid</span>`;
         else if (payStatus === "Partial") payBadge = `<span class="badge badge-partial">ပစ္စည်းဖိုးပြီး</span>`;
@@ -434,7 +460,7 @@
 
             <div class="card-summary" onclick="toggleCard(${index})">
               <div class="summary-left">
-                <h3>${sale.customer || "-"}</h3>
+                <h3>${sale.customer || (_isShop ? "Shop" : "-")}</h3>
                 <p>${sale.township || "-"}</p>
                 <p>${printBadge} ${payBadge}</p>
               </div>
@@ -445,12 +471,28 @@
             </div>
 
             <div class="card-detail" id="detail-${index}">
+              ${_isShop ? `
+              ${sale.phone ? `<p class="info-line"><b>Phone:</b> ${sale.phone}</p>` : ""}
+              ${sale.address ? `<p class="info-line"><b>Address:</b> ${sale.address}</p>` : ""}
+              ${(sale.receiverName || sale.receiverPhone || sale.receiverAddress) ? `
+              <p class="info-line"><b>Receiver Name:</b> ${sale.receiverName || "-"}</p>
+              <p class="info-line"><b>Receiver Phone:</b> ${sale.receiverPhone || "-"}</p>
+              <p class="info-line"><b>Receiver Address:</b> ${sale.receiverAddress || "-"}</p>` : ""}
+              ${sale.orderApp ? `<p class="info-line"><b>Order App:</b> ${sale.orderApp}</p>` : ""}
+              ${sale.deliveryService ? `<p class="info-line"><b>Delivery Service:</b> ${sale.deliveryService}</p>` : ""}
+              ${sale.staff ? `<p class="info-line"><b>Staff:</b> ${sale.staff}</p>` : ""}
+              ` : `
               ${_isWI ? "" : `
               <p class="info-line"><b>Phone:</b> ${sale.phone || "-"}</p>
               <p class="info-line"><b>Address:</b> ${sale.address || "-"}</p>
+              ${(sale.receiverName || sale.receiverPhone || sale.receiverAddress) ? `
+              <p class="info-line"><b>Receiver Name:</b> ${sale.receiverName || "-"}</p>
+              <p class="info-line"><b>Receiver Phone:</b> ${sale.receiverPhone || "-"}</p>
+              <p class="info-line"><b>Receiver Address:</b> ${sale.receiverAddress || "-"}</p>` : ""}
               <p class="info-line"><b>Order App:</b> ${sale.orderApp || "-"}</p>
               <p class="info-line"><b>Delivery Service:</b> ${sale.deliveryService || "-"}</p>`}
               <p class="info-line"><b>Staff:</b> ${sale.staff || "-"}</p>
+              `}
               <p class="info-line"><b>Grand Total:</b> ${sale.grandTotal || 0}</p>
               ${_isWI ? "" : `<p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}</p>`}
               ${Number(sale.deposit) > 0 ? `<p class="info-line"><b>Deposit:</b> ${sale.deposit}</p>` : ""}
