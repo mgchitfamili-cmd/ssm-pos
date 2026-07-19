@@ -2183,34 +2183,19 @@
     var wrap = inp.parentNode;
     wrap.classList.add("ac-wrap");
     var list = document.createElement("div");
-    // ac-fixed: append straight to <body> and position with fixed coords so the
-    // dropdown can never be clipped by an ancestor's overflow:hidden (e.g. the
-    // Order Information collapsible panel), on mobile or desktop.
-    list.className = "ac-list ac-fixed";
-    document.body.appendChild(list);
-
-    function positionList() {
-      var r = inp.getBoundingClientRect();
-      var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-      var margin = 8, gap = 6;
-      var spaceBelow = vh - r.bottom - margin;
-      var spaceAbove = r.top - margin;
-
-      list.style.left = Math.max(margin, r.left) + "px";
-      list.style.width = r.width + "px";
-
-      if (spaceBelow >= 150 || spaceBelow >= spaceAbove) {
-        // Open downward
-        list.style.top = (r.bottom + gap) + "px";
-        list.style.bottom = "auto";
-        list.style.maxHeight = Math.max(90, Math.min(240, spaceBelow)) + "px";
-      } else {
-        // Not enough room below (e.g. mobile keyboard open) — open upward instead
-        list.style.top = "auto";
-        list.style.bottom = (vh - r.top + gap) + "px";
-        list.style.maxHeight = Math.max(90, Math.min(240, spaceAbove)) + "px";
-      }
-    }
+    // Plain absolute positioning, glued to the input's own wrapper (ac-wrap is
+    // position:relative). This keeps the dropdown pinned flush to the bottom
+    // edge of the textbox at all times. We previously appended this straight
+    // to <body> with position:fixed + JS-computed coordinates to dodge the
+    // Order Information panel's overflow:hidden — but getBoundingClientRect()
+    // is relative to the layout viewport while mobile browsers reflow/scroll
+    // the *visual* viewport when the on-screen keyboard opens, so those
+    // coordinates went stale and the list ended up floating far from the
+    // field. The collapsible panel already switches to overflow:visible
+    // once it's finished expanding (see syncOrderInfoOverflow), so plain
+    // absolute positioning is not clipped in normal use.
+    list.className = "ac-list";
+    wrap.appendChild(list);
 
     function pick(v) {
       inp.value = v;
@@ -2259,7 +2244,6 @@
     function show() {
       clearTimeout(hideTimer);
       render();
-      positionList();
       list.classList.add("show");
     }
     function hide() { list.classList.remove("show"); }
@@ -2276,17 +2260,10 @@
         if (document.activeElement !== inp) hide();
       }, 150);
     }
-    function reposition() { if (list.classList.contains("show")) positionList(); }
 
     inp.addEventListener("focus", show);
     inp.addEventListener("input", show);
     inp.addEventListener("blur", scheduleHide);
-
-    // Keep the dropdown glued to the input if the page scrolls, the window
-    // resizes/rotates, or the on-screen keyboard shows/hides.
-    window.addEventListener("scroll", reposition, true);
-    window.addEventListener("resize", reposition);
-    if (window.visualViewport) window.visualViewport.addEventListener("resize", reposition);
   })();
 
   // ── Product inline autocomplete (field ထဲ ရိုက်၊ အောက်မှာ list) ──
