@@ -2217,34 +2217,70 @@
       hide();
       inp.dispatchEvent(new Event("change", { bubbles: true }));
     }
-    function render() {
-      var q = inp.value.trim();
-      list.innerHTML = "";
-      if (q && TOWNS.indexOf(q) < 0) {
-        var c = document.createElement("div");
-        c.className = "ac-opt custom";
-        c.textContent = "「" + q + "」 ဒီအတိုင်း သုံးမည်";
-        c.addEventListener("mousedown", function (e) { e.preventDefault(); pick(q); });
-        list.appendChild(c);
-      }
-      var matches = TOWNS.filter(function (p) { return p.indexOf(q) >= 0; });
-      matches.sort(function (a, b) {
-        return (a.indexOf(q) === 0 ? 0 : 1) - (b.indexOf(q) === 0 ? 0 : 1);
-      });
-      matches.forEach(function (p) {
-        var o = document.createElement("div");
-        o.className = "ac-opt"; o.textContent = p;
-        o.addEventListener("mousedown", function (e) { e.preventDefault(); pick(p); });
-        list.appendChild(o);
-      });
+    // Selecting an option must not let the input blur first (that would fire
+    // the hide timer before the click/tap is processed). preventDefault on
+    // both mousedown (desktop/most mobile browsers) and touchstart (some
+    // mobile browsers dispatch touch first) keeps focus on the input.
+    function bindPick(el, v) {
+      var chosen = false;
+      function go(e) { if (chosen) return; chosen = true; e.preventDefault(); pick(v); }
+      el.addEventListener("mousedown", go);
+      el.addEventListener("touchstart", go, { passive: false });
     }
-    function show() { render(); positionList(); list.classList.add("show"); }
+    function render() {
+      try {
+        var q = inp.value.trim();
+        list.innerHTML = "";
+        if (q && TOWNS.indexOf(q) < 0) {
+          var c = document.createElement("div");
+          c.className = "ac-opt custom";
+          c.textContent = "「" + q + "」 ဒီအတိုင်း သုံးမည်";
+          bindPick(c, q);
+          list.appendChild(c);
+        }
+        var matches = TOWNS.filter(function (p) { return p.indexOf(q) >= 0; });
+        matches.sort(function (a, b) {
+          return (a.indexOf(q) === 0 ? 0 : 1) - (b.indexOf(q) === 0 ? 0 : 1);
+        });
+        matches.forEach(function (p) {
+          var o = document.createElement("div");
+          o.className = "ac-opt"; o.textContent = p;
+          bindPick(o, p);
+          list.appendChild(o);
+        });
+      } catch (err) {
+        // Never let a rendering error leave the dropdown stuck: fall back to
+        // an empty (but still shown/reopenable) list instead of throwing,
+        // which would otherwise abort this handler before show() finishes.
+        list.innerHTML = "";
+      }
+    }
+    var hideTimer = null;
+    function show() {
+      clearTimeout(hideTimer);
+      render();
+      positionList();
+      list.classList.add("show");
+    }
     function hide() { list.classList.remove("show"); }
+    function scheduleHide() {
+      clearTimeout(hideTimer);
+      // Delay the hide so a mousedown/touchstart pick (above) can run first.
+      // Also re-check focus when the timer fires: some mobile keyboards
+      // (notably real devices, unlike Acode's preview) fire a spurious
+      // blur+refocus while the user is mid-keystroke. Without this check,
+      // that stray blur schedules a hide that lands *after* the refocus and
+      // next keystroke, closing the list with no further event left to
+      // reopen it until the page is reloaded.
+      hideTimer = setTimeout(function () {
+        if (document.activeElement !== inp) hide();
+      }, 150);
+    }
     function reposition() { if (list.classList.contains("show")) positionList(); }
 
     inp.addEventListener("focus", show);
     inp.addEventListener("input", show);
-    inp.addEventListener("blur", function () { setTimeout(hide, 150); });
+    inp.addEventListener("blur", scheduleHide);
 
     // Keep the dropdown glued to the input if the page scrolls, the window
     // resizes/rotates, or the on-screen keyboard shows/hides.
