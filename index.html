@@ -607,7 +607,7 @@
     .ac-list{ position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:60;
       background:var(--surface); border:1px solid var(--line-2); border-radius:12px;
       box-shadow:0 12px 30px rgba(0,0,0,.16); max-height:240px; overflow-y:auto;
-      -webkit-overflow-scrolling:touch; display:none; }
+      -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior:contain; display:none; }
     .ac-list.show{ display:block; }
     /* Fixed-position variant: escapes any clipping/overflow-hidden ancestor (e.g. the
        collapsible Order Information panel). Position (top/left/width/max-height) is
@@ -2204,13 +2204,29 @@
     }
     // Selecting an option must not let the input blur first (that would fire
     // the hide timer before the click/tap is processed). preventDefault on
-    // both mousedown (desktop/most mobile browsers) and touchstart (some
-    // mobile browsers dispatch touch first) keeps focus on the input.
+    // mousedown keeps focus on the input for desktop/most mobile browsers.
+    // For touch we can't do the same on touchstart — preventDefault there
+    // hijacks the gesture immediately, which also blocks native scrolling
+    // inside the dropdown (every touch on an option "picks" it before it can
+    // become a scroll). Instead we track movement: touchstart/touchmove stay
+    // passive (scrolling works normally), and we only treat it as a tap —
+    // and preventDefault + pick — on touchend if the finger never moved.
     function bindPick(el, v) {
       var chosen = false;
       function go(e) { if (chosen) return; chosen = true; e.preventDefault(); pick(v); }
       el.addEventListener("mousedown", go);
-      el.addEventListener("touchstart", go, { passive: false });
+
+      var touchStartY = null, touchMoved = false;
+      el.addEventListener("touchstart", function (e) {
+        touchStartY = e.touches[0].clientY;
+        touchMoved = false;
+      }, { passive: true });
+      el.addEventListener("touchmove", function (e) {
+        if (touchStartY != null && Math.abs(e.touches[0].clientY - touchStartY) > 6) touchMoved = true;
+      }, { passive: true });
+      el.addEventListener("touchend", function (e) {
+        if (!touchMoved) go(e);
+      }, { passive: false });
     }
     function render() {
       try {
