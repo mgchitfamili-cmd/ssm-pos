@@ -5,10 +5,13 @@
   function getNetNumber(s){ return num(s.grandTotal) - num(s.discountAmount) - num(s.deposit) + num(s.delivery); }
 
   // Receiver block (name / phone / address) — only rendered when at least one field exists.
+  function hasReceiverData(sale){
+    return !!(sale.receiverName || sale.receiverPhone || sale.receiverAddress);
+  }
   function buildReceiverHTML(sale){
+    if (!hasReceiverData(sale)) return "";
     var rName = sale.receiverName || "", rPhone = sale.receiverPhone || "", rAddress = sale.receiverAddress || "";
-    if (!rName && !rPhone && !rAddress) return "";
-    var html = '<div class="recv-label mm">\u101C\u1000\u103A\u1001\u1036\u101E\u1030 (Receiver)</div>' +
+    var html = '<div class="recv-label mm">ထံသို့</div>' +
       '<div class="cus-mid">' + (rName || "-") + '</div>';
     if (rPhone) html += '<div class="phone-clear">' + rPhone + '</div>';
     if (rAddress) html += '<div class="addr-mm">' + rAddress + '</div>';
@@ -134,7 +137,8 @@
       // 4. customer / phone / address — walk-in (ဆိုင်ရောင်း) ဆို မပြ
       (( /-WI-/.test(String(sale.orderNo || "")) || sale.payMode )
         ? ''
-        : '<div class="cus-mid">' + (sale.customer || "-") + '</div>' +
+        : (hasReceiverData(sale) ? '<div class="recv-label mm">မှတဆင့်</div>' : '') +
+          '<div class="cus-mid">' + (sale.customer || "-") + '</div>' +
           '<div class="phone-clear">' + (sale.phone || "-") + '</div>' +
           '<div class="addr-mm">' + (sale.address || "-") + '</div>' +
           '<hr>' +
