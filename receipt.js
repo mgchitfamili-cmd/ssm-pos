@@ -8,6 +8,29 @@
   function hasReceiverData(sale){
     return !!(sale.receiverName || sale.receiverPhone || sale.receiverAddress);
   }
+
+  // Customer block (name / phone / address).
+  // Shop Mode: if all three are empty, hide the whole block (no "-", no blank lines, no gap).
+  // If at least one has data, show only the fields that have values.
+  // Non-shop mode keeps the existing "-" placeholder behavior.
+  function hasCustomerData(sale){
+    return !!(sale.customer || sale.phone || sale.address);
+  }
+  function buildCustomerBlockHTML(sale){
+    if (sale.shopMode) {
+      if (!hasCustomerData(sale)) return "";
+      var html = (hasReceiverData(sale) ? '<div class="recv-label mm">မှတဆင့်</div>' : "");
+      if (sale.customer) html += '<div class="cus-mid">' + sale.customer + '</div>';
+      if (sale.phone) html += '<div class="phone-clear">' + sale.phone + '</div>';
+      if (sale.address) html += '<div class="addr-mm">' + sale.address + '</div>';
+      return html + '<hr>' + buildReceiverHTML(sale);
+    }
+    return (hasReceiverData(sale) ? '<div class="recv-label mm">မှတဆင့်</div>' : "") +
+      '<div class="cus-mid">' + (sale.customer || "-") + '</div>' +
+      '<div class="phone-clear">' + (sale.phone || "-") + '</div>' +
+      '<div class="addr-mm">' + (sale.address || "-") + '</div>' +
+      '<hr>' + buildReceiverHTML(sale);
+  }
   function buildReceiverHTML(sale){
     if (!hasReceiverData(sale)) return "";
     var rName = sale.receiverName || "", rPhone = sale.receiverPhone || "", rAddress = sale.receiverAddress || "";
@@ -137,13 +160,9 @@
       // 4. customer / phone / address — walk-in (ဆိုင်ရောင်း) ဆို မပြ
       (( /-WI-/.test(String(sale.orderNo || "")) || sale.payMode )
         ? ''
-        : (hasReceiverData(sale) ? '<div class="recv-label mm">မှတဆင့်</div>' : '') +
-          '<div class="cus-mid">' + (sale.customer || "-") + '</div>' +
-          '<div class="phone-clear">' + (sale.phone || "-") + '</div>' +
-          '<div class="addr-mm">' + (sale.address || "-") + '</div>' +
-          '<hr>' +
-          // 4b. receiver name / phone / address — only shown when receiver data exists
-          buildReceiverHTML(sale)) +
+        // 4b. Shop Mode: hide entirely if name/phone/address all empty; else show only filled fields.
+        //     Non-shop mode: unchanged "-" placeholder behavior.
+        : buildCustomerBlockHTML(sale)) +
       // 5. items
       itemHtml +
       '<hr>' +

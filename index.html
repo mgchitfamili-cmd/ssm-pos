@@ -2419,10 +2419,18 @@
       }
       var infoBlockHtml = infoLines.join('<br>');
 
-      var custDisplay = customer || (isShopMode ? 'Shop' : '-');
-      var custBlockHtml = '<div class="cus-mid">' + custDisplay + '</div>';
-      if (!isShopMode || phone) custBlockHtml += '<div class="phone-clear">' + (phone || '-') + '</div>';
-      if (!isShopMode || address) custBlockHtml += '<div class="addr-mm">' + (address || '-') + '</div>';
+      var custBlockHtml = '';
+      if (isShopMode) {
+        if (customer || phone || address) {
+          if (customer) custBlockHtml += '<div class="cus-mid">' + customer + '</div>';
+          if (phone) custBlockHtml += '<div class="phone-clear">' + phone + '</div>';
+          if (address) custBlockHtml += '<div class="addr-mm">' + address + '</div>';
+        }
+      } else {
+        custBlockHtml = '<div class="cus-mid">' + (customer || '-') + '</div>' +
+          '<div class="phone-clear">' + (phone || '-') + '</div>' +
+          '<div class="addr-mm">' + (address || '-') + '</div>';
+      }
 
       var hasReceiver = receiverName || receiverPhone || receiverAddress;
       var receiverBlockHtml = '';
@@ -2442,7 +2450,7 @@
               infoBlockHtml + '</div>' +
           '</div></div><hr>' +
         '<div class="line" style="align-items:baseline;"><span class="town-mid">' + (township || '-') + '</span><span style="font-size:11px;">' + dt + '</span></div><hr>' +
-        custBlockHtml + receiverBlockHtml + '<hr>' +
+        custBlockHtml + receiverBlockHtml + ((custBlockHtml || receiverBlockHtml) ? '<hr>' : '') +
         (itemHtml || '<div class="item-sub mm" style="justify-content:center;color:#999;">\u2014 item \u1019\u101B\u103E\u102D\u101E\u1031\u1038 \u2014</div>') + '<hr>' +
         '<div class="line"><span>Total</span><span>' + fmt(itemsSum) + '</span></div>' + discLine +
         '<div class="line"><span>Deposit</span><span>' + fmt(deposit) + '</span></div>' +
