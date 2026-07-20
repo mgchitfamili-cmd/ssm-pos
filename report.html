@@ -65,12 +65,17 @@
     .total-card .th-value{ font-size:28px; font-weight:800; letter-spacing:-.02em; color:var(--green); text-align:right; white-space:nowrap; }
     .total-card .th-sub{ font-size:12px; color:var(--ink-3); margin-top:4px; }
     .total-divider{ height:1px; background:var(--line); border:none; margin:14px 0; }
-    .total-grid{ display:flex; gap:10px; }
-    .total-col{ flex:1; min-width:0; }
+    /* Sales category cards — responsive: 2x2 on narrow/medium, 4-in-a-row on wide/tablet+ */
+    .total-grid{ display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; }
+    .total-col{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r-sm);
+      padding:12px; box-shadow:var(--shadow); min-width:0; }
     .total-col .tc-label{ font-size:10px; font-weight:600; letter-spacing:.02em; text-transform:uppercase;
       color:var(--ink-3); line-height:1.25; min-height:2.5em; }
     .total-col .tc-value{ font-size:17px; font-weight:800; letter-spacing:-.01em; margin-top:2px; }
     .total-col .tc-sub{ font-size:11px; color:var(--ink-3); margin-top:2px; }
+    @media (min-width:700px){
+      .total-grid{ grid-template-columns:repeat(4, 1fr); }
+    }
 
     /* hero top-staff card */
     .hero-staff{ display:flex; align-items:center; gap:14px; margin:0 14px 14px;
@@ -259,27 +264,32 @@
   <div class="total-card">
     <div class="th-top">
       <div class="th-info">
-        <div class="th-label">စုစုပေါင်းအရောင်း</div>
+        <div class="th-label" id="thLabel">စုစုပေါင်းအရောင်း</div>
         <div class="th-sub" id="orderCount">0 orders</div>
       </div>
       <div class="th-value" id="totalSales">0</div>
     </div>
-    <hr class="total-divider">
-    <div class="total-grid">
+    <hr class="total-divider" id="totalDivider">
+    <div class="total-grid" id="totalGrid">
       <div class="total-col">
         <div class="tc-label">Online COD</div>
         <div class="tc-value orange" id="onlineCod">0</div>
         <div class="tc-sub" id="onlineCodCount">0 order</div>
       </div>
       <div class="total-col">
-        <div class="tc-label">ဆိုင်အရောင်း</div>
-        <div class="tc-value blue" id="walkinAmount">0</div>
-        <div class="tc-sub" id="walkinCount">0 order</div>
-      </div>
-      <div class="total-col">
         <div class="tc-label">Online Pay</div>
         <div class="tc-value purple" id="onlinePayAmount">0</div>
         <div class="tc-sub" id="onlinePayCount">0 order</div>
+      </div>
+      <div class="total-col">
+        <div class="tc-label">Shop Cash</div>
+        <div class="tc-value blue" id="shopCash">0</div>
+        <div class="tc-sub" id="shopCashCount">0 order</div>
+      </div>
+      <div class="total-col">
+        <div class="tc-label">Shop Online Pay</div>
+        <div class="tc-value green" id="shopOnlinePay">0</div>
+        <div class="tc-sub" id="shopOnlinePayCount">0 order</div>
       </div>
     </div>
   </div>
@@ -361,8 +371,17 @@
       // total - discount - deposit + delivery
       return n(sale.grandTotal) - n(sale.discountAmount) - n(sale.deposit) + n(sale.delivery);
     }
+    // Full sale value (items - discount + delivery), independent of how much was
+    // pre-paid as deposit — used for the 4-category summary so fully-prepaid
+    // (Online Pay / Shop Online Pay) orders count at their real sale value
+    // instead of collapsing to ~0 once the deposit is netted out.
+    function saleAmount(sale) {
+      var n = numv;
+      return n(sale.grandTotal) - n(sale.discountAmount) + n(sale.delivery);
+    }
     function numv(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
-    function isWalkIn(s){ return /-WI-/.test(String((s && s.orderNo) || "")) || (s && s.payMode); }
+    function isWalkIn(s){ return (s && s.shopMode === true) || /-WI-/.test(String((s && s.orderNo) || "")) || (s && s.payMode); }
+    function isOnlinePay(s){ return String(s && s.payStatus) === "OnlinePayment"; }
 
     // ── Set Period ────────────────────────────────────────────────
     function setPeriod(p, btn) {
@@ -394,26 +413,36 @@
       let orders = salesHistory.filter(inPeriod);
 
       // Main stats
-      // ── စုစုပေါင်းအရောင်း = net total (online selling + walk-in) + online payment (deposit) ──
-      let onlineCod = 0, walkinAmount = 0, onlinePayAmount = 0;
-      let onlineCodCount = 0, walkinCount = 0, onlinePayCount = 0;
+      // ── Sales summary — mutually exclusive by mode (shopMode) x payment type (payStatus) ──
+      // ONLINE COD        : online-mode orders, not paid via OnlinePayment
+      // ONLINE PAY         : online-mode orders, paid via OnlinePayment
+      // SHOP CASH          : shop-mode orders, not paid via OnlinePayment
+      // SHOP ONLINE PAY    : shop-mode orders, paid via OnlinePayment
+      let onlineCod = 0, onlinePayAmount = 0, shopCash = 0, shopOnlinePay = 0;
+      let onlineCodCount = 0, onlinePayCount = 0, shopCashCount = 0, shopOnlinePayCount = 0;
       orders.forEach(function (s) {
-        if (isWalkIn(s)) { walkinAmount += getNet(s); walkinCount++; }    // ဆိုင်အရောင်း — net
-        else             { onlineCod    += getNet(s); onlineCodCount++; } // online selling — ကောက်ရန် (COD)
-        var dep = numv(s.deposit);
-        if (dep > 0) { onlinePayAmount += dep; onlinePayCount++; }        // online payment — deposit (SS + code)
+        var amt = saleAmount(s), pay = isOnlinePay(s);
+        if (isWalkIn(s)) {
+          if (pay) { shopOnlinePay += amt; shopOnlinePayCount++; }
+          else     { shopCash      += amt; shopCashCount++; }
+        } else {
+          if (pay) { onlinePayAmount += amt; onlinePayCount++; }
+          else     { onlineCod       += amt; onlineCodCount++; }
+        }
       });
-      let totalSales = onlineCod + walkinAmount + onlinePayAmount;   // = net(2+3) + online payment(4)
-      let orderCount = orders.length;
+      let totalSales  = onlineCod + onlinePayAmount + shopCash + shopOnlinePay;
+      let orderCount  = onlineCodCount + onlinePayCount + shopCashCount + shopOnlinePayCount;
 
-      document.getElementById("totalSales").innerText      = totalSales.toLocaleString();
-      document.getElementById("orderCount").innerText      = orderCount + " orders";
-      document.getElementById("onlineCod").innerText       = onlineCod.toLocaleString();
-      document.getElementById("walkinAmount").innerText    = walkinAmount.toLocaleString();
-      document.getElementById("onlinePayAmount").innerText = onlinePayAmount.toLocaleString();
-      document.getElementById("onlineCodCount").innerText  = onlineCodCount + " order";
-      document.getElementById("walkinCount").innerText     = walkinCount + " order";
-      document.getElementById("onlinePayCount").innerText  = onlinePayCount + " order";
+      document.getElementById("totalSales").innerText          = totalSales.toLocaleString();
+      document.getElementById("orderCount").innerText          = orderCount + " orders";
+      document.getElementById("onlineCod").innerText           = onlineCod.toLocaleString();
+      document.getElementById("onlinePayAmount").innerText     = onlinePayAmount.toLocaleString();
+      document.getElementById("shopCash").innerText            = shopCash.toLocaleString();
+      document.getElementById("shopOnlinePay").innerText       = shopOnlinePay.toLocaleString();
+      document.getElementById("onlineCodCount").innerText      = onlineCodCount + " order";
+      document.getElementById("onlinePayCount").innerText      = onlinePayCount + " order";
+      document.getElementById("shopCashCount").innerText       = shopCashCount + " order";
+      document.getElementById("shopOnlinePayCount").innerText  = shopOnlinePayCount + " order";
 
       // Top Products — unit → ခု, weight → ပိဿာ
       let productMap = {};
