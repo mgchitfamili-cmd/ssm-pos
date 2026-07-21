@@ -6,6 +6,7 @@
 
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="firebase-init.js"></script>
+  <script src="firebase-sync.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6d28d9">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -337,6 +338,7 @@
       <p>POS System</p>
     </div>
     <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
+    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
     <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
     <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
@@ -612,8 +614,25 @@
     }
 
     // ── Save Status (reload မလုပ်တော့ဘူး) ─────────────────────────
+    // Delivered ဖြစ်တဲ့အခါ Income page အတွက် ရက်စွဲ/ဝန်ဆောင်မှု/ရငွေကို snapshot သိမ်းထား
     function saveStatus(index, status) {
-      salesHistory[index].deliveryStatus = status;
+      var sale = salesHistory[index];
+      sale.deliveryStatus = status;
+
+      if (status === "Delivered") {
+        if (!sale.deliveredDate) {
+          var d = new Date();
+          sale.deliveredDate = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+        }
+        sale.deliveredService = sale.deliveryService || "-";
+        sale.deliveredAmount  = calculateReceived(sale).received;
+      } else {
+        // Delivered မဟုတ်တော့ရင် Income စာရင်းထဲက ထုတ်
+        delete sale.deliveredDate;
+        delete sale.deliveredService;
+        delete sale.deliveredAmount;
+      }
+
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
       openCardIndex = index;
       renderCards();  // reload အစား render ပဲ
@@ -752,7 +771,12 @@
 
     // ── Save Delivery Fee ─────────────────────────────────────────
     function saveDeliFee(index, value) {
-      salesHistory[index].deliveryFeeReal = value;
+      var sale = salesHistory[index];
+      sale.deliveryFeeReal = value;
+      // Delivered ပြီးသား ဆိုရင် Income amount ကို ပြန်တွက်ပေး (fee နောက်ကျပြင်လည်း မှန်အောင်)
+      if (sale.deliveryStatus === "Delivered") {
+        sale.deliveredAmount = calculateReceived(sale).received;
+      }
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
       openCardIndex = index;
       renderCards();
