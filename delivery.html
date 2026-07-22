@@ -981,7 +981,13 @@
       var sales = JSON.parse(localStorage.getItem("salesHistory")) || [];
       document.querySelectorAll("#cardList .card").forEach(function (card){
         var sale = sales[idxOf(card)] || {};
-        var matchText   = card.innerText.toLowerCase().indexOf(kw) >= 0;
+        var matchText = card.innerText.toLowerCase().indexOf(kw) >= 0;
+        if (!matchText && kw) {
+          var codes = parcelCodesOf(sale);
+          matchText = codes.some(function (code) {
+            return String(code || "").toLowerCase().indexOf(kw) >= 0;
+          });
+        }
         var matchSvc    = (svc === "all") || ((sale.deliveryService || "") === svc);
         var matchStatus = (sf === "all") || card.classList.contains(sf);
         var matchDate   = _inDateRange(sale.orderDate);
