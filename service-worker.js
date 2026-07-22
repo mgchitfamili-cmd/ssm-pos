@@ -2,7 +2,7 @@
 const CACHE = 'ssm-pos-v162';
 const ASSETS = [
   './', 'index.html', 'receipts.html', 'products.html', 'staff.html',
-  'delivery.html', 'payments.html', 'report.html', 'setting.html', 'print.html', 'income.html',
+  'delivery.html', 'payments.html', 'report.html', 'setting.html', 'print.html',
   'receipt.js', 'menu-logo.js', 'firebase-init.js', 'login.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'icon-180.png'
 ];
 
