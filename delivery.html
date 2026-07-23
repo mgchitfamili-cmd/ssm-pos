@@ -627,11 +627,45 @@
     }
 
     // ── Save Status (reload မလုပ်တော့ဘူး) ─────────────────────────
+    // Root cause fix: this used to only write deliveryStatus, so income.html
+    // (which needs deliveryStatus === "Delivered" AND deliveredDate) never
+    // saw the order. syncDeliveredFields() now writes every field income.html
+    // depends on, in the same localStorage write, whenever status = Delivered.
     function saveStatus(index, status) {
+      var prevStatus = salesHistory[index].deliveryStatus;
       salesHistory[index].deliveryStatus = status;
+      // Re-entering Delivered after being reverted (Pending/RTS) should
+      // capture a fresh delivery date, not reuse a stale one from before.
+      if (status === "Delivered" && prevStatus !== "Delivered") {
+        salesHistory[index].deliveredDate = "";
+      }
+      syncDeliveredFields(index);
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+      document.dispatchEvent(new CustomEvent("ssm-sales-updated"));
       openCardIndex = index;
       renderCards();  // reload အစား render ပဲ
+    }
+
+    // ── Sync fields required by income.html ("Delivery ဆီမှရငွေ") ──
+    // Called any time deliveryStatus or a value feeding calculateReceived()
+    // changes, so deliveredDate/deliveredService/deliveredAmount never fall
+    // out of sync with what's shown in this dashboard.
+    // - deliveredDate is set ONCE (first time an order becomes Delivered) so
+    //   re-saving other fields later doesn't shift the order to a new day
+    //   in the Income list.
+    // - deliveredService / deliveredAmount are recalculated every time, so
+    //   editing the Royal delivery fee after delivery keeps Income accurate.
+    function syncDeliveredFields(index) {
+      var sale = salesHistory[index];
+      if (!sale || sale.deliveryStatus !== "Delivered") return;
+
+      if (!sale.deliveredDate) {
+        var d = new Date();
+        var pad = function (n) { return String(n).padStart(2, "0"); };
+        sale.deliveredDate = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+      }
+      sale.deliveredService = sale.deliveryService || "-";
+      sale.deliveredAmount  = calculateReceived(sale).received;
     }
 
     // ── Parcel Tracking Codes (Parcel 1, 2, 3... same order/receipt, ကုန်ပစ္စည်း/COD မခွဲ) ─
@@ -768,7 +802,9 @@
     // ── Save Delivery Fee ─────────────────────────────────────────
     function saveDeliFee(index, value) {
       salesHistory[index].deliveryFeeReal = value;
+      syncDeliveredFields(index);  // keep deliveredAmount accurate if already Delivered
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+      document.dispatchEvent(new CustomEvent("ssm-sales-updated"));
       openCardIndex = index;
       renderCards();
     }
