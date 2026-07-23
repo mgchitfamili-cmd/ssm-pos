@@ -111,20 +111,33 @@
     html.dark .nocode-banner{ background:rgba(220,38,38,.15); border-color:rgba(248,113,113,.4); color:#f87171; }
 
     /* detail */
-    .card-detail{ display:none; padding:4px 14px 14px; border-top:1px solid var(--line); }
-    .field{ margin:11px 0; }
-    .field label{ font-size:12.5px; font-weight:600; color:var(--ink-2); display:block; margin-bottom:5px; }
+    .card-detail{ display:none; padding:4px 14px 10px; border-top:1px solid var(--line); }
+    .field{ margin:5px 0; }
+    .field label{ font-size:12.5px; font-weight:600; color:var(--ink-2); display:block; margin-bottom:3px; }
     .field input, .field select{ padding:11px 12px; width:100%; font-size:15px; line-height:1.45;
       color:var(--ink); background:#fff; border:1px solid var(--line-2); border-radius:var(--r-sm);
       outline:none; -webkit-appearance:none; appearance:none; font-family:inherit; }
     .field input:focus, .field select:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
-    .field-row{ display:flex; gap:10px; }
-    .field-row .field{ flex:1; min-width:0; }
+    .field-row{ display:flex; gap:8px; flex-wrap:nowrap; align-items:stretch; }
+    .field-row .field{ flex:1; min-width:0; display:flex; flex-direction:column; }
+    /* Status: wide enough that "Delivered" (the longest option) never clips */
+    .field-row .field-status{ flex:1 1 90px; min-width:88px; max-width:160px; }
+    /* Delivery Code: shrinks/grows with remaining space but always fits e.g. ABC123456 */
+    .field-row .field-code{ flex:2 1 110px; min-width:108px; }
+    /* Photo: intentionally the smallest of the three, but wide enough for icon + text to sit comfortably */
+    .field-row .field-photo{ flex:0 0 78px; width:78px; min-width:74px; max-width:90px; }
+    /* select/input stretch to fill the row (matches whatever height the row ends up at, instead of a fixed px) */
+    .field-row .field select,
+    .field-row .field input{ flex:1 1 auto; min-height:44px; box-sizing:border-box; padding:0 10px; font-size:14px; }
+    .field-row .field-photo .btn{ width:100%; flex:1 1 auto; min-height:44px; margin:0; padding:0 8px; box-sizing:border-box;
+      border-radius:var(--r-sm); font-size:12px; font-weight:600; line-height:1.15;
+      display:flex; align-items:center; justify-content:center; text-align:center;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .delivery-code-input.code-orange{ border-color:#f59e0b; }
     .delivery-code-input.code-orange:focus{ border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.18); }
     .delivery-code-input.code-green{ border-color:var(--green-line); color:var(--green); font-weight:700; }
     .delivery-code-input.code-green:focus{ border-color:var(--green-line); box-shadow:0 0 0 3px rgba(22,163,74,.15); }
-    .parcel-field{ margin-top:8px; }
+    .parcel-field{ margin-top:4px; }
     .parcel-label{ display:flex; align-items:center; gap:6px; margin-bottom:5px; }
     .parcel-label label{ display:inline; font-size:12.5px; font-weight:600; color:var(--ink-2); margin:0; cursor:pointer; }
     .field .parcel-label input.parcel-ship-cb{
@@ -140,20 +153,23 @@
       border-radius:999px; cursor:pointer; font-family:inherit; display:inline-flex; align-items:center; gap:4px;
     }
     .parcel-add-btn:active{ transform:scale(.96); }
-    .parcel-add-standalone{ margin-top:8px; }
+    .parcel-add-standalone{ margin-top:4px; }
 
-    .info-line{ font-size:13px; margin:7px 0; color:var(--ink-2); }
+    .info-line{ font-size:13px; margin:4px 0; color:var(--ink-2); }
     .info-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 12px; }
-    .info-grid .info-line{ margin:7px 0; }
+    .info-grid .info-line{ margin:4px 0; }
+    .info-grid-summary{ margin:6px 0 8px; padding:8px 9px; background:var(--bg);
+      border:1px solid var(--line); border-radius:10px; }
+    .info-grid-summary .info-line{ margin:3px 0; }
     .info-line b{ color:var(--ink); font-weight:600; }
-    .items-box{ background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:11px 12px;
-      margin:11px 0; font-size:13px; color:var(--ink-2); }
-    .items-box p{ margin:5px 0; }
-    .parcel-line{ font-size:13px; margin:9px 0; color:var(--ink-3); }
+    .items-box{ background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:8px 9px;
+      margin:6px 0; font-size:13px; color:var(--ink-2); }
+    .items-box p{ margin:3px 0; }
+    .parcel-line{ font-size:13px; margin:5px 0; color:var(--ink-3); }
     .received-line{ background:var(--green-tint); border:1px solid var(--green-line); border-radius:10px;
-      padding:11px; margin-top:11px; font-size:15px; font-weight:700; color:var(--green); text-align:center; }
+      padding:8px; margin-top:5px; font-size:15px; font-weight:700; color:var(--green); text-align:center; }
 
-    .detail-actions{ display:flex; gap:8px; margin-top:13px; }
+    .detail-actions{ display:flex; gap:8px; margin-top:8px; }
     .btn{ border:none; padding:11px; border-radius:10px; color:#fff; font-size:13px; font-weight:600;
       cursor:pointer; flex:1; font-family:inherit; transition:transform .05s; }
     .btn:active{ transform:translateY(1px); }
@@ -474,6 +490,10 @@
         // Received calculation
         let received = calculateReceived(sale);
 
+        // Photo button visibility (unchanged condition, computed once so it can be placed in either row)
+        var showPhotoBtn = !(/-WI-/.test(String(sale.orderNo || "")) || sale.payMode);
+        var photoBtnInner = `${sale.deliveryPhoto ? "👁 Photo" : (sale.hasDel || sale._hadDelivery) ? "☁️ Photo" : "📷 Photo"}`;
+
         html += `
           <div class="card ${status} ${_isShop ? 'ShopOrder' : ''}" id="card-${index}">
 
@@ -498,21 +518,17 @@
             <!-- Detail -->
             <div class="card-detail" id="detail-${index}">
 
-              <!-- Status + Code (Royal ရွေးမှသာ Code ပေါ်) -->
+              <!-- Order Summary (Royal Charge / Service / Grand Total / Delivery Fee / Deposit / Net Total) -->
               ${_isShop ? "" : `
-              <div class="field-row">
-                <div class="field">
-                  <label>Status</label>
-                  <select onchange="saveStatus(${index}, this.value)">
-                    <option ${status=="Pending"   ? "selected":""}>Pending</option>
-                    <option ${status=="Delivered" ? "selected":""}>Delivered</option>
-                    <option ${status=="RTS"       ? "selected":""}>RTS</option>
-                  </select>
-                </div>
+              <div class="info-grid info-grid-summary">
+                ${sale.deliveryService == "Royal" ? `<p class="info-line"><b>Royal Charge:</b> ${received.charge}</p>` : `<p class="info-line"></p>`}
+                <p class="info-line"><b>Service:</b> ${sale.deliveryService || "-"}</p>
 
-                ${sale.deliveryService == "Royal" ? renderParcel1Field(sale, index) : ""}
-              </div>
-              ${sale.deliveryService == "Royal" ? renderExtraParcels(sale, index) : ""}`}
+                <p class="info-line"><b>Grand Total:</b> ${sale.grandTotal || 0}</p>
+                <p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}</p>
+                <p class="info-line"><b>Deposit:</b> ${sale.deposit || 0}</p>
+                <p class="info-line"><b>Net Total:</b> ${netNum}</p>
+              </div>`}
 
               <!-- Real Delivery Fee + Received (တစ်တန်းထဲ) -->
               <!-- Received: Online orders သာ ပြပါ — Shop (Walk-in) sale တွေမှာ လုံးဝ ဖျောက် (space မယူ) -->
@@ -542,23 +558,36 @@
                 </div>`}
               </div>` : ""}
 
+              <!-- Status + Code + Photo (Royal ရွေးမှသာ Code ပေါ်) -->
               ${_isShop ? "" : `
-              <div class="info-grid">
-                ${sale.deliveryService == "Royal" ? `<p class="info-line"><b>Royal Charge:</b> ${received.charge}</p>` : `<p class="info-line"></p>`}
-                <p class="info-line"><b>Service:</b> ${sale.deliveryService || "-"}</p>
+              <div class="field-row">
+                <div class="field field-status">
+                  <label>Status</label>
+                  <select onchange="saveStatus(${index}, this.value)">
+                    <option ${status=="Pending"   ? "selected":""}>Pending</option>
+                    <option ${status=="Delivered" ? "selected":""}>Delivered</option>
+                    <option ${status=="RTS"       ? "selected":""}>RTS</option>
+                  </select>
+                </div>
 
-                <p class="info-line"><b>Grand Total:</b> ${sale.grandTotal || 0}</p>
-                <p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}</p>
-                <p class="info-line"><b>Deposit:</b> ${sale.deposit || 0}</p>
-                <p class="info-line"><b>Net Total:</b> ${netNum}</p>
-              </div>`}
+                ${sale.deliveryService == "Royal" ? renderParcel1Field(sale, index) : ""}
+
+                ${showPhotoBtn ? `
+                <div class="field field-photo">
+                  <label style="visibility:hidden;">Photo</label>
+                  <button class="btn btn-photo" onclick="uploadPhoto(${index})">
+                    ${photoBtnInner}
+                  </button>
+                </div>` : ""}
+              </div>
+              ${sale.deliveryService == "Royal" ? renderExtraParcels(sale, index) : ""}`}
 
               <!-- Actions -->
               <div class="detail-actions">
-                ${(/-WI-/.test(String(sale.orderNo || "")) || sale.payMode) ? "" : `
+                ${(_isShop && showPhotoBtn) ? `
                 <button class="btn btn-photo" onclick="uploadPhoto(${index})">
-                  ${sale.deliveryPhoto ? "👁 Photo" : (sale.hasDel || sale._hadDelivery) ? "☁️ Photo" : "📷 Photo"}
-                </button>`}
+                  ${photoBtnInner}
+                </button>` : ""}
                 <button class="btn btn-edit" onclick="editOrder(${index})">✏️ Edit</button>
                 <button class="btn btn-delete admin-del" onclick="deleteOrder(${index})">🗑️ Delete</button>
               </div>
@@ -713,7 +742,7 @@
       var code = codes[0] || "";
       var complete = code.length === 9;
       return `
-                <div class="field">
+                <div class="field field-code">
                   <label>Delivery Code</label>
                   <input
                     class="delivery-code-input ${complete ? "code-green" : "code-orange"}"
