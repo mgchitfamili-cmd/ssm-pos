@@ -116,8 +116,9 @@
     .alert-banner-row .nocode-banner{ margin:0; flex:1 1 0; min-width:0; }
 
     /* 7-day overdue banner — amber, sits beside the code-missing banner */
-    .overdue-banner{ background:var(--amber-tint); border:1px solid var(--amber-line); color:var(--amber); }
+    .overdue-banner{ background:var(--amber-tint); border:1px solid var(--amber-line); color:var(--amber); cursor:pointer; }
     html.dark .overdue-banner{ background:rgba(180,83,9,.18); border-color:rgba(243,212,136,.4); color:#fbbf24; }
+    .overdue-banner.active{ box-shadow:0 0 0 2px var(--amber) inset; }
 
     /* detail */
     .card-detail{ display:none; padding:4px 14px 10px; border-top:1px solid var(--line); }
@@ -427,7 +428,7 @@
 
   <div class="alert-banner-row">
     <div id="noCodeBanner" class="nocode-banner" style="display:none;"></div>
-    <div id="overdueBanner" class="nocode-banner overdue-banner" style="display:none;"></div>
+    <div id="overdueBanner" class="nocode-banner overdue-banner" style="display:none;" onclick="toggleOverdueFilter()"></div>
   </div>
 
   <div id="cardList"></div>
@@ -470,23 +471,35 @@
     }
 
     // ── Order ဖွင့်ပြီး 7 ရက် ကျော်လာလည်း Delivered မဖြစ်သေးတာ ရေတွက် → banner ──
+    function isOverdue(s) {
+      if (!s || s.shopMode) return false; // walk-in orders ကို မရေတွက်ပါ
+      if (s.deliveryStatus === "Delivered") return false;
+      if (!s.orderDate) return false;
+      var opened = new Date(s.orderDate).getTime();
+      if (isNaN(opened)) return false;
+      var SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+      return (Date.now() - opened) >= SEVEN_DAYS;
+    }
+    window.isOverdue = isOverdue;
+    window.overdueFilterActive = false;
+    window.toggleOverdueFilter = function () {
+      window.overdueFilterActive = !window.overdueFilterActive;
+      var b = document.getElementById("overdueBanner");
+      if (b) b.classList.toggle("active", window.overdueFilterActive);
+      if (typeof window.applyDeliveryFilters === "function") window.applyDeliveryFilters();
+    };
+
     function updateOverdueBanner() {
       var arr = [];
       try { arr = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) {}
-      var now = Date.now();
-      var SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
-      var n = arr.filter(function (s) {
-        if (!s || s.shopMode) return false; // walk-in orders ကို မရေတွက်ပါ
-        if (s.deliveryStatus === "Delivered") return false;
-        if (!s.orderDate) return false;
-        var opened = new Date(s.orderDate).getTime();
-        if (isNaN(opened)) return false;
-        return (now - opened) >= SEVEN_DAYS;
-      }).length;
+      var n = arr.filter(isOverdue).length;
       var b = document.getElementById("overdueBanner");
       if (!b) return;
       if (n > 0) { b.style.display = "flex"; b.innerHTML = '⏰ ရက်ကြာ <b style="margin:0 3px">' + n + '</b> ခု'; }
-      else { b.style.display = "none"; }
+      else {
+        b.style.display = "none";
+        if (window.overdueFilterActive) window.toggleOverdueFilter(); // ရှင်းသွားရင် filter ကိုပါ ရှင်းပေး
+      }
     }
 
     function renderCards() {
@@ -1236,7 +1249,8 @@
         var matchSvc    = (svc === "all") || ((sale.deliveryService || "") === svc);
         var matchStatus = (sf === "all") || card.classList.contains(sf);
         var matchDate   = _inDateRange(sale.orderDate);
-        card.style.display = (matchText && matchSvc && matchStatus && matchDate) ? "block" : "none";
+        var matchOverdue = !window.overdueFilterActive || (typeof window.isOverdue === "function" && window.isOverdue(sale));
+        card.style.display = (matchText && matchSvc && matchStatus && matchDate && matchOverdue) ? "block" : "none";
       });
     }
     window.applyDeliveryFilters = applyDeliveryFilters;

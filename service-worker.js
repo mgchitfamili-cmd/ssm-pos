@@ -2,7 +2,7 @@
 // ဒီ file ကို update ထုတ်တိုင်း အောက်က CACHE_NAME ကို v1 → v2 → v3 ... လို့ ပြောင်းပါ
 // (မပြောင်းရင် user တွေရဲ့ browser က ဟောင်းတဲ့ cache version ကို ဆက်သုံးနေမှာမို့
 //  ပြင်ထားတဲ့ ပြောင်းလဲမှုတွေ မမြင်ရနိုင်ပါ)
-const CACHE_NAME = "ssm-delivery-v3";
+const CACHE_NAME = "ssm-delivery-v4";
 
 // App shell — offline ဖြစ်ရင်တောင် ချက်ချင်း ပြန်ဖွင့်လို့ရအောင် အရင်ဆုံး cache ချထားမယ့် file တွေ
 // (relative path — server ပေါ်က ဘယ် folder ထားထားပဲ ဖြစ်ဖြစ် အလုပ်လုပ်အောင်)
