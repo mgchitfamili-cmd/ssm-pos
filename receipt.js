@@ -41,6 +41,18 @@
     return html + '<hr>';
   }
 
+  // Bottom customer block — repeats buyer name/phone/address below the thank-you footer.
+  // Hidden for walk-in sales (same rule as the top block) and hidden entirely if no data.
+  function buildBottomCustomerHTML(sale){
+    if (/-WI-/.test(String(sale.orderNo || "")) || sale.payMode) return "";
+    if (!hasCustomerData(sale)) return "";
+    var html = '<hr>' + '<div class="recv-label mm">ဝယ်သူ</div>';
+    if (sale.customer) html += '<div class="cus-mid">' + sale.customer + '</div>';
+    if (sale.phone) html += '<div class="phone-clear">' + sale.phone + '</div>';
+    if (sale.address) html += '<div class="addr-mm">' + sale.address + '</div>';
+    return html;
+  }
+
   // ဂဏန်း → မြန်မာစာလုံး (ဥပမာ 30000 → "သုံးသောင်းကျပ်")
   function ssmNumToMM(n){
     n = Math.round(Math.abs(Number(n) || 0));
@@ -180,6 +192,8 @@
       '</div>' +
       // footer (ကျေးဇူးတင်စကား) — ထားမယ်
       '<div class="footer-mm">' + footerMsg + '</div>' +
+      // ကျေးဇူးတင်စာ အောက်ဘက်မှာ ဝယ်သူအမည်/ဖုန်း/လိပ်စာ ထပ်ပြ
+      buildBottomCustomerHTML(sale) +
       '<div style="height:22px"></div>';
   }
 
