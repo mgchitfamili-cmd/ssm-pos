@@ -179,14 +179,52 @@
           db.collection(IMG_COL).doc(sid).set(doc, { merge: true })
             .catch(function (e) { console.warn("[img] push failed:", sid, e); });
         };
-        // ပုံ ဖျက် (page တွေက ခေါ်ရန်) — field: "paySS" | "deliveryPhoto"
+        // parcel photo (parcelPhoto0, parcelPhoto1, …) တွေကို sid doc တစ်ခုတည်းထဲ merge မလုပ်ဘဲ
+        // doc သီးခြားစီ ပေးထား — order တစ်ခုမှာ parcel ၄-၅ ခု photo အကုန် တင်ရင်တောင် sid doc တစ်ခုတည်း
+        // 1MB ဂျီးလုံး ကျော်တဲ့ ပြဿနာ မဖြစ်အောင် (photo တစ်ခုစီက သူ့ doc ကိုယ်ပိုင် 1MB budget ရ)
+        function isParcelPhotoField(field) { return /^parcelPhoto\d+$/.test(field); }
+        function imgDocId(sid, field) { return isParcelPhotoField(field) ? (sid + "__" + field) : sid; }
+        // sale တစ်ခု လုံးဝ ဖျက်ချိန် (prune/delete) — main image doc + parcel photo doc (sid__parcelPhotoN) အားလုံး ရှင်းမယ်
+        function ssmDeleteAllImageDocs(sid) {
+          db.collection(IMG_COL).doc(sid).delete().catch(function () {});
+          db.collection(IMG_COL)
+            .where(firebase.firestore.FieldPath.documentId(), ">=", sid + "__")
+            .where(firebase.firestore.FieldPath.documentId(), "<",  sid + "__\uf8ff")
+            .get()
+            .then(function (snap) { snap.forEach(function (d) { d.ref.delete().catch(function () {}); }); })
+            .catch(function () {});
+        }
+
+        // ပုံ ဖျက် (page တွေက ခေါ်ရန်) — field: "paySS" | "deliveryPhoto" | "parcelPhotoN" စတာ ဘာမဆို
         window.ssmDeleteCloudImage = function (orderNo, field) {
           try {
             var sid = sidClean(orderNo); if (!sid) return;
             if (IMG_CACHE[sid]) IMG_CACHE[sid][field] = "";
-            var up = {}; up[field] = firebase.firestore.FieldValue.delete();
-            db.collection(IMG_COL).doc(sid).update(up).catch(function () {});
+            if (isParcelPhotoField(field)) {
+              db.collection(IMG_COL).doc(imgDocId(sid, field)).delete().catch(function () {});
+            } else {
+              var up = {}; up[field] = firebase.firestore.FieldValue.delete();
+              db.collection(IMG_COL).doc(sid).update(up).catch(function () {});
+            }
           } catch (e) {}
+        };
+        // ပုံ cloud ပေါ်ပဲ တင် (device ထဲ လုံးဝ မသိမ်း) — field: "paySS" | "deliveryPhoto" | "parcelPhotoN" စတာ ဘာမဆို
+        // (parcel photo တွေအတွက် သုံးဖို့ — sale object ထဲ dataURL ထည့်စရာ မလို၊ Promise ပြန်ပေး၊ caller ကနေ
+        //  success/fail ကိုသာ .then/.catch နဲ့ handle လုပ်ပါ)
+        window.ssmUploadCloudImage = function (orderNo, field, dataUrl) {
+          return new Promise(function (resolve, reject) {
+            try {
+              var sid = sidClean(orderNo);
+              if (!sid) { reject(new Error("no orderNo")); return; }
+              if (!db)  { reject(new Error("no db")); return; }
+              IMG_CACHE[sid] = IMG_CACHE[sid] || {};
+              IMG_CACHE[sid][field] = dataUrl;
+              var doc = {}; doc[field] = dataUrl; doc.updatedAt = Date.now();
+              db.collection(IMG_COL).doc(imgDocId(sid, field)).set(doc, { merge: true })
+                .then(function () { resolve(); })
+                .catch(function (e) { console.warn("[img] upload failed:", sid, field, e); reject(e); });
+            } catch (e) { reject(e); }
+          });
         };
         // ── one-time migration: local salesHistory ထဲ ကျန်နေတဲ့ inline ပုံတွေ → salesImages ရွှေ့ ──
         try {
@@ -283,7 +321,7 @@
             var sid = sidOf(s);
             if (isOldSale(s) && cloudIds[sid]) {                 // ဟောင်း + cloud မှာ ရှိသေး → cloud ကနေသာ ဖျက် (local မထိ)
               db.collection(SALES).doc(sid).delete().catch(function () {});
-              db.collection(IMG_COL).doc(sid).delete().catch(function () {});   // ပုံ doc ပါ ဖျက်
+              ssmDeleteAllImageDocs(sid);   // ပုံ doc(s) ပါ ဖျက် (main + parcel photo docs)
               delete saleCache[sid];
             }
           });
@@ -340,7 +378,7 @@
           Object.keys(trackedSids).forEach(function (sid) {
             if (!seen[sid]) {
               db.collection(SALES).doc(sid).delete().catch(function () {});
-              db.collection(IMG_COL).doc(sid).delete().catch(function () {});
+              ssmDeleteAllImageDocs(sid);
               delete saleCache[sid];
               markDeleted(sid);
             }
@@ -348,26 +386,43 @@
           trackedSids = seen;
         }
 
-        // ── ပုံ ကြည့်ရန် — memory cache → salesImages → (ဟောင်း) sales doc inline fallback ──
+        // ── ပုံ ကြည့်ရန် — memory cache → salesImages (main doc + parcel photo docs) → (ဟောင်း) sales doc inline fallback ──
+        // ပြန်ပေးတဲ့ object ထဲ main doc field တွေ (paySS/deliveryPhoto) + "sid__parcelPhotoN" doc တွေထဲက
+        // field တွေ အကုန် ပါမယ် — parcel photo count ဘယ်လောက်ရှိမှန်း အရင်သိစရာ မလိုပါ။
         window.ssmGetCloudImages = function (orderNo) {
           return new Promise(function (resolve) {
             try {
               var id = sidClean(orderNo);
               if (!id || !db) { resolve(null); return; }
               var c = IMG_CACHE[id];
-              if (c && (c.paySS || c.deliveryPhoto)) { resolve({ paySS: c.paySS || "", deliveryPhoto: c.deliveryPhoto || "" }); return; }
-              db.collection(IMG_COL).doc(id).get().then(function (snap) {
-                var d = (snap && snap.exists) ? (snap.data() || {}) : {};
-                if (d.paySS || d.deliveryPhoto) {
-                  IMG_CACHE[id] = { paySS: d.paySS || "", deliveryPhoto: d.deliveryPhoto || "" };
-                  resolve(IMG_CACHE[id]); return;
+              if (c && Object.keys(c).length) { resolve(c); return; }
+              db.collection(IMG_COL).doc(id).get().then(function (mainSnap) {
+                var out = {};
+                var d = (mainSnap && mainSnap.exists) ? (mainSnap.data() || {}) : {};
+                for (var k in d) { if (k !== "updatedAt") out[k] = d[k]; }
+
+                db.collection(IMG_COL)
+                  .where(firebase.firestore.FieldPath.documentId(), ">=", id + "__")
+                  .where(firebase.firestore.FieldPath.documentId(), "<",  id + "__\uf8ff")
+                  .get()
+                  .then(function (pSnap) {
+                    pSnap.forEach(function (pd) {
+                      var pdata = pd.data() || {};
+                      for (var k2 in pdata) { if (k2 !== "updatedAt") out[k2] = pdata[k2]; }
+                    });
+                    finish();
+                  })
+                  .catch(function () { finish(); });   // parcel-doc query ကျရင်တောင် main doc data ပဲ ပြန်ပေး
+
+                function finish() {
+                  if (Object.keys(out).length) { IMG_CACHE[id] = out; resolve(out); return; }
+                  // legacy — ဗားရှင်းဟောင်းက sales doc ထဲ inline သိမ်းထားတာ
+                  db.collection(SALES).doc(id).get().then(function (s2) {
+                    if (!s2 || !s2.exists) { resolve(null); return; }
+                    var d2 = s2.data() || {};
+                    resolve({ paySS: d2.paySS || "", deliveryPhoto: d2.deliveryPhoto || "" });
+                  }).catch(function () { resolve(null); });
                 }
-                // legacy — ဗားရှင်းဟောင်းက sales doc ထဲ inline သိမ်းထားတာ
-                db.collection(SALES).doc(id).get().then(function (s2) {
-                  if (!s2 || !s2.exists) { resolve(null); return; }
-                  var d2 = s2.data() || {};
-                  resolve({ paySS: d2.paySS || "", deliveryPhoto: d2.deliveryPhoto || "" });
-                }).catch(function () { resolve(null); });
               }).catch(function () { resolve(null); });
             } catch (e) { resolve(null); }
           });
@@ -423,7 +478,7 @@
               // ဒီ device ကနေ ဖျက်ခဲ့ဖူးတာ — cloud က ပြန်ရောက်လာလည်း local ကို ပြန်မထည့်ဘူး
               // (delete push ကနေ race ဖြစ်ပြီး cloud မှာ ကျန်ခဲ့ရင် ဒီနေရာက ပြန် self-heal ဖျက်ပေးမယ်)
               db.collection(SALES).doc(sid).delete().catch(function () {});
-              db.collection(IMG_COL).doc(sid).delete().catch(function () {});
+              ssmDeleteAllImageDocs(sid);
               return;
             }
             extras.push(byId[sid]);

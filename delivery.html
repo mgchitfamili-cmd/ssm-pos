@@ -112,7 +112,7 @@
 
     /* detail */
     .card-detail{ display:none; padding:4px 14px 10px; border-top:1px solid var(--line); }
-    .field{ margin:5px 0; }
+    .field{ margin:3px 0; }
     .field label{ font-size:12.5px; font-weight:600; color:var(--ink-2); display:block; margin-bottom:3px; }
     .field input, .field select{ padding:11px 12px; width:100%; font-size:15px; line-height:1.45;
       color:var(--ink); background:#fff; border:1px solid var(--line-2); border-radius:var(--r-sm);
@@ -120,6 +120,9 @@
     .field input:focus, .field select:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
     .field-row{ display:flex; gap:8px; flex-wrap:nowrap; align-items:stretch; }
     .field-row .field{ flex:1; min-width:0; display:flex; flex-direction:column; }
+    /* label row ကို ဘယ်နှစ်လိုင်း ဖြစ်ဖြစ် (တစ်လိုင်း/နှစ်လိုင်း) အမြဲ တစ်ကြောင်းတည်း height ချထားပြီး
+       column အားလုံးရဲ့ input/select/button box တွေ တစ်တန်းတည်းမှာ စတင်အောင် (အနိမ့်အမြင့်မညီတာ ပြင်) */
+    .field-row .field label{ line-height:1.3; }
     /* Status: wide enough that "Delivered" (the longest option) never clips */
     .field-row .field-status{ flex:1 1 90px; min-width:88px; max-width:160px; }
     /* Delivery Code: shrinks/grows with remaining space but always fits e.g. ABC123456 */
@@ -137,16 +140,7 @@
     .delivery-code-input.code-orange:focus{ border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.18); }
     .delivery-code-input.code-green{ border-color:var(--green-line); color:var(--green); font-weight:700; }
     .delivery-code-input.code-green:focus{ border-color:var(--green-line); box-shadow:0 0 0 3px rgba(22,163,74,.15); }
-    .parcel-field{ margin-top:4px; }
-    .parcel-label{ display:flex; align-items:center; gap:6px; margin-bottom:5px; }
-    .parcel-label label{ display:inline; font-size:12.5px; font-weight:600; color:var(--ink-2); margin:0; cursor:pointer; }
-    .field .parcel-label input.parcel-ship-cb{
-      -webkit-appearance:checkbox; appearance:checkbox;
-      width:16px; height:16px; padding:0; border:none; border-radius:0;
-      accent-color:var(--green); cursor:pointer; margin:0; flex:none; box-shadow:none;
-    }
-    .parcel-input-row{ display:flex; gap:8px; align-items:center; }
-    .parcel-input-row .parcel-code-input{ width:auto; flex:1 1 auto; max-width:180px; min-width:0; }
+    .parcel-field{ margin-top:2px; }
     .parcel-add-btn{
       flex:none; white-space:nowrap; padding:11px 14px; font-size:12.5px; font-weight:700;
       color:var(--brand); background:var(--brand-tint); border:1px solid var(--brand-line);
@@ -162,6 +156,7 @@
       border:1px solid var(--line); border-radius:10px; }
     .info-grid-summary .info-line{ margin:3px 0; }
     .info-line b{ color:var(--ink); font-weight:600; }
+    .fee-flag{ display:inline-block; font-size:11px; margin-left:2px; vertical-align:middle; }
     .items-box{ background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:8px 9px;
       margin:6px 0; font-size:13px; color:var(--ink-2); }
     .items-box p{ margin:3px 0; }
@@ -428,6 +423,8 @@
   <!-- Hidden file input -->
   <input type="file" id="photoInput" accept="image/*" capture="environment"
          style="display:none" onchange="savePhoto(event)">
+  <input type="file" id="parcelPhotoInput" accept="image/*" capture="environment"
+         style="display:none" onchange="saveParcelPhoto(event)">
 
   <!-- Photo Modal -->
   <div id="photoModal">
@@ -443,6 +440,9 @@
     let salesHistory      = JSON.parse(localStorage.getItem("salesHistory")) || [];
     let currentPhotoIndex = null;
     let currentViewIndex  = null;
+    let currentViewParcelIdx    = null; // null => main deliveryPhoto ကြည့်နေတာ; number => parcel photo idx
+    let currentParcelPhotoIndex = null;
+    let currentParcelPhotoIdx   = null;
     let openCardIndex     = null;  // ဘယ် card ဖွင့်ထားလဲ မှတ်ထားမယ်
 
     // ── Render Cards ──────────────────────────────────────────────
@@ -490,6 +490,12 @@
         // Received calculation
         let received = calculateReceived(sale);
 
+        // Royal Deli Fee + Royal Charge ကို Delivery Fee နဲ့ ယှဉ်ကြည့် (ကျော်ရင် red, မကျော်ရင် green)
+        var royalDeliFeeNum = Number(sale.deliveryFeeReal || 0);
+        var deliFeeAlert = sale.deliveryService == "Royal"
+          ? ((royalDeliFeeNum + received.charge) > Number(sale.delivery || 0) ? "over" : "ok")
+          : null;
+
         // Photo button visibility (unchanged condition, computed once so it can be placed in either row)
         var showPhotoBtn = !(/-WI-/.test(String(sale.orderNo || "")) || sale.payMode);
         var photoBtnInner = `${sale.deliveryPhoto ? "👁 Photo" : (sale.hasDel || sale._hadDelivery) ? "☁️ Photo" : "📷 Photo"}`;
@@ -521,11 +527,11 @@
               <!-- Order Summary (Royal Charge / Service / Grand Total / Delivery Fee / Deposit / Net Total) -->
               ${_isShop ? "" : `
               <div class="info-grid info-grid-summary">
-                ${sale.deliveryService == "Royal" ? `<p class="info-line"><b>Royal Charge:</b> ${received.charge}</p>` : `<p class="info-line"></p>`}
                 <p class="info-line"><b>Service:</b> ${sale.deliveryService || "-"}</p>
+                ${sale.deliveryService == "Royal" ? `<p class="info-line"><b>Royal Charge:</b> ${received.charge}</p>` : `<p class="info-line"></p>`}
 
                 <p class="info-line"><b>Grand Total:</b> ${sale.grandTotal || 0}</p>
-                <p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}</p>
+                <p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}${deliFeeAlert ? ` <span class="fee-flag">${deliFeeAlert === "over" ? "🔴" : "🟢"}</span>` : ""}</p>
                 <p class="info-line"><b>Deposit:</b> ${sale.deposit || 0}</p>
                 <p class="info-line"><b>Net Total:</b> ${netNum}</p>
               </div>`}
@@ -612,13 +618,43 @@
       return n(sale.grandTotal) - n(sale.discountAmount) - n(sale.deposit) + n(sale.delivery);
     }
 
+    // ── +Parcel နှိပ်ပြီး Delivery Code လည်း မထည့်၊ Photo လည်း မတင်ဘဲ ထားခဲ့ရင် (card ပိတ်ချိန်) ပြန်ပျောက်အောင် ──
+    // parcel 1 ကိုတော့ ဘယ်တော့မှ မဖျက်ပါ၊ နောက်ဆုံးက parcel(s) ထဲက အလွတ်ကျန်နေတာကိုပဲ (trailing) ဖယ်ပေးမယ်
+    function pruneEmptyParcels(index) {
+      var sale = salesHistory[index];
+      if (!sale) return false;
+      var codes = parcelCodesOf(sale).slice();
+      var statuses = parcelStatusOf(sale).slice();
+      var photoFlags = parcelPhotoFlagsOf(sale).slice();
+      var changed = false;
+      while (codes.length > 1) {
+        var lastIdx = codes.length - 1;
+        var codeEmpty  = !(codes[lastIdx] || "").trim();
+        var photoEmpty = !photoFlags[lastIdx];
+        if (codeEmpty && photoEmpty) {
+          codes.pop(); statuses.pop(); photoFlags.pop();
+          changed = true;
+        } else break;
+      }
+      if (changed) {
+        sale.deliveryCodes    = codes;
+        sale.parcelStatus     = statuses;
+        sale.parcelPhotoFlags = photoFlags;
+        sale.deliveryCode     = codes[0] || "";
+        localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+      }
+      return changed;
+    }
+
     // ── Toggle Card ───────────────────────────────────────────────
     function toggleCard(index) {
       let detail = document.getElementById("detail-" + index);
 
       if (detail.style.display === "block") {
-        detail.style.display = "none";
+        var pruned = pruneEmptyParcels(index);
         openCardIndex = null;
+        if (pruned) { renderCards(); return; }   // အလွတ် parcel row ပျောက်အောင် ပြန် render
+        detail.style.display = "none";
       } else {
         // တခြား card တွေ ပိတ်မယ်
         document.querySelectorAll(".card-detail").forEach(function (d) {
@@ -699,41 +735,58 @@
 
     // ── Parcel Tracking Codes (Parcel 1, 2, 3... same order/receipt, ကုန်ပစ္စည်း/COD မခွဲ) ─
     // sale.deliveryCodes = ["ABC123456", "XYZ987654", ...] — sale.deliveryCode (ဟောင်း) ကို parcel 1 အဖြစ် backward-compat ထိန်း
-    // sale.parcelShipped = [true, false, ...] — parcel တစ်ခုချင်းစီ ထုတ်ပြီး/မပြီး checkbox state
     function parcelCodesOf(sale) {
       if (Array.isArray(sale.deliveryCodes) && sale.deliveryCodes.length) return sale.deliveryCodes;
       return [sale.deliveryCode || ""];   // ဟောင်း data — parcel 1 တစ်ခုတည်း
     }
-    function parcelShippedOf(sale) {
-      return Array.isArray(sale.parcelShipped) ? sale.parcelShipped : [];
+    // sale.parcelStatus = ["Pending","Delivered","RTS", ...] — parcel တစ်ခုချင်းစီရဲ့ Status (Parcel 1 ကတော့
+    // sale.deliveryStatus ကိုသာ သုံးဆက်၊ ငွေတွက်ချက်မှု (Received/Income) လည်း Parcel 1 status အတိုင်းသာ ဆက်လိုက်နာမယ်)
+    function parcelStatusOf(sale) {
+      return Array.isArray(sale.parcelStatus) ? sale.parcelStatus : [];
+    }
+    // sale.parcelPhotoFlags = [true, false, ...] — parcel photo ကို cloud ပေါ်ပဲ တင်ပြီး
+    // (localStorage ထဲ ပုံ data မသိမ်းပါ — flag (true/false) ပဲ သိမ်းတာမို့ quota မပြည့်ပါ)
+    function parcelPhotoFlagsOf(sale) {
+      return Array.isArray(sale.parcelPhotoFlags) ? sale.parcelPhotoFlags : [];
     }
 
     function renderParcelRow(sale, index, pIdx, isLast) {
       var codes = parcelCodesOf(sale);
-      var shipped = parcelShippedOf(sale);
+      var pStatuses = parcelStatusOf(sale);
+      var photoFlags = parcelPhotoFlagsOf(sale);
       var code = codes[pIdx] || "";
       var complete = code.length === 9;
-      var title = "Delivery Code (Parcel " + (pIdx + 1) + ")";
+      var pStatus = pStatuses[pIdx] || "Pending";
+      var photoBtnInner = photoFlags[pIdx] ? "☁️ Photo" : "📷 Photo";
       return `
-              <div class="field parcel-field">
-                <div class="parcel-label" onclick="event.stopPropagation();">
-                  <input type="checkbox" class="parcel-ship-cb" id="parcel-ship-${index}-${pIdx}"
-                    ${shipped[pIdx] ? "checked" : ""}
-                    onchange="toggleParcelShipped(${index}, ${pIdx}, this.checked)">
-                  <label for="parcel-ship-${index}-${pIdx}">${title}</label>
+              <div class="field-row parcel-field">
+                <div class="field field-status">
+                  <label>Status</label>
+                  <select onchange="saveParcelStatus(${index}, ${pIdx}, this.value)">
+                    <option ${pStatus=="Pending"   ? "selected":""}>Pending</option>
+                    <option ${pStatus=="Delivered" ? "selected":""}>Delivered</option>
+                    <option ${pStatus=="RTS"       ? "selected":""}>RTS</option>
+                  </select>
                 </div>
-                <div class="parcel-input-row">
+                <div class="field field-code">
+                  <label>Delivery Code (P${pIdx + 1})</label>
                   <input
-                    class="delivery-code-input parcel-code-input ${complete ? "code-green" : "code-orange"}"
+                    class="delivery-code-input ${complete ? "code-green" : "code-orange"}"
                     value="${code}"
                     oninput="saveParcelCode(${index}, ${pIdx}, this.value, this)"
                     placeholder="ABC123456"
                     maxlength="9"
                     style="text-transform:uppercase"
                   >
-                  ${isLast ? `<button type="button" class="parcel-add-btn" onclick="addParcel(${index})">+ Parcel</button>` : ""}
                 </div>
-              </div>`;
+                <div class="field field-photo">
+                  <label style="visibility:hidden;">Photo</label>
+                  <button class="btn btn-photo" onclick="uploadParcelPhoto(${index}, ${pIdx})">
+                    ${photoBtnInner}
+                  </button>
+                </div>
+              </div>
+              ${isLast ? `<button type="button" class="parcel-add-btn parcel-add-standalone" onclick="addParcel(${index})">+ Parcel</button>` : ""}`;
     }
 
     // Parcel 1 — checkbox/button မပါ (ဟောင်း pattern အတိုင်း ရိုးရိုး Delivery Code field)
@@ -771,14 +824,15 @@
       return html;
     }
 
-    // ── Parcel Shipped checkbox ───────────────────────────────────
-    function toggleParcelShipped(index, parcelIdx, checked) {
+    // ── Parcel Status (Parcel တစ်ခုချင်းစီ Pending/Delivered/RTS — ငွေတွက်ချက်မှု/Income ကိုတော့
+    //    Parcel 1 ရဲ့ sale.deliveryStatus အတိုင်းသာ ဆက်ယူမယ်၊ ဒီ status က display/tracking ရည်ရွယ်ချက်ပဲ) ──
+    function saveParcelStatus(index, parcelIdx, status) {
       var sale = salesHistory[index];
-      var shipped = parcelShippedOf(sale).slice();
-      shipped[parcelIdx] = checked;
-      sale.parcelShipped = shipped;
+      var statuses = parcelStatusOf(sale).slice();
+      statuses[parcelIdx] = status;
+      sale.parcelStatus = statuses;
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
-      // render မလုပ်ဘူး — checkbox state ကိုယ်တိုင်က visual ပြောင်းပေးပြီးသားမို့
+      // render မလုပ်ဘူး — select ကိုယ်တိုင်က visual ပြောင်းပေးပြီးသားမို့
     }
 
     // ── Save Parcel Code (parcel တစ်ခုချင်းစီ) ──────────────────────
@@ -810,11 +864,11 @@
     function addParcel(index) {
       var sale = salesHistory[index];
       var codes = parcelCodesOf(sale).slice();
-      var shipped = parcelShippedOf(sale).slice();
+      var statuses = parcelStatusOf(sale).slice();
       codes.push("");
-      shipped.push(false);
+      statuses.push("Pending");
       sale.deliveryCodes = codes;
-      sale.parcelShipped = shipped;
+      sale.parcelStatus = statuses;
       sale.deliveryCode  = codes[0] || "";
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
       openCardIndex = index;
@@ -912,8 +966,91 @@
       reader.readAsDataURL(file);
     }
 
+    // ── Parcel Photo Upload (cloud ပေါ်ပဲ တင်မယ် — device ထဲ dataURL သိမ်းမည်မဟုတ်) ──
+    function uploadParcelPhoto(index, pIdx) {
+      var sale = salesHistory[index];
+      var flags = parcelPhotoFlagsOf(sale);
+      if (flags[pIdx]) { viewParcelPhoto(index, pIdx); return; }
+      currentParcelPhotoIndex = index;
+      currentParcelPhotoIdx   = pIdx;
+      var el = document.getElementById("parcelPhotoInput");
+      el.value = "";   // ဖိုင်နာမည်တူ capture များမှာပါ onchange ပြန်fire ဖို့ reset
+      el.click();
+    }
+
+    function saveParcelPhoto(event) {
+      var input = event.target;
+      var file = input.files[0];
+      if (!file) return;
+      var index = currentParcelPhotoIndex, pIdx = currentParcelPhotoIdx;
+
+      if (!window.ssmUploadCloudImage) {
+        input.value = "";
+        alert("Cloud ချိတ်ဆက်မှု မတွေ့ပါ — parcel photo ကို cloud ပေါ်ပဲ တင်ဖို့ ဖြစ်လို့ internet/setup စစ်ပါ။");
+        return;
+      }
+
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onload = function () {
+          // ── Resize (upload မြန်အောင်) ──
+          var MAX = 800;
+          var w = img.width, h = img.height;
+          if (w > h && w > MAX)       { h = Math.round(h * MAX / w); w = MAX; }
+          else if (h >= w && h > MAX) { w = Math.round(w * MAX / h); h = MAX; }
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          var dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+
+          var sale = salesHistory[index];
+          var key  = "parcelPhoto" + pIdx;
+          window.ssmUploadCloudImage(sale.orderNo, key, dataUrl).then(function () {
+            var flags = parcelPhotoFlagsOf(sale).slice();
+            flags[pIdx] = true;
+            sale.parcelPhotoFlags = flags;
+            localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+            input.value = "";
+            openCardIndex = index;
+            renderCards();  // reload အစား
+          }).catch(function () {
+            input.value = "";
+            alert("Cloud ပေါ်ကို ဓာတ်ပုံ တင်လို့ မရပါ — internet စစ်ပြီး ပြန်ကြိုးစားပါ။");
+          });
+        };
+        img.onerror = function () {
+          input.value = "";
+          alert("ဓာတ်ပုံ ဖတ်လို့ မရပါ။ ပြန်ကြိုးစားပါ။");
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function viewParcelPhoto(index, pIdx) {
+      currentViewIndex      = index;
+      currentViewParcelIdx  = pIdx;
+      var sale  = salesHistory[index];
+      var imgEl = document.getElementById("modalImage");
+      var modal = document.getElementById("photoModal");
+      imgEl.removeAttribute("src");
+      imgEl.alt = "☁️ cloud ကနေ ဆွဲနေသည် ...";
+      modal.style.display = "flex";
+      if (window.ssmGetCloudImages) {
+        window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
+          var key = "parcelPhoto" + pIdx;
+          if (imgs && imgs[key]) imgEl.src = imgs[key];
+          else imgEl.alt = "ပုံ မတွေ့ပါ — internet စစ်ပါ / Backup မှာ ကြည့်ပါ";
+        });
+      } else {
+        imgEl.alt = "cloud sync မရနိုင်ပါ";
+      }
+    }
+
     function viewPhoto(index) {
-      currentViewIndex = index;
+      currentViewIndex     = index;
+      currentViewParcelIdx = null;
       var sale = salesHistory[index];
       var imgEl = document.getElementById("modalImage");
       var modal = document.getElementById("photoModal");
@@ -938,15 +1075,25 @@
 
     function closePhoto() {
       document.getElementById("photoModal").style.display = "none";
+      currentViewParcelIdx = null;
     }
 
     function deletePhoto() {
+      var isParcel = currentViewParcelIdx !== null && currentViewParcelIdx !== undefined;
       showConfirm("ဒီ photo ကို ဖျက်မှာလား?", function () {
         var _ds = salesHistory[currentViewIndex];
-        _ds.deliveryPhoto  = "";
-        _ds.deliveryParcel = false;
-        _ds.hasDel = false; _ds._hadDelivery = false;
-        if (window.ssmDeleteCloudImage) window.ssmDeleteCloudImage(_ds.orderNo, "deliveryPhoto");
+        if (isParcel) {
+          var key = "parcelPhoto" + currentViewParcelIdx;
+          var flags = parcelPhotoFlagsOf(_ds).slice();
+          flags[currentViewParcelIdx] = false;
+          _ds.parcelPhotoFlags = flags;
+          if (window.ssmDeleteCloudImage) window.ssmDeleteCloudImage(_ds.orderNo, key);
+        } else {
+          _ds.deliveryPhoto  = "";
+          _ds.deliveryParcel = false;
+          _ds.hasDel = false; _ds._hadDelivery = false;
+          if (window.ssmDeleteCloudImage) window.ssmDeleteCloudImage(_ds.orderNo, "deliveryPhoto");
+        }
         localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
         closePhoto();
         openCardIndex = currentViewIndex;
