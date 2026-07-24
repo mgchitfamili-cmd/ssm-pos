@@ -60,20 +60,10 @@
       font-size: 11px; margin-top: 6px; line-height: 1.4;
     }
 
-    .cut-line{
-      text-align:center; font-family:'Courier New',monospace; font-size:11px;
-      color:#9aa0ab; letter-spacing:1px; margin:10px auto; max-width:340px;
-    }
-    .copy-tag{
-      text-align:center; font-family:Arial,sans-serif; font-size:10px; font-weight:700;
-      letter-spacing:.05em; text-transform:uppercase; color:#666; margin-bottom:2px;
-    }
-
     @media print {
       body { background: white; padding: 0; margin: 0; }
       .btn-bar { display: none; }
-      #receipt, #receipt2 { width: 80mm; padding: 2mm 2mm 12mm; margin: 0; border:none; border-radius:0; box-shadow:none; }
-      .cut-line { max-width:none; color:#000; }
+      #receipt { width: 80mm; padding: 2mm 2mm 12mm; margin: 0; border:none; border-radius:0; box-shadow:none; }
       @page { size: 80mm auto; margin: 0; }
     }
   </style>
@@ -87,9 +77,6 @@
   </div>
 
   <div id="receipt"></div>
-  <div class="cut-line">✂ - - - - - - - - - - - - - - - - - - - - - -</div>
-  <div class="copy-tag">မိတ္တူ (Copy)</div>
-  <div id="receipt2"></div>
 
   <script>
     let sale = JSON.parse(localStorage.getItem("printReceipt"));
@@ -101,7 +88,6 @@
     }
 
     ssmRenderReceipt(document.getElementById("receipt"), sale);
-    ssmRenderReceipt(document.getElementById("receipt2"), sale);
   </script>
 </body>
 </html>
