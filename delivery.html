@@ -150,6 +150,14 @@
     .delivery-code-input.code-orange:focus{ border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.18); }
     .delivery-code-input.code-green{ border-color:var(--green-line); color:var(--green); font-weight:700; }
     .delivery-code-input.code-green:focus{ border-color:var(--green-line); box-shadow:0 0 0 3px rgba(22,163,74,.15); }
+    .delifee-row{ display:flex; gap:6px; align-items:stretch; }
+    .delifee-row input{ flex:1 1 auto; min-width:0; }
+    .delifee-add-btn{ flex:none; width:38px; min-height:44px; padding:0; border-radius:var(--r-sm);
+      border:1px solid var(--brand-line); background:var(--brand-tint); color:var(--brand);
+      font-size:20px; font-weight:700; line-height:1; cursor:pointer; font-family:inherit; }
+    .delifee-add-btn:active{ transform:scale(.94); }
+    .delifee-count{ display:inline-block; margin-left:4px; padding:1px 7px; border-radius:999px;
+      background:var(--brand-tint); color:var(--brand); font-size:11px; font-weight:700; vertical-align:middle; }
     .parcel-field{ margin-top:2px; }
     .parcel-add-btn{
       flex:none; white-space:nowrap; padding:11px 14px; font-size:12.5px; font-weight:700;
@@ -172,7 +180,7 @@
     .items-box p{ margin:3px 0; }
     .parcel-line{ font-size:13px; margin:5px 0; color:var(--ink-3); }
     .received-line{ background:var(--green-tint); border:1px solid var(--green-line); border-radius:10px;
-      padding:8px; margin-top:5px; font-size:15px; font-weight:700; color:var(--green); text-align:center; }
+      padding:8px; margin-top:5px; font-size:18px; font-weight:800; color:var(--green); text-align:center; }
 
     .detail-actions{ display:flex; gap:8px; margin-top:8px; }
     .btn{ border:none; padding:11px; border-radius:10px; color:#fff; font-size:13px; font-weight:600;
@@ -588,12 +596,15 @@
               <div class="field-row">
                 ${sale.deliveryService == "Royal" ? `
                 <div class="field"${_isShop ? ' style="flex:1;"' : ''}>
-                  <label>Royal Deli Fee</label>
-                  <input
-                    value="${sale.deliveryFeeReal || ''}"
-                    onchange="saveDeliFee(${index}, this.value)"
-                    placeholder="0"
-                  >
+                  <label>Royal Deli Fee ${Number(sale.deliveryFeeCount || 0) > 1 ? `<span class="delifee-count">x${sale.deliveryFeeCount}</span>` : ''}</label>
+                  <div class="delifee-row">
+                    <input
+                      value="${sale.deliveryFeeReal || ''}"
+                      onchange="saveDeliFeeManual(${index}, this.value)"
+                      placeholder="0"
+                    >
+                    <button type="button" class="delifee-add-btn" onclick="addDeliFee(${index})">+</button>
+                  </div>
                 </div>
                 ${_isShop ? "" : `
                 <div class="field" style="flex:1;">
@@ -936,6 +947,27 @@
       document.dispatchEvent(new CustomEvent("ssm-sales-updated"));
       openCardIndex = index;
       renderCards();
+    }
+
+    // ── Manual typing (not via "+") clears the add-count badge ──
+    function saveDeliFeeManual(index, value) {
+      salesHistory[index].deliveryFeeCount = 0;
+      saveDeliFee(index, value);
+    }
+
+    // ── Royal Deli Fee ကို ပါဆယ်တစ်ခုချင်းအလိုက် ပေါင်းထည့် ("+" ခလုတ်) ──
+    function addDeliFee(index) {
+      var val = prompt("ပေါင်းထည့်မယ့် ပမာဏ ထည့်ပါ (ဥပမာ 400)", "");
+      if (val === null) return;
+      val = val.trim();
+      if (val === "") return;
+      var add = Number(val);
+      if (isNaN(add)) { alert("ဂဏန်းသာ ထည့်ပါ။"); return; }
+      var sale = salesHistory[index];
+      var current = Number(sale.deliveryFeeReal || 0);
+      var prevCount = Number(sale.deliveryFeeCount || (current > 0 ? 1 : 0));
+      sale.deliveryFeeCount = prevCount + 1;
+      saveDeliFee(index, current + add);
     }
 
     // ── Calculate Received & Charge ───────────────────────────────
