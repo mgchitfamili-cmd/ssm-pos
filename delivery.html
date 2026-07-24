@@ -110,6 +110,14 @@
       font-size:14px; font-weight:700; align-items:center; gap:8px; }
     html.dark .nocode-banner{ background:rgba(220,38,38,.15); border-color:rgba(248,113,113,.4); color:#f87171; }
 
+    /* Row that holds the alert banners side-by-side */
+    .alert-banner-row{ display:flex; gap:8px; margin:0 14px 12px; }
+    .alert-banner-row .nocode-banner{ margin:0; flex:1 1 0; min-width:0; }
+
+    /* 7-day overdue banner — amber, sits beside the code-missing banner */
+    .overdue-banner{ background:var(--amber-tint); border:1px solid var(--amber-line); color:var(--amber); }
+    html.dark .overdue-banner{ background:rgba(180,83,9,.18); border-color:rgba(243,212,136,.4); color:#fbbf24; }
+
     /* detail */
     .card-detail{ display:none; padding:4px 14px 10px; border-top:1px solid var(--line); }
     .field{ margin:3px 0; }
@@ -416,7 +424,10 @@
     <button class="dr-clear" onclick="clearDateRange()" aria-label="Clear">✕</button>
   </div>
 
-  <div id="noCodeBanner" class="nocode-banner" style="display:none;"></div>
+  <div class="alert-banner-row">
+    <div id="noCodeBanner" class="nocode-banner" style="display:none;"></div>
+    <div id="overdueBanner" class="nocode-banner overdue-banner" style="display:none;"></div>
+  </div>
 
   <div id="cardList"></div>
 
@@ -457,6 +468,26 @@
       else { b.style.display = "none"; }
     }
 
+    // ── Order ဖွင့်ပြီး 7 ရက် ကျော်လာလည်း Delivered မဖြစ်သေးတာ ရေတွက် → banner ──
+    function updateOverdueBanner() {
+      var arr = [];
+      try { arr = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) {}
+      var now = Date.now();
+      var SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+      var n = arr.filter(function (s) {
+        if (!s || s.shopMode) return false; // walk-in orders ကို မရေတွက်ပါ
+        if (s.deliveryStatus === "Delivered") return false;
+        if (!s.orderDate) return false;
+        var opened = new Date(s.orderDate).getTime();
+        if (isNaN(opened)) return false;
+        return (now - opened) >= SEVEN_DAYS;
+      }).length;
+      var b = document.getElementById("overdueBanner");
+      if (!b) return;
+      if (n > 0) { b.style.display = "flex"; b.innerHTML = '⏰ ရက်ကြာ <b style="margin:0 3px">' + n + '</b> ခု'; }
+      else { b.style.display = "none"; }
+    }
+
     function renderCards() {
       salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
       // walk-in (ဆိုင်ရောင်း) — parcel အလိုအလျောက် ထုတ်ပြီး (badge ✅ ဖြစ်အောင်)
@@ -468,6 +499,7 @@
         if (fixed) localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
       })();
       updateNoCodeBanner();
+      updateOverdueBanner();
       let html = "";
 
       if (salesHistory.length === 0) {
