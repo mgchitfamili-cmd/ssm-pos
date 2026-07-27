@@ -8,6 +8,8 @@
 
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="firebase-init.js"></script>
+  <script src="payment-methods.js"></script>
+  <script src="payments-store.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6d28d9">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -386,12 +388,7 @@
       <div id="prepaidFields">
         <label>Online Payment Type</label>
         <select id="payType">
-          <option value="">ရွေးပါ</option>
-          <option value="KPay">KPay</option>
-          <option value="Wave Pay">Wave Pay</option>
-          <option value="AYA Pay">AYA Pay</option>
-          <option value="CB Pay">CB Pay</option>
-          <option value="Mobile Banking">Mobile Banking</option>
+          <!-- Options are rendered by PaymentMethods.renderOptions() — see payment-methods.js -->
         </select>
 
         <label>ငွေလွှဲ Screenshot (ပုံ ထည့်မှ Code ထည့်လို့ရ)</label>
@@ -440,6 +437,12 @@
     let payingIndex  = null;
     let payingOrderNo = null;
     let tempSS       = "";       // ယာယီ SS data
+
+    // Payment method options come from the shared payment-methods.js module
+    // (single source of truth — see that file for details).
+    if (window.PaymentMethods) {
+      PaymentMethods.renderOptions(document.getElementById("payType"), { placeholder: "ရွေးပါ" });
+    }
 
     // ── Render List ───────────────────────────────────────────────
     function renderHistory() {

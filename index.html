@@ -10,6 +10,8 @@
 
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="firebase-init.js"></script>
+  <script src="payment-methods.js"></script>
+  <script src="payments-store.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6d28d9">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -864,12 +866,7 @@
               <div>
                 <label class="oppay-lbl">Online Payment Type</label>
                 <select id="depPayType" onchange="resetDepConfirm()">
-                  <option value="">— ရွေးပါ —</option>
-                  <option value="KPay">KPay</option>
-                  <option value="Wave Pay">Wave Pay</option>
-                  <option value="AYA Pay">AYA Pay</option>
-                  <option value="CB Pay">CB Pay</option>
-                  <option value="Mobile Banking">Mobile Banking</option>
+                  <!-- Options are rendered by PaymentMethods.renderOptions() — see payment-methods.js -->
                 </select>
               </div>
               <div>
@@ -953,6 +950,12 @@
     let savedData  = null;
     let editIndex  = null;
     let orderNo    = Number(localStorage.getItem("orderNo")) || 1;
+
+    // Payment method options come from the shared payment-methods.js module
+    // (single source of truth — see that file for details).
+    if (window.PaymentMethods) {
+      PaymentMethods.renderOptions(document.getElementById("depPayType"));
+    }
 
     // order number မှာ device code ထည့် (device အလိုက် unique — sync collision မဖြစ်အောင်)
     function ssmOrderNo(n){
