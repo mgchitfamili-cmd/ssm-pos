@@ -1484,7 +1484,16 @@
 
       let netStatusLabel = document.getElementById("netStatusLabel");
       if (netStatusLabel) {
-        if (onlinePayTotal >= totalWithDelivery) {
+        if (getAppMode() === "shop") {
+          // Shop mode: Cash / Online & Cash / Fully Online — auto, ပို့ခနှင့် မသက်ဆိုင်
+          if (onlinePayTotal <= 0) {
+            netStatusLabel.textContent = "လက်ငင်း (Cash)";
+          } else if (onlinePayTotal >= totalWithDelivery) {
+            netStatusLabel.textContent = "Fully Online payment";
+          } else {
+            netStatusLabel.textContent = "Online & Cash";
+          }
+        } else if (onlinePayTotal >= totalWithDelivery) {
           // ပစ္စည်းဖိုး + ပို့ခ အကုန် Deposit ဖြင့် ရှင်းပြီးသား
           netStatusLabel.textContent = "ပစ္စည်းဖိုး + ပို့ခ အပါ ရှင်းပြီး";
         } else if (delivery > 0 && onlinePayTotal >= itemNet) {
@@ -1509,6 +1518,14 @@
       let onlinePayTotal = selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
       let itemNet = grandTotal - discountAmount;
       let totalWithDelivery = itemNet + delivery;
+
+      if (getAppMode() === "shop") {
+        // Shop mode: Cash / Online & Cash / Fully Online — ပို့ခနှင့် မသက်ဆိုင်ဘဲ
+        // online payment ရှိ/မရှိအတိုင်း auto သတ်မှတ်
+        if (onlinePayTotal <= 0) return "COD";        // လက်ငင်း (Cash)
+        if (onlinePayTotal >= totalWithDelivery) return "Prepaid"; // Fully Online payment
+        return "Partial";                              // Online & Cash
+      }
 
       if (onlinePayTotal >= totalWithDelivery) return "Prepaid";
       if (delivery > 0 && onlinePayTotal >= itemNet) return "Partial";
