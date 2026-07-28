@@ -129,11 +129,15 @@
 
     /* SS photo picker */
     .ss-picker{ display:flex; align-items:center; justify-content:space-between; gap:8px;
-      border:1px dashed var(--line-2); border-radius:var(--r-sm); padding:8px 10px;
-      cursor:pointer; background:#fafafc; min-height:44px; }
-    .ss-picker-empty{ display:flex; align-items:center; gap:7px; color:var(--ink-2);
-      font-size:13.5px; font-weight:600; }
-    .ss-picker-empty span:first-child{ font-size:17px; }
+      border:1px dashed var(--line-2); border-radius:var(--r-sm); padding:8px;
+      background:#fafafc; min-height:44px; }
+    .ss-picker-empty{ display:flex; align-items:stretch; gap:8px; width:100%; }
+    .ss-choice-btn{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+      color:var(--ink-2); font-size:13px; font-weight:600; background:#fff; white-space:nowrap;
+      border:1px solid var(--line-2); border-radius:var(--r-sm); padding:14px 4px;
+      cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .ss-choice-btn:active{ background:var(--line); }
+    .ss-choice-btn span:first-child{ font-size:22px; line-height:1; }
     .ss-picker img{ width:40px; height:40px; object-fit:cover; border-radius:8px; flex:none; }
     .ss-remove{ flex:none; width:30px; height:30px; padding:0; border-radius:8px; background:#fff;
       color:var(--red); border:1px solid var(--red-line); font-size:13px; display:flex;
@@ -322,18 +326,24 @@
             <label class="lbl">ငွေလွှဲ ID (6 လုံး)</label>
             <input id="payTransferId" maxlength="6" inputmode="numeric" placeholder="ဥပမာ 123456">
           </div>
-          <div class="field">
-            <label class="lbl">ငွေလွှဲ SS</label>
-            <div class="ss-picker" id="ssPicker" onclick="document.getElementById('paySSFile').click()">
-              <div class="ss-picker-empty" id="ssPickerEmpty">
-                <span>📷</span><span>ဓါတ်ပုံ ရွေးရန်</span>
-              </div>
-              <img id="ssPreviewImg" style="display:none;" onclick="event.stopPropagation(); viewSSImage();" alt="SS">
-              <button type="button" class="ss-remove" id="ssRemoveBtn" style="display:none;"
-                onclick="event.stopPropagation(); clearSSImage();" aria-label="Remove">✕</button>
+        </div>
+        <div class="field">
+          <label class="lbl">ငွေလွှဲ SS</label>
+          <div class="ss-picker" id="ssPicker">
+            <div class="ss-picker-empty" id="ssPickerEmpty">
+              <button type="button" class="ss-choice-btn" onclick="document.getElementById('paySSFileGallery').click()">
+                <span>📁</span><span>Folder ထဲက ယူရန်</span>
+              </button>
+              <button type="button" class="ss-choice-btn" onclick="document.getElementById('paySSFileCamera').click()">
+                <span>📷</span><span>ပုံရိုက်ရန်</span>
+              </button>
             </div>
-            <input type="file" id="paySSFile" accept="image/*" style="display:none" onchange="handleSSFile(event)">
+            <img id="ssPreviewImg" style="display:none;" onclick="viewSSImage();" alt="SS">
+            <button type="button" class="ss-remove" id="ssRemoveBtn" style="display:none;"
+              onclick="clearSSImage();" aria-label="Remove">✕</button>
           </div>
+          <input type="file" id="paySSFileGallery" accept="image/*" style="display:none" onchange="handleSSFile(event)">
+          <input type="file" id="paySSFileCamera" accept="image/*" capture="environment" style="display:none" onchange="handleSSFile(event)">
         </div>
         <div class="field">
           <label class="lbl">လွှဲသူ နာမည် / ဖုန်း <span style="font-weight:500;color:var(--ink-3);">(optional)</span></label>
@@ -531,7 +541,13 @@
       let img = document.getElementById("ssPreviewImg");
       img.src = ""; img.style.display = "none";
       let empty = document.getElementById("ssPickerEmpty");
-      empty.innerHTML = '<span>📷</span><span>ဓါတ်ပုံ ရွေးရန်</span>';
+      empty.innerHTML =
+        '<button type="button" class="ss-choice-btn" onclick="document.getElementById(\'paySSFileGallery\').click()">' +
+          '<span>📁</span><span>Folder ထဲက ယူရန်</span>' +
+        '</button>' +
+        '<button type="button" class="ss-choice-btn" onclick="document.getElementById(\'paySSFileCamera\').click()">' +
+          '<span>📷</span><span>ပုံရိုက်ရန်</span>' +
+        '</button>';
       empty.style.display = "flex";
       document.getElementById("ssRemoveBtn").style.display = "none";
     }
