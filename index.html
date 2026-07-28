@@ -425,7 +425,7 @@
     }
     .checkout-bar .net{ flex:1; min-width:0; }
     .checkout-bar .net small{
-      display:block; font-size:10.5px; font-weight:700; letter-spacing:.06em;
+      display:block; font-size:13.5px; font-weight:700; letter-spacing:.03em;
       text-transform:uppercase; color:var(--ink-3);
     }
     #netTotal{ margin:1px 0 0; font-size:19px; font-weight:800; letter-spacing:-.02em; white-space:nowrap; }
@@ -835,7 +835,7 @@
   <!-- Sticky checkout bar -->
   <div class="checkout-bar no-print">
     <div class="net">
-      <small>Grand Total</small>
+      <small id="netStatusLabel">Grand Total</small>
       <h2 id="netTotal">Grand Total : 0</h2>
     </div>
     <button id="saveBtn" onclick="saveReceipt()">💾 Save</button>
@@ -1478,8 +1478,41 @@
         }
       }
 
-      let net = grandTotal + delivery - onlinePayTotal - discountAmount;
+      let itemNet = grandTotal - discountAmount;
+      let totalWithDelivery = itemNet + delivery;
+      let net = totalWithDelivery - onlinePayTotal;
+
+      let netStatusLabel = document.getElementById("netStatusLabel");
+      if (netStatusLabel) {
+        if (onlinePayTotal >= totalWithDelivery) {
+          // ပစ္စည်းဖိုး + ပို့ခ အကုန် Deposit ဖြင့် ရှင်းပြီးသား
+          netStatusLabel.textContent = "ပစ္စည်းဖိုး + ပို့ခ အပါ ရှင်းပြီး";
+        } else if (delivery > 0 && onlinePayTotal >= itemNet) {
+          // ပစ္စည်းဖိုးအတွက် Deposit ရှင်းပြီး၊ ပို့ခသာ ကျန်နေသေး
+          netStatusLabel.textContent = "ပစ္စည်းဖိုးရှင်းပြီး — ပို့ခသာ ကောက်ရန်";
+        } else {
+          // Deposit က ပစ္စည်းဖိုး + ပို့ခ ထက် နည်းနေသေးရင် အိမ်ရောက်မှ ငွေချေရန်
+          netStatusLabel.textContent = "အိမ်ရောက်ငွေချေ";
+        }
+      }
+
       document.getElementById("netTotal").innerHTML = "Grand Total : " + net;
+    }
+
+    // ── Payment status for saved receipt (Prepaid / Partial / COD) ──
+    // Same logic as the checkout-bar status label above — kept in sync so
+    // Print/Share (receipt.js) show the matching label (အိမ်ရောက်ငွေချေ /
+    // ပစ္စည်းဖိုးရှင်းပြီး ပို့ခသာကျန် / ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး).
+    function computePayStatus() {
+      let delivery = Number(document.getElementById("delivery").value) || 0;
+      let discountAmount = getDiscountAmount();
+      let onlinePayTotal = selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+      let itemNet = grandTotal - discountAmount;
+      let totalWithDelivery = itemNet + delivery;
+
+      if (onlinePayTotal >= totalWithDelivery) return "Prepaid";
+      if (delivery > 0 && onlinePayTotal >= itemNet) return "Partial";
+      return "COD";
     }
 
     // ── Get Discount Amount (save အတွက်) ──────────────────────────
@@ -1569,7 +1602,7 @@
         deliveryPhoto:   "",
         deposit:         selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0),
         depositBase:     0,
-        payStatus:       (selectedPayments.length ? "Online" : "Cash"),
+        payStatus:       computePayStatus(),
         payType:         selectedPayments.map(function (p) { return payMethodLabel(p.method); }).join(", "),
         payCode:         selectedPayments.map(function (p) { return p.transferId; }).filter(Boolean).join(", "),
         paySS:           "",
