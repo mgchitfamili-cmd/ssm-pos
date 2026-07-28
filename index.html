@@ -10,7 +10,7 @@
 
   <script src="firebase-init.js"></script>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#6d28d9">
+  <meta name="theme-color" content="#5b3b8a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Sone Sone Mommy">
@@ -18,28 +18,42 @@
   <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("service-worker.js").catch(function(){});});}</script>
   <style>
     :root{
-      --bg:#f4f5f8;
+      --bg:#dad3f5;
+      --bg-2:#c7bdec;
       --surface:#ffffff;
-      --line:#eaecf1;
-      --line-2:#dcdfe7;
-      --ink:#15171c;
-      --ink-2:#5a616e;
-      --ink-3:#8b919e;
-      --brand:#6d28d9;
-      --brand-ink:#5b21b6;
-      --brand-tint:#f4f0fe;
-      --brand-line:#e7defb;
-      --green:#15803d;
-      --green-tint:#ecfaf1;
+      --line:#e3daf6;
+      --line-2:#d3c5ef;
+      --ink:#2b2b2b;
+      --ink-2:#6c5f94;
+      --ink-3:#948aba;
+      --brand:#4f3393;
+      --brand-ink:#3a2470;
+      --brand-tint:#efe9fb;
+      --brand-line:#dccdf5;
+      --accent:#8e72c7;
+      --accent-tint:#f3eefc;
+      --accent-line:#cdb6f5;
+      --cta:#4f3393;
+      --cta-ink:#3a2470;
+      --cta-tint:#efe9fb;
+      --cta-line:#dccdf5;
+      --secondary:#7c63b8;
+      --green:#3fae6a;
+      --green-tint:#eaf8f0;
       --green-line:#bfe9cd;
-      --red:#dc2626;
-      --red-line:#f3c5c5;
-      --amber-tint:#fff8e8;
+      --red:#e45b67;
+      --red-line:#f9d2d6;
+      --amber:#f4b942;
+      --amber-tint:#fff6e2;
       --amber-line:#f3d488;
-      --amber-ink:#9a6b00;
-      --r:16px;
-      --r-sm:11px;
-      --shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 18px rgba(16,24,40,.04);
+      --amber-ink:#93690a;
+      --info:#6a8dff;
+      --info-tint:#edf1ff;
+      --info-line:#c9d6ff;
+      --r:20px;
+      --r-sm:16px;
+      --shadow:0 1px 2px rgba(47,35,89,.06), 0 8px 22px rgba(47,35,89,.10);
+      --shadow-lg:0 16px 44px rgba(47,35,89,.22);
     }
     *{ box-sizing:border-box; }
     /* Buttons/popups/chrome — text select မဖြစ်အောင် (tap လုပ်ရင် စိမ်းပြာကွက် မပေါ်စေရန်) */
@@ -52,7 +66,8 @@
     html,body{ margin:0; }
     body{
       font-family:system-ui,'Noto Sans Myanmar','Padauk','Myanmar Text','Segoe UI',sans-serif;
-      background:var(--bg);
+      background:linear-gradient(160deg, var(--bg-2) 0%, var(--bg) 45%, #e3dcf7 100%);
+      background-attachment:fixed;
       color:var(--ink);
       line-height:1.5;
       padding:0 0 94px 0;
@@ -77,7 +92,7 @@
     }
     #menuBtn:active{ background:var(--line); }
     .top-bar h1{
-      margin:0; font-size:16px; font-weight:700; letter-spacing:-.01em;
+      margin:0; font-size:16px; font-weight:700; letter-spacing:-.01em; color:var(--brand);
       flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     #orderNo{
@@ -91,26 +106,48 @@
     .mode-switch{
       display:flex; align-items:center; gap:2px; flex:none;
       padding:3px; margin-left:auto;
-      background:var(--brand-tint); border:1px solid var(--brand-line);
+      background:#faeaef; border:1px solid #f3d3de;
       border-radius:999px;
     }
     .mode-switch button{
       border:none; background:transparent; cursor:pointer;
       font-family:inherit; font-size:12px; font-weight:700;
-      color:var(--brand-ink); padding:6px 13px; border-radius:999px;
+      color:#c15c7d; padding:6px 13px; border-radius:999px;
       white-space:nowrap; transition:background .15s, color .15s;
     }
     .mode-switch button.active{
-      background:var(--brand); color:#fff;
-      box-shadow:0 2px 6px rgba(109,40,217,.28);
+      position:relative; overflow:hidden;
+      background:linear-gradient(150deg, #f5a0bb 0%, #e4779b 55%, #d15c82 100%);
+      color:#2b2b2b;
+      box-shadow:0 2px 6px rgba(228,119,155,.4), inset 0 1px 0 rgba(255,255,255,.4);
+    }
+    .mode-switch button.active::before{
+      content:""; position:absolute; inset:0;
+      background:radial-gradient(60px 30px at 20% -10%, rgba(255,255,255,.55), rgba(255,255,255,0) 70%);
+      pointer-events:none;
     }
 
     .wrap{ max-width:600px; margin:0 auto; padding:14px; }
 
     /* ── Parcel alert ── */
     #parcelAlert{
-      margin:0 0 14px 0; padding:11px 14px; border-radius:12px;
-      font-size:13px; font-weight:600; border:1px solid var(--amber-line);
+      position:relative; overflow:hidden; isolation:isolate;
+      margin:0 0 14px 0; padding:8px 14px; border-radius:16px;
+      font-size:13px; font-weight:700; border:none;
+      box-shadow:0 4px 14px rgba(47,35,89,.16), inset 0 1px 0 rgba(255,255,255,.45);
+    }
+    #parcelAlert::before{
+      content:""; position:absolute; inset:0; z-index:-1;
+      background:radial-gradient(130px 70px at 14% -10%, rgba(255,255,255,.6), rgba(255,255,255,0) 70%);
+      pointer-events:none;
+    }
+    #parcelAlert.alert-warn{
+      background:linear-gradient(150deg, #fff1c9 0%, #fbd07c 55%, #eeb454 100%);
+      color:#8a6412;
+    }
+    #parcelAlert.alert-ok{
+      background:linear-gradient(150deg, #d6f9e6 0%, #83dfae 55%, #52bd88 100%);
+      color:#155c37;
     }
 
     /* ── Cards ── */
@@ -118,12 +155,13 @@
       background:var(--surface); border:1px solid var(--line);
       border-radius:var(--r); padding:16px; margin-bottom:14px; box-shadow:var(--shadow);
     }
+    .card.selected{ border-color:var(--accent-line); box-shadow:0 0 0 3px rgba(205,182,245,.35), var(--shadow); }
     .eyebrow{
       display:flex; align-items:center; gap:8px;
       font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
-      color:var(--ink-3); margin:0 0 14px 0;
+      color:#5B2C83; margin:0 0 14px 0;
     }
-    .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--brand); flex:none; }
+    .eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:#8B5CF6; flex:none; }
 
     /* ── Order Information collapsible header (Shop mode) ── */
     .order-info-toggle-row{ display:flex; justify-content:flex-start; }
@@ -186,7 +224,7 @@
       background:var(--bg);
       display:flex; flex-direction:column;
       transform:translateY(100%);
-      transition:transform .32s cubic-bezier(.32,.72,0,1);
+      transition:transform .24s cubic-bezier(.32,.72,0,1);
       box-shadow:0 -8px 30px rgba(16,24,40,.18);
     }
     .pay-modal-overlay.show .pay-modal-sheet{ transform:translateY(0); }
@@ -234,7 +272,7 @@
       background-repeat:no-repeat; background-position:right 11px center; padding-right:38px;
     }
     input:focus, select:focus, textarea:focus{
-      border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13);
+      border-color:var(--accent); box-shadow:0 0 0 3px rgba(142,114,199,.22);
     }
     input[readonly]{ background:#f4f5f7; color:var(--ink-2); }
     textarea{ min-height:62px; resize:vertical; display:block; }
@@ -252,7 +290,8 @@
     button:active{ transform:translateY(1px); }
     button:disabled{ background:#c6b8e8; cursor:not-allowed; }
     .btn-block{ width:100%; }
-    .add-btn{ width:100%; margin-top:2px; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .add-btn{ width:100%; margin-top:2px; display:flex; align-items:center; justify-content:center; gap:6px; background:var(--secondary); }
+    .add-btn:active{ background:#7b5fae; }
     .add-btn .ssm-icon, .btn-new .ssm-icon{ flex:none; }
 
     /* gift checkbox + remark inline row */
@@ -271,8 +310,8 @@
       transition:background .15s, border-color .15s;
       color-scheme:light;
     }
-    .gift-label input:checked{ background:var(--brand); border-color:var(--brand); }
-    .gift-label input:focus-visible{ box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    .gift-label input:checked{ background:#F9A8D4; border-color:#F9A8D4; }
+    .gift-label input:focus-visible{ box-shadow:0 0 0 3px rgba(142,114,199,.22); }
     .saletype-row{ align-items:stretch; flex-wrap:nowrap; }
     .saletype-row > select{ flex:1; min-width:0; }
     .saletype-row > .gift-label{
@@ -299,9 +338,9 @@
       width:18px; height:18px; border-radius:50%; background:#fff;
       box-shadow:0 1px 2px rgba(16,24,40,.25); transition:transform .18s ease;
     }
-    .ios-switch input:checked + .ios-slider{ background:var(--brand); }
+    .ios-switch input:checked + .ios-slider{ background:#F9A8D4; }
     .ios-switch input:checked + .ios-slider::before{ transform:translateX(17px); }
-    .ios-switch input:focus-visible + .ios-slider{ box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    .ios-switch input:focus-visible + .ios-slider{ box-shadow:0 0 0 3px rgba(142,114,199,.22); }
 
     /* Delivery Service row + recipient toggle button */
     .deliveryservice-row{ align-items:stretch; flex-wrap:wrap; }
@@ -325,6 +364,10 @@
       transition:background .15s, transform .05s;
     }
     .qty-btn:active{ background:var(--brand-line); transform:scale(.94); }
+    .qty-btn-minus{ color:#d92d20; background:#fde3e2; }
+    .qty-btn-minus:active{ background:#f9c8c6; }
+    .qty-btn-plus{ color:#1a7f3c; background:#dcf6e3; }
+    .qty-btn-plus:active{ background:#bcecc9; }
     .qty-input{
       flex:1; min-width:0; width:auto; height:100%; border:none; border-radius:0;
       background:transparent;
@@ -346,13 +389,33 @@
     .recipient-btn-arrow{ flex:none; transition:transform .2s ease; }
     .recipient-btn.active .recipient-btn-arrow{ transform:rotate(90deg); }
     .recipient-btn.active{ background:var(--brand-ink); }
+
+    /* ── Shared glossy gradient for Receiver / Add Item / Online Payment buttons ── */
+    .order-info-toggle-btn,
+    .add-btn,
+    .recipient-btn{
+      position:relative; overflow:hidden;
+      background:linear-gradient(150deg, #9c81d6 0%, #6f4fc0 55%, #4f3393 100%) !important;
+      box-shadow:0 2px 8px rgba(79,51,147,.35), inset 0 1px 0 rgba(255,255,255,.35);
+    }
+    .order-info-toggle-btn::before,
+    .add-btn::before,
+    .recipient-btn::before{
+      content:""; position:absolute; inset:0;
+      background:radial-gradient(60px 30px at 18% -10%, rgba(255,255,255,.5), rgba(255,255,255,0) 70%);
+      pointer-events:none;
+    }
+    .recipient-btn.active{
+      background:linear-gradient(150deg, #7d64c9 0%, #543a9c 55%, #3a2470 100%) !important;
+    }
+    .add-btn:active{ background:linear-gradient(150deg, #8f72c9 0%, #6244ab 55%, #442c82 100%) !important; }
     /* Weight / Unit segmented switch */
     .seg-toggle{ display:flex; flex:1; min-width:120px; gap:3px; padding:3px;
-      background:var(--bg); border:1px solid var(--line-2); border-radius:var(--r-sm); }
+      background:var(--brand-tint); border:1px solid var(--line-2); border-radius:var(--r-sm); }
     .seg-opt{ flex:1; border:none; background:transparent; color:var(--ink-3);
       font-size:14px; font-weight:700; padding:9px 6px; border-radius:calc(var(--r-sm) - 3px);
       cursor:pointer; white-space:nowrap; transition:background .15s, color .15s; }
-    .seg-opt.active{ background:var(--brand); color:#fff; box-shadow:0 2px 6px rgba(109,40,217,.28); }
+    .seg-opt.active{ background:var(--brand); color:#fff; box-shadow:0 2px 6px rgba(91,59,138,.28); }
     .seg-opt.seg-disabled{ opacity:.32; pointer-events:none; }
 
     /* ── Sale list (cart) ── */
@@ -362,9 +425,11 @@
       text-align:left; font-size:10.5px; font-weight:700; letter-spacing:.04em;
       text-transform:uppercase; color:var(--ink-3); white-space:nowrap;
       padding:0 10px 10px; border-bottom:1px solid var(--line-2);
+      position:sticky; top:0; background:var(--surface); z-index:1;
     }
     td{ padding:12px 10px; border-bottom:1px solid var(--line); vertical-align:middle; }
     tr:last-child td{ border-bottom:none; }
+    tbody tr:nth-child(even) td{ background:var(--brand-tint); }
 
     .cart-prod{ min-width:120px; }
     .cart-name{ font-size:14px; font-weight:700; color:var(--ink); line-height:1.3; }
@@ -372,7 +437,7 @@
     th.col-num, .cart-price, .cart-qty, .cart-total{ text-align:right; white-space:nowrap; }
     th.col-qty, .cart-qty{ text-align:center; }
     .cart-price{ color:var(--ink-2); }
-    .cart-total{ color:var(--brand-ink); font-weight:800; font-size:14px; }
+    .cart-total{ color:var(--ink); font-weight:800; font-size:14px; }
     .cart-act{ text-align:right; width:1%; white-space:nowrap; }
     .cart-del{
       background:#fff; color:var(--red); border:1px solid var(--red-line);
@@ -387,7 +452,7 @@
     }
     .cart-foot .ci{ font-size:13px; font-weight:600; color:var(--ink-2); }
     .cart-foot .ci b{ color:var(--brand-ink); }
-    #grandTotal{ margin:0; font-size:18px; font-weight:800; color:var(--brand-ink); letter-spacing:-.01em; }
+    #grandTotal{ margin:0; font-size:18px; font-weight:800; color:var(--ink); letter-spacing:-.01em; }
     .cart-foot-sub{ display:flex; align-items:center; justify-content:space-between; gap:12px;
       margin-top:4px; font-size:12.5px; font-weight:600; color:var(--ink-3); }
     .cart-foot-sub:empty, .cart-foot-sub[hidden]{ display:none; }
@@ -409,7 +474,8 @@
     }
     #afterSaveActions h3{ margin:0 0 13px; font-size:15px; color:var(--green); }
     .save-actions{ display:flex; flex-direction:column; gap:9px; }
-    .btn-print{ background:var(--brand); width:100%; }
+    .btn-print{ background:var(--secondary); width:100%; }
+    .btn-print:active{ background:#7b5fae; }
     .btn-share{ background:var(--green); width:100%; }
     .btn-new{ background:#fff; color:var(--red); border:1px solid var(--red-line); width:100%; display:flex; align-items:center; justify-content:center; gap:6px; }
 
@@ -428,8 +494,10 @@
       display:block; font-size:13.5px; font-weight:700; letter-spacing:.03em;
       text-transform:uppercase; color:var(--ink-3);
     }
-    #netTotal{ margin:1px 0 0; font-size:19px; font-weight:800; letter-spacing:-.02em; white-space:nowrap; }
-    #saveBtn{ flex:none; padding:13px 24px; }
+    #netTotal{ margin:1px 0 0; font-size:19px; font-weight:800; letter-spacing:-.02em; white-space:nowrap; color:var(--ink); }
+    #saveBtn{ flex:none; padding:13px 24px; background:var(--cta); box-shadow:0 6px 18px rgba(91,59,138,.28); }
+    #saveBtn:active{ background:var(--cta-ink); }
+    #saveBtn:disabled{ background:#cabfdb; }
 
     /* ── Slide menu (matches app, brand-accented) ── */
     #menuOverlay{
@@ -444,7 +512,7 @@
     #menuOverlay.open{ display:block; }
     .menu-header{
       padding:26px 20px 22px; color:#fff;
-      background:linear-gradient(135deg, var(--brand-ink), var(--brand));
+      background:var(--brand);
     }
     .menu-header h2{ margin:0; font-size:18px; font-weight:800; letter-spacing:-.01em; }
     .menu-header p{ margin:5px 0 0; font-size:12px; color:rgba(255,255,255,.82); }
@@ -482,10 +550,10 @@
     .popup-overlay.show{ display:flex; }
     .popup-card{
       width:100%; max-width:320px; background:var(--surface);
-      border:1px solid var(--line); border-radius:18px; padding:22px 20px 18px;
-      box-shadow:0 22px 55px rgba(0,0,0,.3); text-align:center;
+      border:1px solid var(--line); border-radius:22px; padding:22px 20px 18px;
+      box-shadow:var(--shadow-lg); text-align:center;
       transform:translateY(10px) scale(.96); opacity:0;
-      transition:transform .18s ease, opacity .18s ease;
+      transition:transform .22s ease, opacity .22s ease;
     }
     .popup-overlay.show .popup-card{ transform:none; opacity:1; }
     .popup-icon{
@@ -511,7 +579,7 @@
       transition:border-color .15s, box-shadow .15s;
     }
     .csel-btn.is-placeholder{ color:var(--ink-3); }
-    .csel-btn:active{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    .csel-btn:active{ border-color:var(--accent); box-shadow:0 0 0 3px rgba(142,114,199,.22); }
 
     .sheet-overlay{
       position:fixed; inset:0; z-index:9000; display:none;
@@ -525,7 +593,7 @@
       background:var(--surface); border:1px solid var(--line); border-bottom:none;
       border-top-left-radius:22px; border-top-right-radius:22px;
       max-height:72vh; display:flex; flex-direction:column;
-      transform:translateY(101%); transition:transform .26s cubic-bezier(.32,.72,0,1);
+      transform:translateY(101%); transition:transform .24s cubic-bezier(.32,.72,0,1);
       padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));
       box-shadow:0 -10px 40px rgba(0,0,0,.22);
     }
@@ -559,7 +627,7 @@
     .rcart-main{ flex:1; min-width:0; }
     .rcart .item-name{ font-weight:700; font-size:14px; color:var(--ink); }
     .rcart .item-sub{ display:flex; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--ink-2); margin-top:2px; }
-    .rcart .item-sub span:last-child{ font-weight:700; color:var(--brand-ink); white-space:nowrap; }
+    .rcart .item-sub span:last-child{ font-weight:700; color:var(--ink); white-space:nowrap; }
     .rcart .item-remark{ font-size:12px; color:var(--ink-3); margin-top:2px; }
     .rcart .cart-del{ flex:none; background:none; border:none; font-size:16px; cursor:pointer; padding:4px 2px; line-height:1; color:var(--red); }
     .rcart-act{ display:flex; flex-direction:column; gap:2px; flex:none; }
@@ -887,10 +955,22 @@
     // button appeared to do nothing.)
     if (typeof window.ssmIcon !== "function") {
       window.ssmIcon = function (name) {
-        var map = { edit: "✏️", trash: "🗑️", add: "＋", print: "🖨️", share: "📤" };
+        var map = { edit: "✏️", trash: "🗑️", add: "＋", minus: "−", print: "🖨️", share: "📤" };
         return map[name] || "";
       };
     }
+
+    // Render any static <span data-icon="..."> placeholders (qty +/- buttons,
+    // Add Item, New Receipt, etc). These were never being filled in because
+    // icons.js is not actually loaded — ssmIcon() above was only ever called
+    // from JS template strings, never against these markup placeholders.
+    document.querySelectorAll("[data-icon]").forEach(function (el) {
+      var name = el.getAttribute("data-icon");
+      var size = Number(el.getAttribute("data-icon-size")) || 16;
+      el.innerHTML = ssmIcon(name, { size: size });
+      el.style.fontSize = size + "px";
+      el.style.lineHeight = "1";
+    });
 
     let grandTotal = 0;
     let items      = [];
@@ -1852,12 +1932,13 @@
       }).length;
 
       alertBox.style.display = "block";
+      alertBox.classList.remove("alert-warn", "alert-ok");
 
       if (parcelPending === 0 && printPending === 0) {
-        alertBox.style.background = "#d1fae5";
+        alertBox.classList.add("alert-ok");
         alertBox.innerHTML = "✅ Parcel & Print အားလုံး ပြီးပါပြီ";
       } else {
-        alertBox.style.background = "#fef3c7";
+        alertBox.classList.add("alert-warn");
         alertBox.innerHTML = "⚠️ Parcel မထုတ်ရ " + parcelPending + " ခု · Print မထုတ်ရ " + printPending + " ခု";
       }
     }
@@ -2170,14 +2251,28 @@
       inp.dispatchEvent(new Event("change", { bubbles: true }));
     }
     // Selecting an option must not let the input blur first (that would fire
-    // the hide timer before the click/tap is processed). preventDefault on
-    // both mousedown (desktop/most mobile browsers) and touchstart (some
-    // mobile browsers dispatch touch first) keeps focus on the input.
+    // the hide timer before the click/tap is processed), but it also must
+    // not fire on touchstart — that made every scroll attempt inside the
+    // list register as an instant pick before the finger could move. Track
+    // the touch and only pick on touchend if the finger didn't move (a real
+    // tap); if it moved past a small threshold, treat it as a scroll and
+    // let the browser handle it normally.
     function bindPick(el, v) {
       var chosen = false;
-      function go(e) { if (chosen) return; chosen = true; e.preventDefault(); pick(v); }
-      el.addEventListener("mousedown", go);
-      el.addEventListener("touchstart", go, { passive: false });
+      var startX = 0, startY = 0, moved = false;
+      function pickOnce() { if (chosen) return; chosen = true; pick(v); }
+      el.addEventListener("mousedown", function (e) { e.preventDefault(); pickOnce(); });
+      el.addEventListener("touchstart", function (e) {
+        var t = e.touches[0];
+        startX = t.clientX; startY = t.clientY; moved = false;
+      }, { passive: true });
+      el.addEventListener("touchmove", function (e) {
+        var t = e.touches[0];
+        if (Math.abs(t.clientX - startX) > 8 || Math.abs(t.clientY - startY) > 8) moved = true;
+      }, { passive: true });
+      el.addEventListener("touchend", function (e) {
+        if (!moved) { e.preventDefault(); pickOnce(); }
+      }, { passive: false });
     }
     function render() {
       try {
@@ -2231,6 +2326,15 @@
     inp.addEventListener("focus", show);
     inp.addEventListener("input", show);
     inp.addEventListener("blur", scheduleHide);
+
+    // Mobile blurs the input as soon as a touch lands on the list (even
+    // before we know it's a scroll, not a tap) — that queues a hide via
+    // scheduleHide() above. Cancel that pending hide for as long as the
+    // finger is down anywhere in the list, so a scroll gesture doesn't get
+    // cut off mid-drag; once the finger lifts, re-arm the same delayed hide
+    // in case the touch turned out to be a scroll rather than a pick.
+    list.addEventListener("touchstart", function () { clearTimeout(hideTimer); }, { passive: true });
+    list.addEventListener("touchend", function () { scheduleHide(); }, { passive: true });
   })();
 
   // ── Product inline autocomplete (field ထဲ ရိုက်၊ အောက်မှာ list) ──
