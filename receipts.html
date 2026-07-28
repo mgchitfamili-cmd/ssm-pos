@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="receipt.js"></script>
+  <script src="icons.js"></script>
 
-  <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="firebase-init.js"></script>
-  <script src="payment-methods.js"></script>
-  <script src="payments-store.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6d28d9">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -103,7 +101,6 @@
       background:var(--surface); font-family:inherit; box-sizing:border-box; font-size:13px;
       overflow:hidden; white-space:nowrap; transition:border-color .15s, box-shadow .15s; }
     .rdate-box:focus-within{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
-    html.dark .rdate-box:focus-within{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
     .rdate-label{ flex:none; color:var(--ink-3); font-weight:600; }
     .rdate-sep{ flex:none; color:var(--line-2); margin:0 6px; }
     .rdate-value{ flex:1 1 auto; min-width:0; color:var(--ink); font-weight:600;
@@ -152,8 +149,9 @@
     .actions{ display:flex; gap:7px; margin-top:13px; flex-wrap:wrap; }
     .btn{ border:none; padding:10px 12px; border-radius:10px; color:#fff; font-size:13px;
       font-weight:600; cursor:pointer; flex:1; min-width:74px; font-family:inherit;
-      transition:transform .05s; }
+      transition:transform .05s; display:inline-flex; align-items:center; justify-content:center; gap:5px; }
     .btn:active{ transform:translateY(1px); }
+    .btn .ssm-icon{ flex:none; }
     .btn-payment{ background:var(--teal); }
     .btn-print{ background:var(--brand); }
     .btn-share{ background:var(--green); }
@@ -235,30 +233,6 @@
     .menu-item.active .ic{ background:#fff; }
 
     @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
-    /* ===== Dark mode (toggle via html.dark) ===== */
-    html.dark{
-      --bg:#0f1116; --surface:#181b22; --line:#252a33; --line-2:#333a46;
-      --ink:#e8eaef; --ink-2:#aab1bd; --ink-3:#727a87;
-      --brand:#8b5cf6; --brand-ink:#c4b5fd; --brand-tint:#1d1930; --brand-line:#352c57;
-      --green:#22c55e; --green-tint:#10271a; --green-line:#1f4a32;
-      --red:#f87171; --red-tint:#2a1414; --red-line:#5c2b2b;
-      --amber:#e0b84e; --amber-tint:#272010; --amber-line:#544619;
-      --blue:#93b4fb; --blue-tint:#172033; --blue-line:#2c3c5c;
-      --teal:#5fd0e6;
-      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
-    }
-    html.dark .top-bar{ background:rgba(18,20,26,.82); }
-    html.dark .checkout-bar{ background:rgba(18,20,26,.92); }
-    html.dark input:not([type=range]):not([type=checkbox]),
-    html.dark select, html.dark textarea,
-    html.dark .field input, html.dark .field select,
-    html.dark .modal-box input, html.dark .modal-box select,
-    html.dark .header-search, html.dark .csel-btn{ background-color:#1e222a; }
-    html.dark select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23aeb6c2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; }
-    html.dark .csel-btn{ background-color:#1e222a; }
-    html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
-    html.dark #parcelAlert{ color:#7a5b00; }
-    html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
     /* WIDE-SCREEN — 2-column grid on tablets, 1-column on phones */
     @media (min-width:700px){
       h1 { max-width:920px; margin-left:auto; margin-right:auto; }
@@ -278,6 +252,58 @@
     #ssModalImg{ max-width:100%; max-height:80vh; object-fit:contain; border-radius:12px; }
     #ssModal button{ margin-top:20px; padding:12px 24px; border-radius:var(--r-sm); border:none;
       background:#fff; color:var(--ink); font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; }
+
+    /* ── Online Payment: summary chips + full-screen modal (embeds payments.html) ── */
+    .btn-onlinepay{ background:var(--brand); }
+    .pay-summary-box{
+      margin-top:11px; padding:12px 13px; border-radius:var(--r-sm);
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+    }
+    .pay-summary-total{
+      display:flex; align-items:center; justify-content:space-between;
+      font-size:13.5px; font-weight:700; color:var(--brand-ink);
+      margin:0 0 8px 0;
+    }
+    .pay-summary-chips{ display:flex; flex-wrap:wrap; gap:7px; }
+    .pay-summary-chip{
+      display:inline-flex; align-items:center; gap:5px;
+      font-size:12px; font-weight:600; color:var(--ink-2);
+      background:#fff; border:1px solid var(--line-2); border-radius:999px;
+      padding:5px 11px; white-space:nowrap;
+    }
+    .pay-summary-chip b{ color:var(--ink); }
+    .pay-modal-overlay{
+      position:fixed; inset:0; z-index:9997;
+      background:rgba(15,17,23,.4);
+      opacity:0; pointer-events:none;
+      transition:opacity .28s ease;
+      display:flex; align-items:flex-end; justify-content:center;
+    }
+    .pay-modal-overlay.show{ opacity:1; pointer-events:auto; }
+    .pay-modal-sheet{
+      width:100%; max-width:600px; height:100%;
+      background:var(--bg);
+      display:flex; flex-direction:column;
+      transform:translateY(100%);
+      transition:transform .32s cubic-bezier(.32,.72,0,1);
+      box-shadow:0 -8px 30px rgba(16,24,40,.18);
+    }
+    .pay-modal-overlay.show .pay-modal-sheet{ transform:translateY(0); }
+    .pay-modal-head{
+      flex:none; display:flex; align-items:center; gap:8px;
+      padding:13px 14px; padding-top:calc(13px + env(safe-area-inset-top, 0px));
+      background:rgba(255,255,255,.92);
+      backdrop-filter:saturate(150%) blur(10px); -webkit-backdrop-filter:saturate(150%) blur(10px);
+      border-bottom:1px solid var(--line);
+    }
+    .pay-modal-head h2{ margin:0; flex:1; font-size:16px; font-weight:700; letter-spacing:-.01em; }
+    .pay-modal-close{
+      flex:none; background:none; border:none; font-size:19px; color:var(--ink-2);
+      cursor:pointer; padding:7px 10px; border-radius:10px; line-height:1;
+    }
+    .pay-modal-close:active{ background:var(--line); }
+    .pay-modal-body{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    .pay-modal-body iframe{ width:100%; height:100%; border:none; display:block; background:var(--bg); }
   </style>
 </head>
 
@@ -308,56 +334,11 @@
     <div class="header-search">
       <input id="searchBox" placeholder="Search Order No / Customer" oninput="applyFilters()">
       <button type="button" id="searchBtn" aria-label="Search" onclick="applyFilters(); document.getElementById('searchBox').focus();">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="10.5" cy="10.5" r="6.5"></circle>
-          <line x1="20" y1="20" x2="15.3" y2="15.3"></line>
-        </svg>
+        <span data-icon="search" data-icon-size="19"></span>
       </button>
     </div>
   </div>
 
-  <div id="rfilter">
-    <div class="rpillnav" id="rpillnav">
-      <div class="rpillnav-scroll">
-        <div class="rpillnav-thumb" id="rpillThumb"></div>
-        <button class="rchip active" data-st="all"     onclick="setRStatus('all',this)">အကုန် <b id="cnt-all">0</b></button>
-        <button class="rchip"        data-st="Cash"    onclick="setRStatus('Cash',this)">Cash <b id="cnt-Cash">0</b></button>
-        <button class="rchip"        data-st="Prepaid" onclick="setRStatus('Prepaid',this)">Prepaid <b id="cnt-Prepaid">0</b></button>
-        <button class="rchip"        data-st="Partial" onclick="setRStatus('Partial',this)">ပစ္စည်းဖိုးပြီး <b id="cnt-Partial">0</b></button>
-        <button class="rchip"        data-st="COD"     onclick="setRStatus('COD',this)">COD <b id="cnt-COD">0</b></button>
-      </div>
-    </div>
-    <div class="rdates">
-      <div class="rdate">
-        <div class="rdate-box">
-          <span class="rdate-label">From</span><span class="rdate-sep">|</span>
-          <span class="rdate-value" id="dateFromLabel">Select Date</span>
-          <svg class="rdate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="5" width="18" height="16" rx="2"></rect>
-            <line x1="16" y1="3" x2="16" y2="7"></line>
-            <line x1="8" y1="3" x2="8" y2="7"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          <input type="date" id="dateFrom" class="rdate-native" onchange="handleRDateChange('dateFrom','dateFromLabel')">
-        </div>
-      </div>
-
-      <div class="rdate">
-        <div class="rdate-box">
-          <span class="rdate-label">To</span><span class="rdate-sep">|</span>
-          <span class="rdate-value" id="dateToLabel">Select Date</span>
-          <svg class="rdate-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="5" width="18" height="16" rx="2"></rect>
-            <line x1="16" y1="3" x2="16" y2="7"></line>
-            <line x1="8" y1="3" x2="8" y2="7"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          <input type="date" id="dateTo" class="rdate-native" onchange="handleRDateChange('dateTo','dateToLabel')">
-        </div>
-      </div>
-      <button class="rclear" onclick="clearRDates()" aria-label="Clear dates">✕</button>
-    </div>
-  </div>
 
   <div id="historyList"></div>
 
@@ -388,7 +369,12 @@
       <div id="prepaidFields">
         <label>Online Payment Type</label>
         <select id="payType">
-          <!-- Options are rendered by PaymentMethods.renderOptions() — see payment-methods.js -->
+          <option value="">ရွေးပါ</option>
+          <option value="KPay">KPay</option>
+          <option value="Wave Pay">Wave Pay</option>
+          <option value="AYA Pay">AYA Pay</option>
+          <option value="CB Pay">CB Pay</option>
+          <option value="Mobile Banking">Mobile Banking</option>
         </select>
 
         <label>ငွေလွှဲ Screenshot (ပုံ ထည့်မှ Code ထည့်လို့ရ)</label>
@@ -415,6 +401,19 @@
     <button onclick="closeSS()">✖ Close</button>
   </div>
 
+  <!-- Online Payment modal (embeds payments.html, same as index.html) -->
+  <div class="pay-modal-overlay" id="onlinePayModalOverlay" onclick="if(event.target===this) closeOnlinePaymentModal()">
+    <div class="pay-modal-sheet" role="dialog" aria-modal="true" aria-label="Online Payment">
+      <div class="pay-modal-head">
+        <h2>💳 Online Payment</h2>
+        <button type="button" class="pay-modal-close" onclick="closeOnlinePaymentModal()" aria-label="Close">✕</button>
+      </div>
+      <div class="pay-modal-body">
+        <iframe id="onlinePayModalFrame" title="Online Payment" src="about:blank"></iframe>
+      </div>
+    </div>
+  </div>
+
   <!-- Hidden receipt preview for print/share -->
   <div id="receiptPreviewHidden" class="receipt-preview-hidden"></div>
 
@@ -438,12 +437,6 @@
     let payingOrderNo = null;
     let tempSS       = "";       // ယာယီ SS data
 
-    // Payment method options come from the shared payment-methods.js module
-    // (single source of truth — see that file for details).
-    if (window.PaymentMethods) {
-      PaymentMethods.renderOptions(document.getElementById("payType"), { placeholder: "ရွေးပါ" });
-    }
-
     // ── Render List ───────────────────────────────────────────────
     function renderHistory() {
       salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
@@ -452,6 +445,8 @@
       if (salesHistory.length === 0) {
         html = `<p style="color:#9ca3af; text-align:center; margin-top:40px;">Receipt မရှိသေးပါ။</p>`;
       }
+
+      var _allPayRecords = JSON.parse(localStorage.getItem("paymentsList")) || [];
 
       salesHistory
         .map(function (sale, index) { return { sale: sale, index: index }; })
@@ -470,6 +465,22 @@
           });
         }
 
+        // Online Payment summary (payments.html records linked to this receipt)
+        var _linkedPays = (sale.linkedPayments || [])
+          .map(function (pid) { return _allPayRecords.find(function (p) { return p.id === pid; }); })
+          .filter(Boolean);
+        var paySummaryHtml = "";
+        if (_linkedPays.length) {
+          var _payTotal = _linkedPays.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+          var _chips = _linkedPays.map(function (p) {
+            var _mLabel = p.method === "Bank" ? "ဘဏ်လွှဲ" : (p.method || "အခြား");
+            return '<span class="pay-summary-chip">' + _mLabel + ' • <b>' + (Number(p.amount) || 0).toLocaleString("en-US") + ' Ks</b></span>';
+          }).join("");
+          paySummaryHtml =
+            '<div class="pay-summary-total"><span>💳 Online Payment (' + _linkedPays.length + ')</span><span>' + _payTotal.toLocaleString("en-US") + ' Ks</span></div>' +
+            '<div class="pay-summary-chips">' + _chips + '</div>';
+        }
+
         // Print badge
         // Shop mode + Delivery Service မရွေးထား (ဆိုင်ရောက်ရောင်း/no-delivery) ဆိုရင်
         // "🖨️ မထုတ်ရသေး" ဟု မပြပါ — Online mode နှင့် Delivery ရွေးထားသော Shop voucher များကို မထိခိုက်စေပါ။
@@ -477,6 +488,7 @@
         let printBadge = sale.printed
           ? `<span class="badge badge-printed">🖨️ Print ပြီး</span>`
           : (_noDeliveryShopVoucher ? "" : `<span class="badge badge-notprinted">🖨️ မထုတ်ရသေး</span>`);
+
 
         // Payment badge
         let payBadge = "";
@@ -488,25 +500,6 @@
         else if (payStatus === "Prepaid") payBadge = `<span class="badge badge-prepaid">Prepaid</span>`;
         else if (payStatus === "Partial") payBadge = `<span class="badge badge-partial">ပစ္စည်းဖိုးပြီး</span>`;
         else                              payBadge = `<span class="badge badge-cod">COD</span>`;
-
-        // Payment info in detail — deposit/online ပေးထားမှသာ ပြ (walk-in cash / COD သက်သက်ဆို မပြ)
-        let payInfo = "";
-        if (Number(sale.payAmount) > 0 || Number(sale.deposit) > 0) {
-          payInfo = `
-            <div class="items-box">
-              <b>💵 Payment</b>
-              <p>အခြေအနေ : ${payStatus === "Prepaid" ? "ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး" : (payStatus === "Partial" ? "ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်" : "အိမ်ရောက်ငွေချေ (COD)")}</p>
-              <p>Type : ${sale.payType || "-"}</p>
-              <p>Code : ${sale.payCode || "-"}</p>
-              <p>ပမာဏ : ${sale.payAmount || "-"}</p>
-              <p>ရက်စွဲ : ${sale.payDate || "-"}</p>
-              ${sale.paySS
-                ? `<img src="${sale.paySS}" style="max-width:100%;max-height:120px;border-radius:6px;margin-top:5px;" onclick="viewSS('${index}')">`
-                : (sale.hasPay || sale._hadPay)
-                  ? `<p style="font-size:12px;color:#8b5cf6;cursor:pointer;font-weight:600;margin-top:5px;" onclick="viewSS('${index}')">☁️ SS ကြည့်ရန်</p>`
-                  : ""}
-            </div>`;
-        }
 
         html += `
           <div class="card receipt-card" id="card-${index}" data-status="${payStatus}" data-date="${(sale.orderDate || '').slice(0,10)}">
@@ -552,18 +545,17 @@
               <p class="info-line"><b>Net Total:</b> ${getNetNumber(sale)}</p>
 
               <div class="items-box">
-                <b>ပစ္စည်းများ:</b>
                 ${itemHtml}
               </div>
 
-              ${payInfo}
+              <div id="paySummary-${index}" class="pay-summary-box" style="${_linkedPays.length ? '' : 'display:none;'}">${paySummaryHtml}</div>
 
               <div class="actions">
-                <button class="btn btn-payment" onclick="openPayModal(${index})">💵 Payment</button>
-                <button class="btn btn-print"   onclick="printReceipt(${index})">🖨️ Print</button>
-                <button class="btn btn-share"   onclick="shareReceipt(${index})">📤 Share</button>
-                <button class="btn btn-edit"    onclick="editReceipt(${index})">✏️ Edit</button>
-                <button class="btn btn-delete"  onclick="deleteReceipt(${index})">🗑️ Delete</button>
+                <button class="btn btn-onlinepay" onclick="openOnlinePaymentModal(${index})">💳 Online Payment</button>
+                <button class="btn btn-print"   onclick="printReceipt(${index})">${ssmIcon("print", {size:16})} Print</button>
+                <button class="btn btn-share"   onclick="shareReceipt(${index})">${ssmIcon("share", {size:16})} Share</button>
+                <button class="btn btn-edit"    onclick="editReceipt(${index})">${ssmIcon("edit", {size:16})} Edit</button>
+                <button class="btn btn-delete"  onclick="deleteReceipt(${index})">${ssmIcon("trash", {size:16})} Delete</button>
               </div>
             </div>
 
@@ -839,77 +831,13 @@
     }
 
     // ── Search ────────────────────────────────────────────────────
-    // ── Filters: search + date range + payment status (with counts) ──
-    var currentRStatus = "all";
-
-    function positionRPillThumb() {
-      var scroller = document.querySelector(".rpillnav-scroll");
-      var thumb    = document.getElementById("rpillThumb");
-      var active   = scroller && scroller.querySelector(".rchip.active");
-      if (!scroller || !thumb || !active) return;
-      thumb.style.width     = active.offsetWidth + "px";
-      thumb.style.transform = "translateX(" + active.offsetLeft + "px)";
-    }
-    window.addEventListener("resize", positionRPillThumb);
-
-    function setRStatus(st, btn) {
-      currentRStatus = st;
-      document.querySelectorAll(".rchip").forEach(function (c) { c.classList.remove("active"); });
-      if (btn) btn.classList.add("active");
-      applyFilters();
-    }
-
-    function formatRDate(iso) {
-      if (!iso) return "Select Date";
-      var p = iso.split("-");
-      if (p.length !== 3) return "Select Date";
-      return p[2] + "." + p[1] + "." + p[0];
-    }
-    function updateRDateLabel(inputId, labelId) {
-      var el = document.getElementById(inputId);
-      document.getElementById(labelId).textContent = formatRDate(el ? el.value : "");
-    }
-    function handleRDateChange(inputId, labelId) {
-      updateRDateLabel(inputId, labelId);
-      applyFilters();
-    }
-
-    function clearRDates() {
-      document.getElementById("dateFrom").value = "";
-      document.getElementById("dateTo").value   = "";
-      updateRDateLabel("dateFrom", "dateFromLabel");
-      updateRDateLabel("dateTo",   "dateToLabel");
-      applyFilters();
-    }
-
     function applyFilters() {
-      var kw   = (document.getElementById("searchBox").value || "").toLowerCase();
-      var from = document.getElementById("dateFrom").value;
-      var to   = document.getElementById("dateTo").value;
-      var counts = { all:0, Cash:0, Prepaid:0, Partial:0, COD:0 };
+      var kw = (document.getElementById("searchBox").value || "").toLowerCase();
 
       document.querySelectorAll(".receipt-card").forEach(function (card) {
-        var st   = card.getAttribute("data-status") || "COD";
-        var date = card.getAttribute("data-date") || "";
-
         var passText = (card.textContent || "").toLowerCase().includes(kw);
-        var passDate = true;
-        if (from && (!date || date < from)) passDate = false;
-        if (to   && (!date || date > to))   passDate = false;
-
-        var passSD = passText && passDate;     // search + date (status မထည့်ဘဲ count)
-        if (passSD) { counts.all++; if (counts[st] != null) counts[st]++; }
-
-        var passStatus = (currentRStatus === "all") || (st === currentRStatus);
-        card.style.display = (passSD && passStatus) ? "block" : "none";
+        card.style.display = passText ? "block" : "none";
       });
-
-      document.getElementById("cnt-all").textContent     = counts.all;
-      document.getElementById("cnt-Cash").textContent    = counts.Cash;
-      document.getElementById("cnt-Prepaid").textContent = counts.Prepaid;
-      document.getElementById("cnt-Partial").textContent = counts.Partial;
-      document.getElementById("cnt-COD").textContent     = counts.COD;
-      positionRPillThumb();
     }
 
 
@@ -943,6 +871,54 @@
         });
       });
     }
+
+    // ── Online Payment: modal embedding payments.html (same UI as index.html) ──
+    var _onlinePayIndex = null;
+
+    function openOnlinePaymentModal(index) {
+      _onlinePayIndex = index;
+      var sale = salesHistory[index];
+      if (!sale) return;
+      var overlay = document.getElementById("onlinePayModalOverlay");
+      var frame = document.getElementById("onlinePayModalFrame");
+      if (!overlay || !frame) return;
+      var preIds = (sale.linkedPayments || []).join(",");
+      // "&t=" busts the iframe cache so payments.html always re-reads localStorage fresh.
+      frame.src = "payments.html?select=1&sale=" + encodeURIComponent(sale.orderNo || "") +
+        "&pre=" + encodeURIComponent(preIds) + "&t=" + Date.now();
+      overlay.style.display = "flex";
+      requestAnimationFrame(function () { overlay.classList.add("show"); });
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeOnlinePaymentModal() {
+      var overlay = document.getElementById("onlinePayModalOverlay");
+      var frame = document.getElementById("onlinePayModalFrame");
+      if (!overlay) return;
+      overlay.classList.remove("show");
+      document.body.style.overflow = "";
+      setTimeout(function () {
+        overlay.style.display = "none";
+        if (frame) frame.src = "about:blank";
+      }, 320); // matches .pay-modal-sheet transition duration
+    }
+
+    // Messages from the embedded payments.html (select mode)
+    window.addEventListener("message", function (ev) {
+      var d = ev && ev.data;
+      if (!d || d.source !== "ssm-payments") return;
+      if (d.type === "selected") {
+        if (_onlinePayIndex !== null && salesHistory[_onlinePayIndex]) {
+          var chosen = Array.isArray(d.payments) ? d.payments : [];
+          salesHistory[_onlinePayIndex].linkedPayments = chosen.map(function (p) { return p.id; });
+          localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+        }
+        closeOnlinePaymentModal();
+        renderHistory();
+      } else if (d.type === "cancel") {
+        closeOnlinePaymentModal();
+      }
+    });
 
     // ── Init ──────────────────────────────────────────────────────
     renderHistory();

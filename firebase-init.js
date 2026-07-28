@@ -53,7 +53,7 @@
 
       // ── data sync (inlined — သီးခြား firebase-sync.js မလို) ──────────
       // page ဖွင့်ချိန် cloud ကို တစ်ခါပဲ ဆွဲ၊ ပြီးရင် local ကို ဘယ်တော့မှ မဖျက် (push-only)။
-      var SYNC_KEYS    = ["products", "shopSettings", "staffList", "ssm_admin_pin"];   // + admin PIN sync
+      var SYNC_KEYS    = ["products", "shopSettings", "staffList", "ssm_admin_pin", "paymentsList"];   // + admin PIN sync + payment records sync
       var COL          = "appdata";
       var _protoSet    = Storage.prototype.setItem;                 // original (iOS Safari မှာ instance override အလုပ်မလုပ်လို့ prototype သုံး)
       var rawSet       = function (k, v) { _protoSet.call(localStorage, k, v); };
@@ -151,14 +151,15 @@
           if (key === "products"     && typeof window.loadProducts === "function") window.loadProducts();
           else if (key === "shopSettings" && typeof window.loadSettings === "function") window.loadSettings();
           else if (key === "staffList"    && typeof window.loadStaff    === "function") window.loadStaff();
+          else if (key === "paymentsList" && typeof window.loadPayments === "function") window.loadPayments();
         } catch (e) {}
       }
 
       function ssmStartSync() {
         if (syncStarted) return; syncStarted = true;
         var db = window.fb.db;
-        console.log("[SSM sync] inline v32 (Blaze: prune 365d + images cloud-only in salesImages) loaded");
-        window.SSM_SYNC_VER = "v32";
+        console.log("[SSM sync] inline v33 (Blaze: prune 365d + images cloud-only in salesImages + paymentsList sync) loaded");
+        window.SSM_SYNC_VER = "v33";
 
         // device id (sales doc-id unique ဖြစ်အောင်; auto, once)
         var deviceId = localStorage.getItem("ssm_deviceId");

@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sone Sone Mommy POS</title>
+  <title>Sone Sone Mommy POS v2</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="receipt.js"></script>
+  <script src="icons.js"></script>
 
-  <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="firebase-init.js"></script>
-  <script src="payment-methods.js"></script>
-  <script src="payments-store.js"></script>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#6d28d9">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -46,7 +44,7 @@
     }
     *{ box-sizing:border-box; }
     /* Buttons/popups/chrome — text select မဖြစ်အောင် (tap လုပ်ရင် စိမ်းပြာကွက် မပေါ်စေရန်) */
-    button, .oppay-confirm, .popup-card, .popup-icon, .popup-msg, .popup-actions,
+    button, .popup-card, .popup-icon, .popup-msg, .popup-actions,
     .csel-btn, .checkout-bar, label, h1, h2, h3 {
       -webkit-user-select:none; -moz-user-select:none; user-select:none;
       -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
@@ -135,7 +133,8 @@
       flex:none; white-space:nowrap;
       align-items:center; gap:6px;
       font-size:12.5px; font-weight:600;
-      padding:8px 13px;
+      line-height:1.15;
+      padding:7px 13px;
       border-radius:999px;
       background:var(--brand); color:#fff; border:none;
       cursor:pointer;
@@ -153,8 +152,63 @@
       overflow:hidden; min-height:0; min-width:0;
       overflow-wrap:break-word; word-break:break-word;
     }
-    .order-info-toggle-row + .order-info-collapse .order-info-collapse-inner{
-      padding-top:14px;
+
+
+    /* ── Online Payment: selected-payments summary chip list ── */
+    .pay-summary-box{
+      margin-top:12px; padding:12px 13px; border-radius:var(--r-sm);
+      background:var(--brand-tint); border:1px solid var(--brand-line);
+    }
+    .pay-summary-total{
+      display:flex; align-items:center; justify-content:space-between;
+      font-size:13.5px; font-weight:700; color:var(--brand-ink);
+      margin:0 0 8px 0;
+    }
+    .pay-summary-chips{ display:flex; flex-wrap:wrap; gap:7px; }
+    .pay-summary-chip{
+      display:inline-flex; align-items:center; gap:5px;
+      font-size:12px; font-weight:600; color:var(--ink-2);
+      background:#fff; border:1px solid var(--line-2); border-radius:999px;
+      padding:5px 11px; white-space:nowrap;
+    }
+    .pay-summary-chip b{ color:var(--ink); }
+
+    /* ── Online Payment: full-screen modal (embeds payments.html) ── */
+    .pay-modal-overlay{
+      position:fixed; inset:0; z-index:400;
+      background:rgba(15,17,23,.4);
+      opacity:0; pointer-events:none;
+      transition:opacity .28s ease;
+      display:flex; align-items:flex-end; justify-content:center;
+    }
+    .pay-modal-overlay.show{ opacity:1; pointer-events:auto; }
+    .pay-modal-sheet{
+      width:100%; max-width:600px; height:100%;
+      background:var(--bg);
+      display:flex; flex-direction:column;
+      transform:translateY(100%);
+      transition:transform .32s cubic-bezier(.32,.72,0,1);
+      box-shadow:0 -8px 30px rgba(16,24,40,.18);
+    }
+    .pay-modal-overlay.show .pay-modal-sheet{ transform:translateY(0); }
+    .pay-modal-head{
+      flex:none; display:flex; align-items:center; gap:8px;
+      padding:13px 14px; padding-top:calc(13px + env(safe-area-inset-top, 0px));
+      background:rgba(255,255,255,.92);
+      backdrop-filter:saturate(150%) blur(10px); -webkit-backdrop-filter:saturate(150%) blur(10px);
+      border-bottom:1px solid var(--line);
+    }
+    .pay-modal-head h2{ margin:0; flex:1; font-size:16px; font-weight:700; letter-spacing:-.01em; }
+    .pay-modal-close{
+      flex:none; background:none; border:none; font-size:19px; color:var(--ink-2);
+      cursor:pointer; padding:7px 10px; border-radius:10px; line-height:1;
+    }
+    .pay-modal-close:active{ background:var(--line); }
+    .pay-modal-body{
+      flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    }
+    .pay-modal-body iframe{
+      width:100%; height:100%; border:none; display:block; background:var(--bg);
     }
 
     /* ── Fields ── */
@@ -162,6 +216,8 @@
     .field-row{ display:flex; gap:10px; }
     .field-row .field{ flex:1; min-width:0; }
     .field:last-child{ margin-bottom:0; }
+    .field:has(+ #receiverSection){ margin-bottom:0; }
+    #receiverSection{ margin-top:12px; }
     .lbl{
       display:block; font-size:12.5px; font-weight:600; color:var(--ink-2);
       margin:0 0 6px 2px;
@@ -197,7 +253,8 @@
     button:active{ transform:translateY(1px); }
     button:disabled{ background:#c6b8e8; cursor:not-allowed; }
     .btn-block{ width:100%; }
-    .add-btn{ width:100%; margin-top:2px; }
+    .add-btn{ width:100%; margin-top:2px; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .add-btn .ssm-icon, .btn-new .ssm-icon{ flex:none; }
 
     /* gift checkbox + remark inline row */
     .gift-row{ display:flex; align-items:center; gap:10px; margin:0 0 10px 0; }
@@ -213,12 +270,10 @@
       border:2px solid var(--ink-3); border-radius:50%;
       background:#fff; cursor:pointer; position:relative;
       transition:background .15s, border-color .15s;
-      color-scheme:light; /* keep native control base light so dark mode's UA ring doesn't overlay our custom fill */
+      color-scheme:light;
     }
     .gift-label input:checked{ background:var(--brand); border-color:var(--brand); }
     .gift-label input:focus-visible{ box-shadow:0 0 0 3px rgba(109,40,217,.13); }
-    html.dark .gift-label input:checked{ background-color:var(--brand); border-color:var(--brand); }
-    html.dark .gift-label input:focus-visible{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
     .saletype-row{ align-items:stretch; flex-wrap:nowrap; }
     .saletype-row > select{ flex:1; min-width:0; }
     .saletype-row > .gift-label{
@@ -300,7 +355,6 @@
       cursor:pointer; white-space:nowrap; transition:background .15s, color .15s; }
     .seg-opt.active{ background:var(--brand); color:#fff; box-shadow:0 2px 6px rgba(109,40,217,.28); }
     .seg-opt.seg-disabled{ opacity:.32; pointer-events:none; }
-    html.dark .seg-toggle{ background-color:#12151c; }
 
     /* ── Sale list (cart) ── */
     .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin:0 -4px; }
@@ -335,8 +389,9 @@
     .cart-foot .ci{ font-size:13px; font-weight:600; color:var(--ink-2); }
     .cart-foot .ci b{ color:var(--brand-ink); }
     #grandTotal{ margin:0; font-size:18px; font-weight:800; color:var(--brand-ink); letter-spacing:-.01em; }
-    #discountShow{ margin:11px 2px 0; font-size:13.5px; font-weight:700; color:var(--red); text-align:right; }
-    #discountShow:empty{ display:none; }
+    .cart-foot-sub{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-top:4px; font-size:12.5px; font-weight:600; color:var(--ink-3); }
+    .cart-foot-sub:empty, .cart-foot-sub[hidden]{ display:none; }
 
     /* discount box — subtle violet, on-brand */
     .disc-box{
@@ -348,35 +403,6 @@
     #discountValue:disabled{ opacity:.45; cursor:not-allowed; }
     #discountNote:empty{ display:none; }
 
-    /* deposit / online payment box */
-    .oppay-box{ background:var(--brand-tint); border:1px solid var(--brand-line); border-radius:var(--r-sm); padding:14px; margin:0 0 12px; }
-    .oppay-head{ margin:0 0 12px; font-size:14px; font-weight:800; color:var(--brand-ink); letter-spacing:-.01em; }
-    .oppay-lbl{ display:block; font-size:12px; font-weight:600; color:var(--brand-ink); margin:0 0 6px 2px; }
-    .oppay-row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:end; margin-bottom:12px; }
-    .oppay-row > div{ min-width:0; display:flex; flex-direction:column; }
-    .oppay-row .oppay-lbl{ min-height:32px; display:flex; align-items:flex-end; }
-    @media (max-width:360px){
-      .paytype-code-row{ grid-template-columns:1fr; }
-    }
-    .oppay-row input, .oppay-row select, .oppay-row .oppay-upload{
-      margin:0 !important; height:46px; box-sizing:border-box; width:100%; }
-    .oppay-row .oppay-upload{ padding:0 6px; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.15; font-size:11.5px; white-space:nowrap; overflow:hidden; }
-    .oppay-upload{ width:100%; padding:12px; border:1.5px dashed var(--brand-line); border-radius:var(--r-sm);
-      background:var(--surface); color:var(--brand-ink); font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; }
-    .oppay-upload:active{ background:var(--brand-tint); }
-    /* Compact Screenshot / Select-from-Folder buttons — scoped to this row only,
-       leaves other .oppay-row inputs/selects/buttons untouched */
-    .oppay-ss-row.oppay-row{ gap:8px; margin-bottom:10px; }
-    .oppay-ss-row.oppay-row .oppay-upload{ height:34px; padding:0 6px; font-size:11px; }
-    .oppay-ss-img{ display:block; max-width:150px; border-radius:10px; margin:10px 0 0; border:1px solid var(--brand-line); }
-    .oppay-confirm{ width:100%; margin:12px 0 0; padding:14px; border-radius:var(--r-sm); border:none;
-      background:linear-gradient(135deg,#7c3aed,#6d28d9); color:#fff; font-family:inherit; font-weight:800; font-size:14px; cursor:pointer;
-      box-shadow:0 4px 12px rgba(109,40,217,.35); transition:transform .12s, box-shadow .12s; }
-    .oppay-confirm:active{ transform:scale(.98); box-shadow:0 2px 6px rgba(109,40,217,.3); }
-    .oppay-confirm.on{ background:#16a34a; border-color:#16a34a; color:#fff; }
-    .oppay-note{ margin:8px 0 0; font-size:11px; font-weight:600; color:#b45309; }
-    .oppay-confirm.on ~ .oppay-note{ display:none; }
-
     /* after-save */
     #afterSaveActions{
       display:none; background:var(--green-tint); border:1px solid var(--green-line);
@@ -386,7 +412,7 @@
     .save-actions{ display:flex; flex-direction:column; gap:9px; }
     .btn-print{ background:var(--brand); width:100%; }
     .btn-share{ background:var(--green); width:100%; }
-    .btn-new{ background:#fff; color:var(--red); border:1px solid var(--red-line); width:100%; }
+    .btn-new{ background:#fff; color:var(--red); border:1px solid var(--red-line); width:100%; display:flex; align-items:center; justify-content:center; gap:6px; }
 
     /* ── Sticky checkout bar ── */
     .checkout-bar{
@@ -527,71 +553,6 @@
     .sheet-search input{ width:100%; }
     .sheet-opt.custom{ color:var(--brand-ink); font-weight:600; }
     .sheet-empty{ padding:20px; text-align:center; color:var(--ink-3); font-size:14px; }
-    /* ===== Dark mode (toggle via html.dark) ===== */
-    html.dark{
-      --bg:#0f1116; --surface:#181b22; --line:#252a33; --line-2:#333a46;
-      --ink:#e8eaef; --ink-2:#aab1bd; --ink-3:#727a87;
-      --brand:#8b5cf6; --brand-ink:#c4b5fd; --brand-tint:#1d1930; --brand-line:#352c57;
-      --green:#22c55e; --green-tint:#10271a; --green-line:#1f4a32;
-      --red:#f87171; --red-tint:#2a1414; --red-line:#5c2b2b;
-      --amber:#e0b84e; --amber-tint:#272010; --amber-line:#544619;
-      --blue:#93b4fb; --blue-tint:#172033; --blue-line:#2c3c5c;
-      --teal:#5fd0e6;
-      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
-    }
-    html.dark .top-bar{ background:rgba(18,20,26,.82); }
-    html.dark .checkout-bar{ background:rgba(18,20,26,.92); }
-    html.dark input:not([type=range]):not([type=checkbox]),
-    html.dark select, html.dark textarea,
-    html.dark .field input, html.dark .field select,
-    html.dark .modal-box input, html.dark .modal-box select, html.dark .gift-remark,
-    html.dark #searchBox, html.dark .csel-btn, html.dark .qty-stepper{ background-color:#1e222a; }
-    html.dark select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23aeb6c2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; }
-    html.dark .csel-btn{ background-color:#1e222a; }
-    html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
-    /* ── Quantity stepper — Dark Mode ── */
-    html.dark .qty-stepper{ border-color:var(--line-2); }
-    html.dark .qty-btn{
-      background:rgba(139,92,246,.16); color:var(--brand-ink);
-      transition:background .18s ease, transform .05s;
-    }
-    html.dark .qty-btn:hover{ background:rgba(139,92,246,.26); }
-    html.dark .qty-btn:active{ background:rgba(139,92,246,.36); transform:scale(.94); }
-    html.dark .qty-input{ color:var(--ink); }
-    html.dark #parcelAlert{ color:#7a5b00; }
-    html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
-    html.dark .ios-switch input:focus-visible + .ios-slider{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
-    /* ── Live receipt preview + responsive form/preview layout ── */
-    @media (min-width:700px) and (orientation:landscape){
-      .layout{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:18px;
-        max-width:1000px; margin:0 auto; align-items:start; }
-      .layout .wrap{ max-width:none; margin:0; padding-left:0; padding-right:0; }
-      .preview-col{ position:sticky; top:64px; padding:14px 0; }
-    }
-    .preview-col{ padding:0 14px 8px; }
-    .rcpt-eyebrow{ display:flex; align-items:center; justify-content:center; gap:8px;
-      font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
-      color:var(--ink-3); margin:0 0 10px; }
-    .rcpt-eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--brand); }
-    .rcpt{ width:300px; max-width:100%; margin:0 auto; background:#fff; color:#000;
-      padding:14px; border:1px solid var(--line-2); border-radius:12px;
-      font-family:'Courier New', monospace; font-size:11px; line-height:1.3; box-shadow:var(--shadow); }
-    /* live preview wrapper — chrome only; receipt styling comes from receipt.js (.ssm-receipt) so it matches receipts/print exactly */
-    .rcpt-card{ margin:0 auto; max-width:100%; border:1px solid var(--line-2); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; }
-    .rcpt hr{ border:none; border-top:1px dashed #000; margin:5px 0; }
-    .rcpt .line{ display:flex; justify-content:space-between; margin:2px 0; font-family:Arial,sans-serif; }
-    .rcpt .mm{ font-family:Arial,sans-serif; }
-    .rcpt .town-mid{ font-family:Arial,sans-serif; font-size:14px; font-weight:bold; }
-    .rcpt .cus-mid{ font-family:Arial,sans-serif; font-size:13px; font-weight:bold; }
-    .rcpt .phone-clear{ font-weight:bold; font-size:12px; }
-    .rcpt .addr-mm{ font-family:Arial,sans-serif; font-size:10px; }
-    .rcpt .recv-label{ font-size:9px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:#666; margin:0 0 2px; }
-    .rcpt .item-name{ font-weight:bold; margin-top:4px; }
-    .rcpt .item-sub{ display:flex; justify-content:space-between; font-size:10px; color:#333; }
-    .rcpt .item-remark{ font-size:10px; color:#000; margin-left:4px; }
-    .rcpt .net-box{ text-align:center; font-size:13px; font-weight:bold; border:1.5px solid #000; padding:5px; margin:5px 0; }
-    .rcpt .footer-mm{ font-family:Arial,sans-serif; text-align:center; font-size:11px; margin-top:6px; line-height:1.4; }
-    .rcpt .rcpt-note{ text-align:center; font-family:Arial,sans-serif; font-size:11px; margin:4px 0 2px; color:#000; }
     /* receipt-style editable cart */
     .rcart{ margin-top:2px; }
     .rcart-item{ display:flex; align-items:flex-start; gap:8px; padding:9px 0; border-bottom:1px dashed var(--line-2); }
@@ -620,7 +581,6 @@
     .ac-opt:active, .ac-opt.active{ background:var(--brand-tint); color:var(--brand-ink); }
     .ac-opt.custom{ color:var(--brand-ink); font-weight:600; }
     .ac-empty{ padding:14px 16px; text-align:center; color:var(--ink-3); font-size:14px; }
-    html.dark .ac-list{ background-color:#1e222a; }
   </style>
 </head>
 
@@ -654,7 +614,6 @@
     </div>
   </div>
 
-  <div class="layout">
   <div class="wrap">
 
     <h3 id="parcelAlert" class="no-print"></h3>
@@ -798,9 +757,9 @@
           <div class="row">
             <div>
               <div class="qty-stepper">
-                <button type="button" class="qty-btn qty-btn-minus" onclick="stepQty(-1)" aria-label="Decrease quantity">−</button>
+                <button type="button" class="qty-btn qty-btn-minus" onclick="stepQty(-1)" aria-label="Decrease quantity"><span data-icon="minus" data-icon-size="16"></span></button>
                 <input id="qty" class="qty-input" placeholder="0" inputmode="decimal" autocomplete="off" oninput="calculateItemTotal()">
-                <button type="button" class="qty-btn qty-btn-plus" onclick="stepQty(1)" aria-label="Increase quantity">+</button>
+                <button type="button" class="qty-btn qty-btn-plus" onclick="stepQty(1)" aria-label="Increase quantity"><span data-icon="add" data-icon-size="16"></span></button>
               </div>
             </div>
             <div>
@@ -813,23 +772,11 @@
           <input id="remark" placeholder="Remark">
         </div>
 
-        <button class="add-btn" onclick="addItem()">＋ Add Item</button>
-      </section>
-
-      <!-- Sale list -->
-      <section class="card">
-        <p class="eyebrow"><span class="dot"></span>ရောင်းရ စာရင်း</p>
-        <div id="saleTable" class="rcart"></div>
-        <div class="cart-foot">
-          <span class="ci">Total Items: <b id="cartCount">0</b></span>
-          <h3 id="grandTotal">Total : 0</h3>
-        </div>
+        <button class="add-btn" onclick="addItem()"><span data-icon="add" data-icon-size="16"></span> Add Item</button>
       </section>
 
       <!-- Discount & payment -->
       <section class="card">
-        <p class="eyebrow"><span class="dot"></span>လျှော့ဈေး & ပေးချေမှု</p>
-
         <div class="field-row">
           <div class="field">
             <label class="lbl">လျော့ပေး (Discount)</label>
@@ -843,51 +790,33 @@
         <div class="field">
           <textarea id="note" placeholder="📝 Delivery မှတ်ချက် (receipt အောက်ခြေ)"></textarea>
         </div>
-        <div class="field">
-          <select id="payStatusSel" onchange="autoFillDeposit(); toggleDepFields(); calculateNet();">
-            <option value="COD">အိမ်ရောက်ငွေချေ (COD)</option>
-            <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်</option>
-            <option value="Prepaid">ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး</option>
-            <option value="Cash">လက်ငင်း (Cash)</option>
-            <option value="OnlinePayment">Online Payment</option>
-            <option value="SplitPayment">Split Payment</option>
-            <option value="CashDeliFee">Cash (ပို့ခသာကောက်ရန်)</option>
-          </select>
-        </div>
 
-        <div class="oppay-box" id="oppayBox">
-          <p class="oppay-head">💵 Payment</p>
-          <div class="field">
-            <label class="oppay-lbl">စရံ / ကြိုတင်ပေးငွေပမာဏ (Deposit)</label>
-            <input id="deposit" oninput="resetDepConfirm(); toggleDepFields();" placeholder="0">
-          </div>
-          <div id="depTypeWrap" style="display:none;">
-            <div class="oppay-row paytype-code-row">
-              <div>
-                <label class="oppay-lbl">Online Payment Type</label>
-                <select id="depPayType" onchange="resetDepConfirm()">
-                  <!-- Options are rendered by PaymentMethods.renderOptions() — see payment-methods.js -->
-                </select>
-              </div>
-              <div>
-                <input id="depCode" maxlength="6" placeholder="Transaction Code (နောက်ဆုံး ၆ လုံး)" oninput="resetDepConfirm()">
-              </div>
-            </div>
-          </div>
-          <div id="depExtra" style="display:none;">
-            <input type="file" id="depSSInput" accept="image/*" style="display:none" onchange="loadDepSS(event)">
-            <input type="file" id="depSSInputCam" accept="image/*" capture="environment" style="display:none" onchange="loadDepSS(event)">
-            <div class="oppay-row oppay-ss-row">
-              <button type="button" class="oppay-upload" style="flex:1;" onclick="document.getElementById('depSSInputCam').click()">📷 ဓာတ်ပုံ ရိုက်ရန်</button>
-              <button type="button" class="oppay-upload" style="flex:1;" onclick="document.getElementById('depSSInput').click()">🖼️ Folder ကနေ ရွေးရန်</button>
-            </div>
-            <img id="depSSPreview" class="oppay-ss-img" style="display:none;">
-            <button type="button" id="depConfirmBtn" class="oppay-confirm" onclick="confirmDeposit()">💰 ငွေ လက်ခံရရှိပါသည် (Confirm)</button>
-            <p id="depConfirmNote" class="oppay-note">⚠️ Confirm မလုပ်ရင် Deposit က invoice မှာ မပါပါ</p>
-          </div>
+        <div class="order-info-toggle-row">
+          <button type="button" id="onlinePayToggleBtn" class="order-info-toggle-btn" style="display:inline-flex;" onclick="openPaymentModal()" aria-haspopup="dialog">💳 Online Payment ထည့်ရန်</button>
         </div>
+        <div id="paySummary" class="pay-summary-box" style="display:none;"></div>
+      </section>
 
-        <h3 id="discountShow"></h3>
+      <!-- Sale list -->
+      <section class="card">
+        <p class="eyebrow"><span class="dot"></span>ရောင်းရ စာရင်း</p>
+        <div id="saleTable" class="rcart"></div>
+        <div class="cart-foot">
+          <span class="ci">Total Items: <b id="cartCount">0</b></span>
+          <h3 id="grandTotal">Total : 0</h3>
+        </div>
+        <div class="cart-foot-sub" id="deliveryFeeShow" hidden>
+          <span>ပို့ခ (Delivery Fee)</span>
+          <span id="deliveryFeeShowVal">0</span>
+        </div>
+        <div class="cart-foot-sub" id="onlinePayFeeShow" hidden>
+          <span>စရံ / ကြိုတင်ပေးငွေ (<span id="onlinePayFeeShowCount">0</span>)</span>
+          <span id="onlinePayFeeShowVal" style="color:var(--red);">-0</span>
+        </div>
+        <div class="cart-foot-sub" id="discountFeeShow" hidden>
+          <span>လျော့ပေး (Discount)</span>
+          <span id="discountFeeShowVal" style="color:var(--red);">-0</span>
+        </div>
       </section>
 
     </div>
@@ -898,16 +827,10 @@
       <div class="save-actions">
         <button class="btn-print" onclick="printReceipt()">🖨️ Print</button>
         <button class="btn-share" onclick="shareReceipt()">📤 Share</button>
-        <button class="btn-new" onclick="newReceipt()">➕ New Receipt</button>
+        <button class="btn-new" onclick="newReceipt()"><span data-icon="add" data-icon-size="16"></span> New Receipt</button>
       </div>
     </div>
 
-  </div>
-
-    <aside class="preview-col no-print">
-      <div class="rcpt-eyebrow"><span class="dot"></span>Live Preview</div>
-      <div id="livePreview" class="rcpt-card"></div>
-    </aside>
   </div>
 
   <!-- Sticky checkout bar -->
@@ -917,6 +840,19 @@
       <h2 id="netTotal">Grand Total : 0</h2>
     </div>
     <button id="saveBtn" onclick="saveReceipt()">💾 Save</button>
+  </div>
+
+  <!-- Online Payment modal (embeds payments.html as the single payment UI) -->
+  <div class="pay-modal-overlay no-print" id="payModalOverlay" onclick="if(event.target===this) closePaymentModal()">
+    <div class="pay-modal-sheet" role="dialog" aria-modal="true" aria-label="Online Payment">
+      <div class="pay-modal-head">
+        <h2>💳 Online Payment</h2>
+        <button type="button" class="pay-modal-close" onclick="closePaymentModal()" aria-label="Close">✕</button>
+      </div>
+      <div class="pay-modal-body">
+        <iframe id="payModalFrame" title="Online Payment" src="about:blank"></iframe>
+      </div>
+    </div>
   </div>
 
   <!-- Receipt Preview (Share image အတွက်ပဲ၊ screen မှာ မပြ) -->
@@ -945,17 +881,23 @@
 
     <script>
 
+    // Safety net: if icons.js failed to load or hasn't defined ssmIcon yet,
+    // fall back to a plain-text glyph instead of throwing a ReferenceError.
+    // (An uncaught error here used to silently abort addItem() right after
+    // the item was pushed but before the cart row/UI was updated — so the
+    // button appeared to do nothing.)
+    if (typeof window.ssmIcon !== "function") {
+      window.ssmIcon = function (name) {
+        var map = { edit: "✏️", trash: "🗑️", add: "＋" };
+        return map[name] || "";
+      };
+    }
+
     let grandTotal = 0;
     let items      = [];
     let savedData  = null;
     let editIndex  = null;
     let orderNo    = Number(localStorage.getItem("orderNo")) || 1;
-
-    // Payment method options come from the shared payment-methods.js module
-    // (single source of truth — see that file for details).
-    if (window.PaymentMethods) {
-      PaymentMethods.renderOptions(document.getElementById("depPayType"));
-    }
 
     // order number မှာ device code ထည့် (device အလိုက် unique — sync collision မဖြစ်အောင်)
     function ssmOrderNo(n){
@@ -995,16 +937,7 @@
       });
       try { localStorage.setItem("ssm_appMode", v); } catch (e) {}
       updateOrderInfoForMode(v);
-
-      // Mode အလိုက် Payment Method default ချိန်ညှိမှု —
-      // Online → COD (အိမ်ရောက်ငွေချေ), Shop → Cash (လက်ငင်း)
-      var _payStatusSel = document.getElementById("payStatusSel");
-      if (_payStatusSel) {
-        _payStatusSel.value = (v === "shop") ? "Cash" : "COD";
-        try { if (typeof autoFillDeposit === "function") autoFillDeposit(); } catch (e) {}
-        try { if (typeof toggleDepFields === "function") toggleDepFields(); } catch (e) {}
-        try { if (typeof calculateNet === "function") calculateNet(); } catch (e) {}
-      }
+      try { if (typeof calculateNet === "function") calculateNet(); } catch (e) {}
     }
     function getAppMode() {
       var t = document.getElementById("modeSwitch");
@@ -1036,14 +969,17 @@
       var toggleBtn = document.getElementById("orderInfoToggleBtn");
       var collapse = document.getElementById("orderInfoCollapse");
       if (!toggleBtn || !collapse) return;
+      var inner = collapse.querySelector(".order-info-collapse-inner");
       if (mode === "shop") {
         toggleBtn.style.display = "inline-flex";
         collapse.classList.remove("expanded");        // collapsed by default in Shop mode
         toggleBtn.textContent = "+ Order Information";
         toggleBtn.setAttribute("aria-expanded", "false");
+        if (inner) inner.style.paddingTop = "14px";     // space below the visible toggle button
       } else {
         toggleBtn.style.display = "none";
         collapse.classList.add("expanded");            // always visible in Online mode
+        if (inner) inner.style.paddingTop = "0";        // no toggle button shown, so no gap needed
       }
       syncOrderInfoOverflow(collapse, collapse.classList.contains("expanded"));
     }
@@ -1063,6 +999,99 @@
         if (savedMode === "shop") setAppMode("shop");
       } catch (e) {}
     })();
+
+    // ── Online Payment: collapsible fields toggle ──────────────────
+    // ── Online Payment: full-screen modal embedding payments.html ──
+    // selectedPayments holds the full payment records (id, amount, method, ...)
+    // that are linked to the sale currently being drafted/edited.
+    var selectedPayments = [];
+
+    // A stable key identifying "this sale" for the duration of the draft,
+    // so payments.html can tag which payment records belong to it and stop
+    // the same payment from being linked to two different sales at once.
+    // When editing an existing receipt this equals its real orderNo; for a
+    // brand-new sale it equals the order number that WILL be assigned on
+    // save (ssmOrderNo(orderNo) doesn't change until saveReceipt() runs),
+    // so the key stays consistent across repeated modal opens pre-save.
+    function getSaleKey() {
+      return window.editOrderNo || ssmOrderNo(orderNo);
+    }
+
+    function fmtPayKs(n) {
+      n = Number(n) || 0;
+      return n.toLocaleString("en-US") + " Ks";
+    }
+    function payMethodLabel(m) {
+      return m === "Bank" ? "ဘဏ်လွှဲ" : (m || "အခြား");
+    }
+
+    function renderPaySummary() {
+      var box = document.getElementById("paySummary");
+      var btn = document.getElementById("onlinePayToggleBtn");
+      var footShow = document.getElementById("onlinePayFeeShow");
+      if (!box) return;
+      if (!selectedPayments.length) {
+        box.style.display = "none";
+        box.innerHTML = "";
+        if (btn) btn.textContent = "💳 Online Payment ထည့်ရန်";
+        if (footShow) footShow.hidden = true;
+        return;
+      }
+      var total = selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+      var chips = selectedPayments.map(function (p) {
+        return '<span class="pay-summary-chip">' + payMethodLabel(p.method) + ' • <b>' + fmtPayKs(p.amount) + '</b></span>';
+      }).join("");
+      box.innerHTML =
+        '<div class="pay-summary-total"><span>💳 စရံ / ကြိုတင်ပေးငွေ (Deposit) (' + selectedPayments.length + ')</span><span>' + fmtPayKs(total) + '</span></div>' +
+        '<div class="pay-summary-chips">' + chips + '</div>';
+      box.style.display = "block";
+      if (btn) btn.textContent = "✏️ Online Payment ပြင်ရန် (" + selectedPayments.length + ")";
+      if (footShow) {
+        document.getElementById("onlinePayFeeShowCount").textContent = selectedPayments.length;
+        document.getElementById("onlinePayFeeShowVal").textContent = "-" + total;
+        footShow.hidden = false;
+      }
+    }
+
+    function openPaymentModal() {
+      var overlay = document.getElementById("payModalOverlay");
+      var frame = document.getElementById("payModalFrame");
+      if (!overlay || !frame) return;
+      var preIds = selectedPayments.map(function (p) { return p.id; }).join(",");
+      // "&t=" busts the iframe cache so payments.html always re-reads
+      // localStorage fresh (other pages may have added/changed payments).
+      frame.src = "payments.html?select=1&sale=" + encodeURIComponent(getSaleKey()) +
+        "&pre=" + encodeURIComponent(preIds) + "&t=" + Date.now();
+      overlay.style.display = "flex";
+      requestAnimationFrame(function () { overlay.classList.add("show"); });
+      document.body.style.overflow = "hidden";
+    }
+
+    function closePaymentModal() {
+      var overlay = document.getElementById("payModalOverlay");
+      var frame = document.getElementById("payModalFrame");
+      if (!overlay) return;
+      overlay.classList.remove("show");
+      document.body.style.overflow = "";
+      setTimeout(function () {
+        overlay.style.display = "none";
+        if (frame) frame.src = "about:blank";
+      }, 320); // matches .pay-modal-sheet transition duration
+    }
+
+    // Messages from the embedded payments.html (select mode)
+    window.addEventListener("message", function (ev) {
+      var d = ev && ev.data;
+      if (!d || d.source !== "ssm-payments") return;
+      if (d.type === "selected") {
+        selectedPayments = Array.isArray(d.payments) ? d.payments : [];
+        renderPaySummary();
+        calculateNet();
+        closePaymentModal();
+      } else if (d.type === "cancel") {
+        closePaymentModal();
+      }
+    });
 
     // ── Delivery Service: recipient toggle button ─────────────────
     function toggleRecipientBtn() {
@@ -1332,15 +1361,19 @@
       var _sub = (saleType === "weight")
         ? weightText
         : ((isGift ? "လက်ဆောင် | " : "") + qty + " x " + price);
-      document.getElementById("saleTable").innerHTML += `
-        <div class="rcart-item" data-id="${item.id}" data-total="${total}">
-          <div class="rcart-main">
-            <div class="item-name">${product}${giftTag}${repTag}</div>
-            <div class="item-sub"><span>${_sub}</span><span>${total}</span></div>
-            ${remark ? `<div class="item-remark">→ ${remark}</div>` : ""}
-          </div>
-          <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">✏️</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">🗑️</button></span>
-        </div>`;
+      try {
+        document.getElementById("saleTable").innerHTML += `
+          <div class="rcart-item" data-id="${item.id}" data-total="${total}">
+            <div class="rcart-main">
+              <div class="item-name">${product}${giftTag}${repTag}</div>
+              <div class="item-sub"><span>${_sub}</span><span>${total}</span></div>
+              ${remark ? `<div class="item-remark">→ ${remark}</div>` : ""}
+            </div>
+            <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">${ssmIcon("edit",{size:15})}</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">${ssmIcon("trash",{size:15})}</button></span>
+          </div>`;
+      } catch (err) {
+        console.error("addItem: cart row render failed", err);
+      }
       updateCartCount();
 
       document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
@@ -1423,140 +1456,36 @@
 
     function calculateNet() {
       let delivery = Number(document.getElementById("delivery").value);
-      let deposit  = effectiveDeposit();
       let discountAmount = Number(document.getElementById("discountValue").value) || 0;
+      let onlinePayTotal = selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
 
-      let discountShow = document.getElementById("discountShow");
-      if (discountAmount > 0) {
-        discountShow.innerText = "Discount : -" + discountAmount;
-      } else {
-        discountShow.innerText = "";
+      let discountShow = document.getElementById("discountFeeShow");
+      if (discountShow) {
+        if (discountAmount > 0) {
+          document.getElementById("discountFeeShowVal").textContent = "-" + discountAmount;
+          discountShow.hidden = false;
+        } else {
+          discountShow.hidden = true;
+        }
       }
 
-      let net = grandTotal - discountAmount + delivery - deposit;
+      let deliveryShow = document.getElementById("deliveryFeeShow");
+      if (deliveryShow) {
+        if (delivery > 0) {
+          document.getElementById("deliveryFeeShowVal").textContent = delivery;
+          deliveryShow.hidden = false;
+        } else {
+          deliveryShow.hidden = true;
+        }
+      }
+
+      let net = grandTotal + delivery - onlinePayTotal - discountAmount;
       document.getElementById("netTotal").innerHTML = "Grand Total : " + net;
     }
 
     // ── Get Discount Amount (save အတွက်) ──────────────────────────
     function getDiscountAmount() {
       return Number(document.getElementById("discountValue").value) || 0;
-    }
-
-    // ── Deposit online-payment screenshot ──
-    var depSSData = "";
-    // Payment status ရွေးလိုက်ရင် Deposit ကို auto ဖြည့်ပေးမယ် (COD ဆို ပုံမှန်အတိုင်း မပြောင်း)
-    function autoFillDeposit() {
-      var v = document.getElementById("payStatusSel").value;
-      if (v === "CashDeliFee") {
-        // ပို့ခသာ ကောက်ရမယ့် Cash → Deposit/Online Payment အချက်အလက် အားလုံး ရှင်း
-        document.getElementById("deposit").value = "0";
-        var pt = document.getElementById("depPayType"); if (pt) pt.value = "";
-        var pc = document.getElementById("depCode");    if (pc) pc.value = "";
-        depSSData = "";
-        var pv = document.getElementById("depSSPreview"); if (pv) { pv.src = ""; pv.style.display = "none"; }
-        resetDepConfirm();
-        return;
-      }
-      if (v !== "Partial" && v !== "Prepaid" && v !== "OnlinePayment") return; // COD/Cash/SplitPayment → မထိ (manual entry)
-      var delivery = Number(document.getElementById("delivery").value) || 0;
-      var discountAmount = getDiscountAmount();
-      var itemsNet = grandTotal - discountAmount; // Delivery မပါဘဲ ဘောင်ချာ တန်ဖိုး
-      var depEl = document.getElementById("deposit");
-      if (v === "Partial") {
-        depEl.value = itemsNet;               // ပစ္စည်းဖိုးသာ ရှင်း → ပို့ခ ကျန်
-      } else if (v === "Prepaid" || v === "OnlinePayment") {
-        depEl.value = itemsNet + delivery;     // အားလုံး ရှင်း → ဘောင်ချာတန်ဖိုး အပြည့်
-      }
-      resetDepConfirm();
-    }
-    function toggleDepFields() {
-      var v = document.getElementById("payStatusSel").value;
-      var box = document.getElementById("oppayBox");
-      if (v === "CashDeliFee" || v === "Cash") {
-        if (box) box.style.display = "none"; // Payment section တစ်ခုလုံး ဖျောက် (Cash / CashDeliFee)
-        return;
-      }
-      if (box) box.style.display = ""; // တခြား status ပြန်ရွေးရင် ပြန်ပြ
-      var dep = Number(document.getElementById("deposit").value) || 0;
-      var isCashLike = (v === "COD" || v === "Cash"); // ငွေသား တိုက်ရိုက်ပေးချေမှု အမျိုးအစားများ → deposit/online fields မလို
-      var show = ((v && !isCashLike) || dep > 0);
-      document.getElementById("depExtra").style.display = show ? "block" : "none";
-      var tw = document.getElementById("depTypeWrap"); if (tw) tw.style.display = show ? "block" : "none";
-    }
-    var depositConfirmed = false;
-    function effectiveDeposit() {
-      return depositConfirmed ? (Number(document.getElementById("deposit").value) || 0) : 0;
-    }
-    function confirmDeposit() {
-      var amt = Number(document.getElementById("deposit").value) || 0;
-      if (amt <= 0) { alert("Deposit ပမာဏ ထည့်ပါ။"); return; }
-      if (!document.getElementById("depPayType").value) { alert("Online Payment Type ရွေးပါ။"); return; }
-      if (!depSSData) { alert("ငွေလွှဲ Screenshot ထည့်ပါ။"); return; }
-      var _dc = (document.getElementById("depCode").value || "").trim();
-      if (_dc.length !== 6) { alert("Transaction Code ၆ လုံး အပြည့် ထည့်ပါ။"); return; }
-
-      // ── Duplicate transaction-code check (confirm-time — receipts လိုပဲ) ──
-      var _hist = JSON.parse(localStorage.getItem("salesHistory")) || [];
-      var _myNo = window.editOrderNo || ssmOrderNo(orderNo);
-      var _dup = null;
-      for (var _i = 0; _i < _hist.length; _i++) {
-        var _h = _hist[_i];
-        if (_h && _h.payCode && String(_h.payCode).trim() === _dc && _h.orderNo !== _myNo) { _dup = _h; break; }
-      }
-      if (_dup) {
-        showConfirm(
-          "ယခုထည့်ထားသော " + _dc + " မှာ " + (_dup.orderNo || "-") + " တွင် အသုံးပြုပြီးဖြစ်ပါသည်။\n\nသေချာအောင် ပြန်လည်စစ်ဆေးပါ။",
-          function () { applyDepConfirm(); },   // သေချာပါသည် → confirm လုပ်မယ်
-          null,                                  // ပြန်စစ်ပါမည် → confirm မလုပ်ဘူး
-          { yes: "သေချာပါသည်", no: "ပြန်စစ်ပါမည်" }
-        );
-        return;
-      }
-      applyDepConfirm();
-    }
-    function applyDepConfirm() {
-      depositConfirmed = true;
-      var b = document.getElementById("depConfirmBtn");
-      if (b) { b.classList.add("on"); b.textContent = "✓ ငွေ လက်ခံရရှိပြီး"; }
-      ssmBeep(1000, 0.16);
-      calculateNet();
-    }
-    function resetDepConfirm() {
-      depositConfirmed = false;
-      var b = document.getElementById("depConfirmBtn");
-      if (b) { b.classList.remove("on"); b.textContent = "💰 ငွေ လက်ခံရရှိပါသည် (Confirm)"; }
-      calculateNet();
-    }
-    function resizeImageFile(file, cb) {
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        var img = new Image();
-        img.onload = function () {
-          var MAX = 800, w = img.width, h = img.height;
-          if (w > h && w > MAX)      { h = Math.round(h * MAX / w); w = MAX; }
-          else if (h >= w && h > MAX){ w = Math.round(w * MAX / h); h = MAX; }
-          var c = document.createElement("canvas");
-          c.width = w; c.height = h;
-          c.getContext("2d").drawImage(img, 0, 0, w, h);
-          cb(c.toDataURL("image/jpeg", 0.5));
-        };
-        img.onerror = function () { cb(null); };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-    function loadDepSS(event) {
-      var input = event.target;
-      var file = input.files[0];
-      if (!file) return;
-      resizeImageFile(file, function (dataUrl) {
-        input.value = "";   // ဖိုင်တူ ပြန်ရွေးရင်ပါ onchange fire ဖို့
-        if (!dataUrl) { alert("ဓာတ်ပုံ ဖတ်လို့ မရပါ။ ပြန်ကြိုးစားပါ။"); return; }
-        depSSData = dataUrl;
-        var pv = document.getElementById("depSSPreview");
-        pv.src = depSSData; pv.style.display = "block";
-        resetDepConfirm();
-      });
     }
 
     // ── On-page message banner (alert() can be suppressed on mobile) ──
@@ -1607,17 +1536,6 @@
 
       let discountAmount = getDiscountAmount();
 
-      // Online payment (deposit) info
-      var depStatus = document.getElementById("payStatusSel").value || "COD";
-      var depType = document.getElementById("depPayType").value;
-      var depAmt  = effectiveDeposit();
-      var depCode = (document.getElementById("depCode").value || "").trim();
-      var depPayAmount = "", depPayDate = "";
-      if ((depType || depStatus !== "COD") && depAmt > 0) {
-        depPayAmount = depAmt;
-        depPayDate = new Date().toLocaleDateString();
-      }
-
       // (Duplicate transaction-code check removed — it relied on prompt()/alert()
       //  which mobile browsers suppress after repeated dialogs, silently blocking save.)
 
@@ -1650,14 +1568,15 @@
         deliveryFeeReal: "",
         charge:          "",
         deliveryPhoto:   "",
-        deposit:         depAmt,
-        depositBase:     depPayAmount ? 0 : depAmt,
-        payStatus:       depStatus,
-        payType:         depositConfirmed ? depType : "",
-        payCode:         depositConfirmed ? depCode : "",
-        paySS:           depositConfirmed ? (depSSData || "") : "",
-        payAmount:       depPayAmount,
-        payDate:         depPayDate,
+        deposit:         selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0),
+        depositBase:     0,
+        payStatus:       (selectedPayments.length ? "Online" : "Cash"),
+        payType:         selectedPayments.map(function (p) { return payMethodLabel(p.method); }).join(", "),
+        payCode:         selectedPayments.map(function (p) { return p.transferId; }).filter(Boolean).join(", "),
+        paySS:           "",
+        payAmount:       selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0),
+        payDate:         (selectedPayments.length ? new Date(Math.max.apply(null, selectedPayments.map(function (p) { return p.createdAt || 0; }))).toISOString().slice(0, 10) : ""),
+        linkedPayments:  selectedPayments.map(function (p) { return p.id; }),
         note:            document.getElementById("note").value,
         netTotal:        document.getElementById("netTotal").innerText,
         printed:         false,
@@ -1672,12 +1591,6 @@
       else salesHistory.push(savedData);
       let isEditMode = (editIndex != null) || (_exist >= 0);
 
-      // ပုံ — Firestore (salesImages) မှာသာ သိမ်း။ paySS inline ပါရင် sync layer က cloud တင်ပြီး ဖြုတ်ပေး။
-      // paySS အသစ် ပါလာရင် hasPay flag တင် (cloud ဖြုတ်ပြီးနောက် "☁️ SS ကြည့်ရန်" ပေါ်အောင်)
-      if (savedData.paySS) { savedData.hasPay = true; savedData.payV = Date.now(); }
-      else if (_prevSale && (_prevSale.hasPay || _prevSale._hadPay)) {
-        savedData.hasPay = true; if (_prevSale.payV) savedData.payV = _prevSale.payV;
-      }
       if (!savedData.deliveryPhoto && _prevSale) {
         if (_prevSale.deliveryPhoto) savedData.deliveryPhoto = _prevSale.deliveryPhoto;               // legacy inline (migrate မလုပ်ရသေး) → ဆက်သယ် (sync layer ဖြုတ်တင်မယ်)
         else if (_prevSale.hasDel || _prevSale._hadDelivery) { savedData.hasDel = true; if (_prevSale.delV) savedData.delV = _prevSale.delV; }
@@ -1720,7 +1633,7 @@
       document.getElementById("rp-deliveryService").innerText = "Delivery : " + data.deliveryService;
       document.getElementById("rp-grandTotal").innerText      = "Total : " + data.grandTotal;
       document.getElementById("rp-delivery").innerText        = "Delivery Fee : " + data.delivery;
-      document.getElementById("rp-deposit").innerText         = "Deposit : " + data.deposit;
+      document.getElementById("rp-deposit").innerText         = "Deposit : " + data.deposit + (data.payType ? " (" + data.payType + ")" : "");
       document.getElementById("rp-netTotal").innerText        = data.netTotal;
 
       // Discount line
@@ -1830,26 +1743,20 @@
       document.getElementById("orderapp").value        = receipt.orderApp        || "";
       document.getElementById("delivery").value        = receipt.delivery        || "";
       document.getElementById("deliveryService").value = receipt.deliveryService || "";
-      document.getElementById("deposit").value         = receipt.deposit         || "";
-      document.getElementById("payStatusSel").value    = receipt.payStatus       || "COD";
-      document.getElementById("depPayType").value      = receipt.payType         || "";
-      depositConfirmed = (Number(receipt.deposit) > 0);
-      (function(){ var b=document.getElementById("depConfirmBtn"); if(b){ if(depositConfirmed){ b.classList.add("on"); b.textContent="✓ ငွေ လက်ခံရရှိပြီး"; } else { b.classList.remove("on"); b.textContent="💰 ငွေ လက်ခံရရှိပါသည် (Confirm)"; } } })();
-      if (typeof toggleDepFields === "function") toggleDepFields();
-      document.getElementById("depCode").value         = receipt.payCode         || "";
-      depSSData = receipt.paySS || "";
-      (function(){ var pv = document.getElementById("depSSPreview"); if (depSSData) { pv.src = depSSData; pv.style.display = "block"; } else { pv.style.display = "none"; } })();
-      // ပုံက cloud (salesImages) မှာသာ ရှိရင် — ဆွဲပြီး preview ပြ (edit မှာ ပုံ မပျောက်အောင် depSSData ထဲ ထည့်)
-      if (!depSSData && (receipt.hasPay || receipt._hadPay) && window.ssmGetCloudImages) {
-        window.ssmGetCloudImages(receipt.orderNo).then(function (imgs) {
-          if (imgs && imgs.paySS) {
-            depSSData = imgs.paySS;
-            var pv = document.getElementById("depSSPreview"); if (pv) { pv.src = depSSData; pv.style.display = "block"; }
-          }
-        });
-      }
       document.getElementById("note").value            = receipt.note            || "";
       document.getElementById("discountValue").value   = receipt.discountAmount  || receipt.discountValue || "";
+
+      // Restore linked Online Payment records (matched against payments.html's
+      // own store) so the summary + modal pre-selection reflect this receipt.
+      selectedPayments = [];
+      if (receipt.linkedPayments && receipt.linkedPayments.length) {
+        var _allPay = JSON.parse(localStorage.getItem("paymentsList")) || [];
+        receipt.linkedPayments.forEach(function (pid) {
+          var found = _allPay.find(function (p) { return p.id === pid; });
+          if (found) selectedPayments.push(found);
+        });
+      }
+      renderPaySummary();
 
       receipt.items.forEach(function (item) {
         if (!item.id) item.id = Date.now() + Math.random();
@@ -1867,7 +1774,7 @@
               <div class="item-sub"><span>${_sub2}</span><span>${item.total}</span></div>
               ${item.remark ? `<div class="item-remark">→ ${item.remark}</div>` : ""}
             </div>
-            <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">✏️</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">🗑️</button></span>
+            <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">${ssmIcon("edit",{size:15})}</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">${ssmIcon("trash",{size:15})}</button></span>
           </div>`;
       });
 
@@ -2330,157 +2237,6 @@
     inp.addEventListener("focus", show);
     inp.addEventListener("input", show);
     inp.addEventListener("blur", function () { setTimeout(hide, 150); });
-  })();
-  </script>
-  <script>
-  /* ── Live receipt preview (mirrors print.html) ── */
-  (function () {
-    function gv(id){ var e=document.getElementById(id); return e?e.value:''; }
-    function gt(id){ var e=document.getElementById(id); return e?e.innerText:''; }
-    function num(s){ var n=Number(String(s==null?'':s).replace(/[^0-9.-]/g,'')); return isNaN(n)?0:n; }
-    function fmt(n){ return Number(n||0).toLocaleString(); }
-
-    function renderLivePreview(){
-      var box = document.getElementById('livePreview');
-      if (!box) return;
-      var S = {};
-      try { S = JSON.parse(localStorage.getItem('shopSettings')) || {}; } catch(e){}
-      var logo  = S.logo || '';
-      var addr  = S.address || 'စုံစုံမာမီ';
-      var ph    = S.phone || '';
-      var lsize = S.logoSize || 115;
-      var tsize = S.textSize || 9; var addrAlign = S.addrAlign || "left";
-
-      var customer = gv('name'), phone = gv('phone'), address = gv('address'),
-          township = gv('township'), staff = gv('staff'), orderApp = gv('orderapp'),
-          service  = gv('deliveryService'), orderNo = gt('orderNo');
-      var receiverName = gv('receiverName'), receiverPhone = gv('receiverPhone'),
-          receiverAddress = gv('receiverAddress');
-
-      var itemsSum = 0, itemHtml = '';
-      var list = (typeof items !== 'undefined' && items) ? items : [];
-      list.forEach(function(it){
-        itemsSum += num(it.total);
-        var gift = it.isGift ? ' \uD83C\uDF81' : '';
-        var sizeLabel = '';
-        if (it.saleType === 'weight') sizeLabel = (it.size || '') + ' | ';
-        else if (it.isGift) sizeLabel = '\u101C\u1000\u103A\u1006\u1031\u102C\u1004\u103A | ';
-        itemHtml += '<div class="item-name mm">' + (it.product || '') + gift + '</div>';
-        itemHtml += '<div class="item-sub mm"><span>' + sizeLabel + (it.qty || 0) + ' x ' + (it.price || 0) +
-                    '</span><span>' + fmt(it.total) + '</span></div>';
-        if (it.remark) itemHtml += '<div class="item-remark mm">\u2192 ' + it.remark + '</div>';
-      });
-
-      var discount = num(gv('discountValue'));
-      var note = gv('note');
-      var _ps = (document.getElementById('payStatusSel')||{}).value || 'COD';
-      var payStatusLabels = {
-        COD: 'အိမ်ရောက်ငွေချေ',
-        Partial: 'ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်',
-        Prepaid: 'ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး',
-        Cash: 'လက်ငင်း (Cash)',
-        OnlinePayment: 'Online Payment',
-        SplitPayment: 'Split Payment',
-        CashDeliFee: 'Cash (ပို့ခသာကောက်ရန်)'
-      };
-      var payLabelLive = payStatusLabels[_ps] || payStatusLabels.COD;
-      var delivery = num(gv('delivery'));
-      var deposit  = num(gv('deposit'));
-      var net      = num(gt('netTotal'));
-      if (!net) net = itemsSum - discount - deposit + delivery;
-
-      // receipts/print နဲ့ တူညီတဲ့ shared template သုံး (single source of truth)
-      if (window.ssmRenderReceipt) {
-        window.ssmRenderReceipt(box, {
-          orderNo: orderNo, staff: staff,
-          customer: customer, phone: phone, address: address, township: township,
-          receiverName: receiverName, receiverPhone: receiverPhone, receiverAddress: receiverAddress,
-          orderApp: orderApp, deliveryService: service,
-          items: list, grandTotal: itemsSum,
-          discountAmount: discount, deposit: deposit, delivery: delivery,
-          note: note, payStatus: _ps,
-          shopMode: (typeof getAppMode === 'function') && getAppMode() === 'shop',
-          orderDate: new Date().toISOString()
-        });
-        return;
-      }
-
-      var discLine = discount > 0
-        ? '<div class="line"><span>လျော့ပေး (Discount)</span><span>-' + fmt(discount) + '</span></div>' : '';
-      var logoHtml = logo ? '<img src="' + logo + '" style="width:' + lsize + 'px;height:auto;flex-shrink:0;">' : '';
-      var now = new Date();
-      var dt = now.toLocaleDateString() + '  ' + now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-
-      // Shop-mode: default Customer/Address, hide empty Phone/Order App/Delivery Service/Staff lines
-      var isShopMode = (typeof getAppMode === 'function') && getAppMode() === 'shop';
-      var infoLines = [orderNo || ''];
-      if (isShopMode) {
-        if (staff) infoLines.push('\u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + staff);
-        if (orderApp) infoLines.push(orderApp);
-        if (service) infoLines.push(service);
-      } else {
-        infoLines.push('\u101C\u1000\u103A\u1001\u1036\u101E\u1030-' + (staff || '-'), (orderApp || '-'), (service || '-'));
-      }
-      var infoBlockHtml = infoLines.join('<br>');
-
-      var custBlockHtml = '';
-      if (isShopMode) {
-        if (customer || phone || address) {
-          if (customer) custBlockHtml += '<div class="cus-mid">' + customer + '</div>';
-          if (phone) custBlockHtml += '<div class="phone-clear">' + phone + '</div>';
-          if (address) custBlockHtml += '<div class="addr-mm">' + address + '</div>';
-        }
-      } else {
-        custBlockHtml = '<div class="cus-mid">' + (customer || '-') + '</div>' +
-          '<div class="phone-clear">' + (phone || '-') + '</div>' +
-          '<div class="addr-mm">' + (address || '-') + '</div>';
-      }
-
-      var hasReceiver = receiverName || receiverPhone || receiverAddress;
-      var receiverBlockHtml = '';
-      if (hasReceiver) {
-        receiverBlockHtml += '<hr>';
-        receiverBlockHtml += '<div class="recv-label mm">\u101C\u1000\u103A\u1001\u1036\u101E\u1030 (Receiver)</div>';
-        receiverBlockHtml += '<div class="cus-mid">' + (receiverName || '-') + '</div>';
-        if (receiverPhone) receiverBlockHtml += '<div class="phone-clear">' + receiverPhone + '</div>';
-        if (receiverAddress) receiverBlockHtml += '<div class="addr-mm">' + receiverAddress + '</div>';
-      }
-
-      box.innerHTML =
-        '<div style="display:flex;align-items:center;gap:6px;">' + logoHtml +
-          '<div style="flex:1;">' +
-            '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.3;text-align:' + addrAlign + ';">' + addr + '<br>\uD83D\uDCDE ' + ph + '</div>' +
-            '<div class="mm" style="font-size:' + tsize + 'px;line-height:1.5;margin-top:4px;border-top:1px solid #000;padding-top:3px;text-align:right;">' +
-              infoBlockHtml + '</div>' +
-          '</div></div><hr>' +
-        '<div class="line" style="align-items:baseline;"><span class="town-mid">' + (township || '-') + '</span><span style="font-size:11px;">' + dt + '</span></div><hr>' +
-        custBlockHtml + receiverBlockHtml + ((custBlockHtml || receiverBlockHtml) ? '<hr>' : '') +
-        (itemHtml || '<div class="item-sub mm" style="justify-content:center;color:#999;">\u2014 item \u1019\u101B\u103E\u102D\u101E\u1031\u1038 \u2014</div>') + '<hr>' +
-        '<div class="line"><span>Total</span><span>' + fmt(itemsSum) + '</span></div>' + discLine +
-        '<div class="line"><span>Deposit</span><span>' + fmt(deposit) + '</span></div>' +
-        '<div class="line"><span>ပို့ခ (Delivery Fee)</span><span>' + fmt(delivery) + '</span></div>' +
-        '<div class="net-box mm">' + payLabelLive + ' : ' + fmt(net) + '</div>' +
-        (note ? '<div class="rcpt-note">' + note + '</div>' : '') +
-        '<div class="footer-mm">' + (S.thankYou ? S.thankYou.replace(/\n/g, '<br>') : "\u1005\u102F\u1036\u1005\u102F\u1036\u1019\u102C\u1019\u102E\u101B\u1032\u1037 \u101C\u1000\u103A\u101B\u102C\u101C\u1031\u1038\u1000\u102D\u102F \u1019\u103C\u100A\u103A\u1038\u1005\u1019\u103A\u1038\u1000\u103C\u100A\u103A\u1037\u1015\u1031\u1038\u101C\u102D\u102F\u1037 \u1000\u103B\u1031\u1038\u1007\u1030\u1038\u1010\u1004\u103A\u1015\u102B\u1010\u101A\u103A \uD83D\uDE4F<br>\u1005\u102C\u1038\u1019\u103C\u102D\u1014\u103A\u1015\u102B\u1005\u1031\u1014\u1031\u102C\u103A \uD83D\uDC9B") + '</div>';
-    }
-    window.renderLivePreview = renderLivePreview;
-
-    // re-render on field changes
-    ['name','phone','address','township','orderapp','deliveryService','staff','delivery','deposit','discountValue','note','receiverName','receiverPhone','receiverAddress']
-      .forEach(function(id){
-        var e = document.getElementById(id);
-        if (e){ e.addEventListener('input', renderLivePreview); e.addEventListener('change', renderLivePreview); }
-      });
-    // re-render after cart / total functions
-    ['addItem','deleteRow','calculateNet'].forEach(function(fn){
-      if (typeof window[fn] === 'function'){
-        var orig = window[fn];
-        window[fn] = function(){ var r = orig.apply(this, arguments); try{ renderLivePreview(); }catch(e){} return r; };
-      }
-    });
-
-    if (document.readyState !== 'loading') renderLivePreview();
-    else document.addEventListener('DOMContentLoaded', renderLivePreview);
   })();
   </script>
   <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
