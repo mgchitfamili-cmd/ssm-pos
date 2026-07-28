@@ -419,6 +419,14 @@
 
   <script>
 
+    // icons.js မ load ဖြစ်ရင် (network/404) သို့ icon နာမည် မသိရင်တောင် render loop မကျိုးအောင် fallback
+    if (typeof window.ssmIcon !== "function") {
+      window.ssmIcon = function (name) {
+        var map = { edit: "✏️", trash: "🗑️", add: "＋", print: "🖨️", share: "📤" };
+        return map[name] || "";
+      };
+    }
+
     let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
 
     // ── legacy fix: paySS ကို cloud ဖြုတ်ပြီးသား ဒါပေမဲ့ hasPay flag မရှိတဲ့ order — payCode/payAmount ရှိရင် flag ပြန်တင် ──
