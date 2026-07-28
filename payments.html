@@ -689,6 +689,7 @@
 
     function loadPayments() {
       paymentsList = JSON.parse(localStorage.getItem("paymentsList")) || [];
+      let isAdmin = (localStorage.getItem("ssm_role") || "staff") === "admin";
 
       // sort newest first
       let sorted = paymentsList.map(function (p, i) { return { p: p, i: i }; })
@@ -713,10 +714,10 @@
               <div class="pay-amt-wrap">
                 <div class="pay-amt">${fmtKs(p.amount)}</div>
                 <span class="tag ${methodTagClass(p.method)}">${methodLabel(p.method)}</span>
-                <div class="pay-actions">
+                ${isAdmin ? `<div class="pay-actions">
                   <button class="icon-btn btn-edit"   onclick="event.stopPropagation(); openForm(${index})" aria-label="Edit">✏️</button>
                   <button class="icon-btn btn-delete" onclick="event.stopPropagation(); deletePayment(${index})" aria-label="Delete">🗑️</button>
-                </div>
+                </div>` : ""}
               </div>
               ${(p.sender || p.transferId || p.hasSS) ? `<div class="pay-info-right">
                 ${p.sender ? `<div class="pay-mid">လွှဲသူ - <b>${p.sender}</b></div>` : ""}
