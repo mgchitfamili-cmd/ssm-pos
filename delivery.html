@@ -261,7 +261,7 @@
     @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
     /* ===== Dark mode (toggle via html.dark) ===== */
     html.dark{
-      --bg:#0f1116; --surface:#181b22; --line:#252a33; --line-2:#333a46;
+      --bg:#0f1116; --bg-2:#14161d; --bg-3:#191c25; --surface:#181b22; --line:#252a33; --line-2:#333a46;
       --ink:#e8eaef; --ink-2:#aab1bd; --ink-3:#727a87;
       --brand:#8b5cf6; --brand-ink:#c4b5fd; --brand-tint:#1d1930; --brand-line:#352c57;
       --green:#22c55e; --green-tint:#10271a; --green-line:#1f4a32;
@@ -283,10 +283,10 @@
     html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
     html.dark #parcelAlert{ color:#7a5b00; }
     html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
-    html.dark .card.Delivered{ background:linear-gradient(165deg, #16301f 0%, #1c4029 55%, #1f4a2e 100%); border-color:var(--green-line); }
-    html.dark .card.RTS{ background:linear-gradient(165deg, #3a1c1f 0%, #4a2226 55%, #55272b 100%); border-color:var(--red-line); }
-    html.dark .card.Pending{ background:linear-gradient(165deg, #3a2f14 0%, #4a3b18 55%, #55441b 100%); border-color:var(--amber-line); }
-    html.dark .card.ShopOrder{ background:linear-gradient(165deg, #142a3f 0%, #18344e 55%, #1c3d5c 100%); border-color:#2c4c6e; }
+    html.dark .card.Delivered{ background:linear-gradient(165deg, var(--surface) 0%, var(--surface) 55%, var(--green-tint) 100%); border-color:var(--green-line); }
+    html.dark .card.RTS{ background:linear-gradient(165deg, var(--surface) 0%, var(--surface) 55%, var(--red-tint) 100%); border-color:var(--red-line); }
+    html.dark .card.Pending{ background:linear-gradient(165deg, var(--surface) 0%, var(--surface) 55%, var(--amber-tint) 100%); border-color:var(--amber-line); }
+    html.dark .card.ShopOrder{ background:linear-gradient(165deg, var(--surface) 0%, var(--surface) 55%, var(--blue-tint) 100%); border-color:var(--blue-line); }
     /* WIDE-SCREEN — 2-column grid on tablets, 1-column on phones */
     @media (min-width:700px){
       .filter-selects, .date-range { max-width:920px; margin-left:auto; margin-right:auto; }
