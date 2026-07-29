@@ -15,7 +15,7 @@
   <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("service-worker.js").catch(function(){});});}</script>
   <style>
     :root{
-      --bg:#f4f5f8; --surface:#ffffff; --line:#eaecf1; --line-2:#dcdfe7;
+      --bg:#dad3f5; --bg-2:#c7bdec; --bg-3:#e3dcf7; --surface:#ffffff; --line:#eaecf1; --line-2:#dcdfe7;
       --ink:#15171c; --ink-2:#5a616e; --ink-3:#8b919e;
       --brand:#6d28d9; --brand-ink:#5b21b6; --brand-tint:#f4f0fe; --brand-line:#e7defb;
       --green:#15803d; --green-tint:#ecfaf1; --green-line:#bfe9cd;
@@ -25,15 +25,20 @@
     }
     *{ box-sizing:border-box; }
     html,body{ margin:0; }
+    html{
+      min-height:100%;
+      background:linear-gradient(160deg, var(--bg-2) 0%, var(--bg) 45%, var(--bg-3) 100%);
+    }
     body{
       font-family:system-ui,'Noto Sans Myanmar','Padauk','Myanmar Text','Segoe UI',sans-serif;
-      background:var(--bg); color:var(--ink); line-height:1.5; padding:0 0 30px 0;
+      background:linear-gradient(160deg, var(--bg-2) 0%, var(--bg) 45%, var(--bg-3) 100%);
+      min-height:100vh; color:var(--ink); line-height:1.5; padding:0 0 30px 0;
       -webkit-text-size-adjust:100%;
     }
 
     .top-bar{
       position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:8px;
-      padding:11px 12px; margin:0; background:rgba(255,255,255,.85);
+      padding:11px 12px; margin:0; background:#F3EEFF;
       backdrop-filter:saturate(150%) blur(10px); -webkit-backdrop-filter:saturate(150%) blur(10px);
       border-bottom:1px solid var(--line);
     }
@@ -110,7 +115,7 @@
 
     /* ===== Dark mode ===== */
     html.dark{
-      --bg:#0f1116; --surface:#181b22; --line:#252a33; --line-2:#333a46;
+      --bg:#0f1116; --bg-2:#14161d; --bg-3:#191c25; --surface:#181b22; --line:#252a33; --line-2:#333a46;
       --ink:#e8eaef; --ink-2:#aab1bd; --ink-3:#727a87;
       --brand:#8b5cf6; --brand-ink:#c4b5fd; --brand-tint:#1d1930; --brand-line:#352c57;
       --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
@@ -310,8 +315,18 @@
 
     // Cloud sync ပြီးတိုင်း / တခြား page ကနေ Delivered လုပ်တိုင်း — ချက်ချင်း ပြန် render
     document.addEventListener("ssm-sales-updated", function () { renderIncome(); });
-    window.addEventListener("storage", function (e) { if (e.key === "salesHistory") renderIncome(); });
-    window.addEventListener("pageshow", function () { renderIncome(); });
+    window.addEventListener("storage", function (e) {
+      if (e.key === "salesHistory") renderIncome();
+      if (e.key === "ssm_dark") {
+        document.documentElement.classList.toggle("dark", e.newValue === "1");
+      }
+    });
+    window.addEventListener("pageshow", function () {
+      renderIncome();
+      try {
+        document.documentElement.classList.toggle("dark", localStorage.getItem("ssm_dark") === "1");
+      } catch (e) {}
+    });
 
     // ── Slide Menu ──
     function openMenu() {
