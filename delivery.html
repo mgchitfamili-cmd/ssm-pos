@@ -283,10 +283,18 @@
     html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
     html.dark #parcelAlert{ color:#7a5b00; }
     html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
-    html.dark .card.Delivered{ background:linear-gradient(165deg, var(--surface) 0%, var(--surface) 55%, var(--green-tint) 100%); border-color:var(--green-line); }
-    html.dark .card.RTS{ background:linear-gradient(165deg, var(--surface) 0%, var(--surface) 55%, var(--red-tint) 100%); border-color:var(--red-line); }
-    html.dark .card.Pending{ background:linear-gradient(165deg, var(--surface) 0%, var(--surface) 55%, var(--amber-tint) 100%); border-color:var(--amber-line); }
-    html.dark .card.ShopOrder{ background:linear-gradient(165deg, var(--surface) 0%, var(--surface) 55%, var(--blue-tint) 100%); border-color:var(--blue-line); }
+    html.dark .card.Delivered{ background:linear-gradient(165deg, #d7f3e3 0%, #aee3c4 55%, #7fd1a2 100%); border-color:var(--green-line); }
+    html.dark .card.RTS{ background:linear-gradient(165deg, #fbdada 0%, #f5b5b8 55%, #ee8f95 100%); border-color:var(--red-line); }
+    html.dark .card.Pending{ background:linear-gradient(165deg, #fdf0d0 0%, #fbdb95 55%, #f7c15c 100%); border-color:var(--amber-line); }
+    html.dark .card.ShopOrder{ background:linear-gradient(165deg, #dbe9fd 0%, #aecdf7 55%, #7fadf0 100%); border-color:#a9c8f7; }
+    html.dark .card.Delivered .summary-left h3, html.dark .card.RTS .summary-left h3,
+    html.dark .card.Pending .summary-left h3, html.dark .card.ShopOrder .summary-left h3{ color:#20242c; }
+    html.dark .card.Delivered .summary-left p, html.dark .card.RTS .summary-left p,
+    html.dark .card.Pending .summary-left p, html.dark .card.ShopOrder .summary-left p{ color:#5a5470; }
+    html.dark .card.Delivered .summary-right .net, html.dark .card.RTS .summary-right .net,
+    html.dark .card.Pending .summary-right .net, html.dark .card.ShopOrder .summary-right .net{ color:#2b1f57; }
+    html.dark .card.Delivered .parcel-no, html.dark .card.RTS .parcel-no,
+    html.dark .card.Pending .parcel-no, html.dark .card.ShopOrder .parcel-no{ color:#5a5470; border-color:rgba(0,0,0,.15); }
     /* WIDE-SCREEN — 2-column grid on tablets, 1-column on phones */
     @media (min-width:700px){
       .filter-selects, .date-range { max-width:920px; margin-left:auto; margin-right:auto; }
