@@ -15,7 +15,7 @@
   <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("service-worker.js").catch(function(){});});}</script>
   <style>
     :root{
-      --bg:#dad3f5; --bg-2:#c7bdec; --surface:#ffffff; --line:#e3daf6; --line-2:#d3c5ef;
+      --bg:#dad3f5; --bg-2:#c7bdec; --bg-3:#e3dcf7; --surface:#ffffff; --line:#e3daf6; --line-2:#d3c5ef;
       --ink:#2b2b2b; --ink-2:#6c5f94; --ink-3:#948aba;
       --brand:#4f3393; --brand-ink:#3a2470; --brand-tint:#efe9fb; --brand-line:#dccdf5;
       --green:#3fae6a; --green-tint:#eaf8f0; --green-line:#bfe9cd;
@@ -29,7 +29,7 @@
     html,body{ margin:0; }
     body{
       font-family:system-ui,'Noto Sans Myanmar','Padauk','Myanmar Text','Segoe UI',sans-serif;
-      background:linear-gradient(160deg, var(--bg-2) 0%, var(--bg) 45%, #e3dcf7 100%);
+      background:linear-gradient(160deg, var(--bg-2) 0%, var(--bg) 45%, var(--bg-3) 100%);
       background-attachment:fixed;
       color:var(--ink); line-height:1.5; padding:0 0 30px 0;
       -webkit-text-size-adjust:100%;
@@ -41,7 +41,7 @@
       backdrop-filter:saturate(150%) blur(10px); -webkit-backdrop-filter:saturate(150%) blur(10px);
       border-bottom:1px solid var(--line);
     }
-    #menuBtn{ background:#fff; border:none; box-shadow:var(--shadow); font-size:23px; line-height:1; color:var(--ink);
+    #menuBtn{ background:var(--surface); border:none; box-shadow:var(--shadow); font-size:23px; line-height:1; color:var(--ink);
       cursor:pointer; padding:6px 9px; border-radius:14px;
       -webkit-tap-highlight-color:transparent; outline:none; -webkit-user-select:none; user-select:none; }
     #menuBtn:active{ background:var(--line); }
@@ -62,7 +62,7 @@
       font-size:14px; color:var(--ink); background:transparent; border:none;
       outline:none; -webkit-appearance:none; appearance:none; }
     #searchBtn{ flex:none; width:34px; height:34px; margin-right:1px; padding:0; border:none; border-radius:50%;
-      background:#fff; box-shadow:var(--shadow); color:var(--ink); cursor:pointer;
+      background:var(--surface); box-shadow:var(--shadow); color:var(--ink); cursor:pointer;
       display:flex; align-items:center; justify-content:center;
       -webkit-tap-highlight-color:transparent; outline:none; -webkit-user-select:none; user-select:none; }
     #searchBtn svg{ width:19px; height:19px; display:block; }
@@ -74,14 +74,10 @@
 
     /* card */
     .card{ position:relative; isolation:isolate; overflow:hidden;
-      background:linear-gradient(165deg, #ffffff 0%, #ffffff 55%, var(--brand-tint) 100%);
+      background:linear-gradient(165deg, var(--surface) 0%, var(--surface) 55%, var(--brand-tint) 100%);
       border:1px solid var(--line); border-radius:var(--r);
       margin-bottom:10px; box-shadow:var(--shadow); }
-    .card::before{
-      content:""; position:absolute; inset:0; z-index:-1;
-      background:radial-gradient(160px 80px at 12% -10%, rgba(255,255,255,.8), rgba(255,255,255,0) 70%);
-      pointer-events:none;
-    }
+    .card::before{ content:none; }
     .card.Delivered{ background:linear-gradient(165deg, #d7f3e3 0%, #aee3c4 55%, #7fd1a2 100%); border-color:var(--green-line); }
     .card.RTS{ background:linear-gradient(165deg, #fbdada 0%, #f5b5b8 55%, #ee8f95 100%); border-color:var(--red-line); }
     .card.Pending{ background:linear-gradient(165deg, #fdf0d0 0%, #fbdb95 55%, #f7c15c 100%); border-color:var(--amber-line); }
@@ -196,16 +192,12 @@
       border:none; padding:11px; border-radius:var(--r-sm); color:#fff; font-size:13px; font-weight:600;
       cursor:pointer; flex:1; font-family:inherit; transition:transform .05s;
       box-shadow:0 2px 6px rgba(47,35,89,.25), inset 0 1px 0 rgba(255,255,255,.35); }
-    .btn::before{
-      content:""; position:absolute; inset:0; z-index:-1;
-      background:radial-gradient(60px 30px at 20% -10%, rgba(255,255,255,.5), rgba(255,255,255,0) 70%);
-      pointer-events:none;
-    }
+    .btn::before{ content:none; }
     .btn:active{ transform:translateY(1px); }
     .btn-photo{ background:linear-gradient(180deg, #a68ddb 0%, #8e72c7 55%, #7458ab 100%); }
-    .btn-edit{ background:linear-gradient(180deg, #ffffff 0%, var(--amber-tint) 100%);
+    .btn-edit{ background:linear-gradient(180deg, var(--surface) 0%, var(--amber-tint) 100%);
       color:var(--amber-ink); border:1px solid var(--amber-line); box-shadow:none; }
-    .btn-delete{ background:linear-gradient(180deg, #ffffff 0%, var(--red-tint) 100%);
+    .btn-delete{ background:linear-gradient(180deg, var(--surface) 0%, var(--red-tint) 100%);
       color:var(--red); border:1px solid var(--red-line); box-shadow:none; }
 
     /* photo modal */
@@ -251,7 +243,7 @@
     .menu-item.active{ background:var(--brand-tint); color:var(--brand-ink); font-weight:700; }
     .menu-item .ic{ width:38px; height:38px; flex:none; border-radius:10px; display:flex; align-items:center;
       justify-content:center; font-size:18px; background:var(--brand-tint); border:1px solid var(--brand-line); }
-    .menu-item.active .ic{ background:#fff; }
+    .menu-item.active .ic{ background:var(--surface); }
 
     /* status filter chips */
     .filter-selects{ display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px 14px 14px; }
@@ -291,6 +283,10 @@
     html.dark .btn-edit, html.dark .btn-delete, html.dark .cart-del{ background:#1e222a; }
     html.dark #parcelAlert{ color:#7a5b00; }
     html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
+    html.dark .card.Delivered{ background:linear-gradient(165deg, #16301f 0%, #1c4029 55%, #1f4a2e 100%); border-color:var(--green-line); }
+    html.dark .card.RTS{ background:linear-gradient(165deg, #3a1c1f 0%, #4a2226 55%, #55272b 100%); border-color:var(--red-line); }
+    html.dark .card.Pending{ background:linear-gradient(165deg, #3a2f14 0%, #4a3b18 55%, #55441b 100%); border-color:var(--amber-line); }
+    html.dark .card.ShopOrder{ background:linear-gradient(165deg, #142a3f 0%, #18344e 55%, #1c3d5c 100%); border-color:#2c4c6e; }
     /* WIDE-SCREEN — 2-column grid on tablets, 1-column on phones */
     @media (min-width:700px){
       .filter-selects, .date-range { max-width:920px; margin-left:auto; margin-right:auto; }
@@ -321,7 +317,7 @@
     .csel-btn{
       width:100%; text-align:left; font-family:inherit; font-size:15px; font-weight:500;
       color:var(--ink); cursor:pointer;
-      background-color:#fff;
+      background-color:var(--surface);
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%238b919e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
       background-repeat:no-repeat; background-position:right 11px center;
       border:1px solid var(--line-2); border-radius:var(--r-sm);

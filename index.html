@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sone Sone Mommy POS v2</title>
 
+  <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="receipt.js"></script>
 
@@ -20,6 +21,7 @@
     :root{
       --bg:#dad3f5;
       --bg-2:#c7bdec;
+      --bg-3:#e3dcf7;
       --surface:#ffffff;
       --line:#e3daf6;
       --line-2:#d3c5ef;
@@ -66,7 +68,7 @@
     html,body{ margin:0; }
     body{
       font-family:system-ui,'Noto Sans Myanmar','Padauk','Myanmar Text','Segoe UI',sans-serif;
-      background:linear-gradient(160deg, var(--bg-2) 0%, var(--bg) 45%, #e3dcf7 100%);
+      background:linear-gradient(160deg, var(--bg-2) 0%, var(--bg) 45%, var(--bg-3) 100%);
       background-attachment:fixed;
       color:var(--ink);
       line-height:1.5;
@@ -121,11 +123,7 @@
       color:#2b2b2b;
       box-shadow:0 2px 6px rgba(228,119,155,.4), inset 0 1px 0 rgba(255,255,255,.4);
     }
-    .mode-switch button.active::before{
-      content:""; position:absolute; inset:0;
-      background:radial-gradient(60px 30px at 20% -10%, rgba(255,255,255,.55), rgba(255,255,255,0) 70%);
-      pointer-events:none;
-    }
+    .mode-switch button.active::before{ content:none; }
 
     .wrap{ max-width:600px; margin:0 auto; padding:14px; }
 
@@ -205,7 +203,7 @@
     .pay-summary-chip{
       display:inline-flex; align-items:center; gap:5px;
       font-size:12px; font-weight:600; color:var(--ink-2);
-      background:#fff; border:1px solid var(--line-2); border-radius:999px;
+      background:var(--surface); border:1px solid var(--line-2); border-radius:999px;
       padding:5px 11px; white-space:nowrap;
     }
     .pay-summary-chip b{ color:var(--ink); }
@@ -263,7 +261,7 @@
 
     input:not([type=range]):not([type=checkbox]), select, textarea{
       width:100%; padding:11px 12px; font-size:15px; line-height:1.45; color:var(--ink);
-      background:#fff; border:1px solid var(--line-2); border-radius:var(--r-sm);
+      background:var(--surface); border:1px solid var(--line-2); border-radius:var(--r-sm);
       font-family:inherit; outline:none; -webkit-appearance:none; appearance:none;
       transition:border-color .15s, box-shadow .15s;
     }
@@ -306,7 +304,7 @@
       -webkit-appearance:none; appearance:none;
       width:19px; height:19px; margin:0; flex:none;
       border:2px solid var(--ink-3); border-radius:50%;
-      background:#fff; cursor:pointer; position:relative;
+      background:var(--surface); cursor:pointer; position:relative;
       transition:background .15s, border-color .15s;
       color-scheme:light;
     }
@@ -351,7 +349,7 @@
     .qty-stepper{
       display:flex; align-items:center; justify-content:space-between; gap:5px;
       height:45.75px; box-sizing:border-box;
-      background:#fff; border:1px solid var(--line-2); border-radius:var(--r-sm);
+      background:var(--surface); border:1px solid var(--line-2); border-radius:var(--r-sm);
       padding:0 6px;
     }
     .qty-btn{
@@ -400,11 +398,7 @@
     }
     .order-info-toggle-btn::before,
     .add-btn::before,
-    .recipient-btn::before{
-      content:""; position:absolute; inset:0;
-      background:radial-gradient(60px 30px at 18% -10%, rgba(255,255,255,.5), rgba(255,255,255,0) 70%);
-      pointer-events:none;
-    }
+    .recipient-btn::before{ content:none; }
     .recipient-btn.active{
       background:linear-gradient(180deg, #7d64c9 0%, #543a9c 55%, #3a2470 100%) !important;
     }
@@ -440,7 +434,7 @@
     .cart-total{ color:var(--ink); font-weight:800; font-size:14px; }
     .cart-act{ text-align:right; width:1%; white-space:nowrap; }
     .cart-del{
-      background:#fff; color:var(--red); border:1px solid var(--red-line);
+      background:var(--surface); color:var(--red); border:1px solid var(--red-line);
       width:36px; height:36px; padding:0; font-size:16px; border-radius:10px; line-height:1;
     }
     .cart-del:active{ background:#fef2f2; }
@@ -477,7 +471,7 @@
     .btn-print{ background:var(--secondary); width:100%; }
     .btn-print:active{ background:#7b5fae; }
     .btn-share{ background:var(--green); width:100%; }
-    .btn-new{ background:#fff; color:var(--red); border:1px solid var(--red-line); width:100%; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .btn-new{ background:var(--surface); color:var(--red); border:1px solid var(--red-line); width:100%; display:flex; align-items:center; justify-content:center; gap:6px; }
 
     /* ── Sticky checkout bar ── */
     .checkout-bar{
@@ -500,11 +494,7 @@
       background:linear-gradient(180deg, #9c81d6 0%, #6f4fc0 55%, #4f3393 100%);
       box-shadow:0 6px 18px rgba(91,59,138,.28), inset 0 1px 0 rgba(255,255,255,.35);
     }
-    #saveBtn::before{
-      content:""; position:absolute; inset:0;
-      background:radial-gradient(70px 34px at 18% -10%, rgba(255,255,255,.5), rgba(255,255,255,0) 70%);
-      pointer-events:none;
-    }
+    #saveBtn::before{ content:none; }
     #saveBtn:active{ background:linear-gradient(180deg, #7d64c9 0%, #543a9c 55%, #3a2470 100%); }
     #saveBtn:disabled{ background:#cabfdb; }
 
@@ -538,7 +528,7 @@
       display:flex; align-items:center; justify-content:center; font-size:18px;
       background:var(--brand-tint); border:1px solid var(--brand-line);
     }
-    .menu-item.active .ic{ background:#fff; }
+    .menu-item.active .ic{ background:var(--surface); }
 
 
     /* Receipt preview — Share image အတွက်ပဲ၊ screen မှာ မပြ */
@@ -548,6 +538,30 @@
       font-family:'Courier New',monospace;
     }
 
+    /* ===== Dark mode (toggled via html.dark) ===== */
+    html.dark{
+      --bg:#0f1116; --bg-2:#14161d; --bg-3:#191c25; --surface:#181b22; --line:#252a33; --line-2:#333a46;
+      --ink:#e8eaef; --ink-2:#aab1bd; --ink-3:#727a87;
+      --brand:#8b5cf6; --brand-ink:#c4b5fd; --brand-tint:#1d1930; --brand-line:#352c57;
+      --accent:#a68ddb; --accent-tint:#1d1930; --accent-line:#352c57;
+      --cta:#8b5cf6; --cta-ink:#c4b5fd; --cta-tint:#1d1930; --cta-line:#352c57;
+      --secondary:#a08fd6;
+      --green:#22c55e; --green-tint:#10271a; --green-line:#1f4a32;
+      --red:#f87171; --red-line:#5c2b2b;
+      --amber:#e0b84e; --amber-tint:#272010; --amber-line:#544619; --amber-ink:#f2d17a;
+      --info:#93b4fb; --info-tint:#172033; --info-line:#2c3c5c;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
+      --shadow-lg:0 16px 44px rgba(0,0,0,.5);
+    }
+    html.dark .top-bar{ background:rgba(18,20,26,.82); }
+    html.dark .checkout-bar{ background:rgba(18,20,26,.92); }
+    html.dark .pay-modal-head{ background:rgba(18,20,26,.92); }
+    html.dark input:not([type=range]):not([type=checkbox]),
+    html.dark select, html.dark textarea{ background-color:#1e222a; }
+    html.dark select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23aeb6c2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; }
+    html.dark .csel-btn{ background-color:#1e222a;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%23aab1bd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; }
+    html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
     @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
     /* ── Custom Popup (alert/confirm) ── */
     .popup-overlay{
@@ -574,12 +588,13 @@
     .popup-actions{ display:flex; gap:9px; }
     .popup-actions button{ flex:1; }
     .popup-cancel{ background:var(--surface); color:var(--ink-2); border:1px solid var(--line-2); }
+    .popup-input{ background:var(--surface); color:var(--ink); border:1px solid var(--line-2); }
     /* ── Custom select (bottom sheet, replaces native picker) ── */
     .csel-native{ display:none !important; }
     .csel-btn{
       width:100%; text-align:left; font-family:inherit; font-size:15px; font-weight:500;
       color:var(--ink); cursor:pointer;
-      background-color:#fff;
+      background-color:var(--surface);
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%238b919e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
       background-repeat:no-repeat; background-position:right 11px center;
       border:1px solid var(--line-2); border-radius:var(--r-sm);
@@ -2042,7 +2057,7 @@
       ov2.innerHTML = '<div class="popup-card" role="dialog" aria-modal="true">' +
         '<div class="popup-icon">\u26a0\ufe0f</div>' +
         '<p class="popup-msg" style="white-space:pre-line"></p>' +
-        '<input class="popup-input" style="width:100%;margin:2px 0 14px;padding:11px 12px;font-size:15px;border:1px solid #dcdfe7;border-radius:11px;font-family:inherit;outline:none;box-sizing:border-box;background:#fff;color:#15171c;">' +
+        '<input class="popup-input" style="width:100%;margin:2px 0 14px;padding:11px 12px;font-size:15px;border-radius:11px;font-family:inherit;outline:none;box-sizing:border-box;">' +
         '<div class="popup-actions"></div></div>';
       document.body.appendChild(ov2);
       var m = ov2.querySelector(".popup-msg"), inp = ov2.querySelector(".popup-input"), act = ov2.querySelector(".popup-actions");
