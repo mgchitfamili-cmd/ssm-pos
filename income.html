@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Income</title>
+  <title>Income (Delivery + Shop)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
@@ -136,7 +136,7 @@
       <p>POS System</p>
     </div>
     <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
+    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> ဝင်ငွေ (Delivery + Shop)</div>
     <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
     <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
@@ -148,10 +148,15 @@
 
   <div class="top-bar">
     <button id="menuBtn" onclick="openMenu()">⋮</button>
-    <span class="top-title">Delivery ဆီမှရငွေ</span>
+    <span class="top-title">ဝင်ငွေ (Delivery + Shop)</span>
   </div>
 
   <div class="filter-selects">
+    <select id="srcFilter" onchange="srcFilterChanged()">
+      <option value="all">🗂 အားလုံး (Delivery + Shop)</option>
+      <option value="delivery">🚚 Delivery ဆီမှရငွေ</option>
+      <option value="shop">🛒 Shop ဆိုင်အရောင်း</option>
+    </select>
     <select id="svcFilter" onchange="renderIncome()">
       <option value="all">🚚 Service — အားလုံး</option>
       <option value="Royal">Royal</option>
@@ -239,38 +244,72 @@
     }
 
     // ── Core: build grouped income data from salesHistory ───────
-    function getDeliveredRecords() {
+    // Returns a unified list of income entries from BOTH:
+    //  • Delivery orders that have been marked "Delivered"
+    //  • Shop (in-store / walk-in) sales entered while POS was in Shop mode
+    function getIncomeRecords() {
       var sales = [];
       try { sales = JSON.parse(localStorage.getItem("salesHistory")) || []; } catch (e) {}
-      return sales.filter(function (s) {
-        return s && s.deliveryStatus === "Delivered" && s.deliveredDate;
+
+      var out = [];
+      sales.forEach(function (s) {
+        if (!s) return;
+
+        if (s.deliveryStatus === "Delivered" && s.deliveredDate) {
+          out.push({
+            date:    s.deliveredDate,
+            service: s.deliveredService || "-",
+            amount:  Number(s.deliveredAmount) || 0,
+            source:  "delivery"
+          });
+        } else if (s.shopMode === true) {
+          var d = String(s.orderDate || "").slice(0, 10);
+          if (!d) return;
+          var net = (Number(s.grandTotal) || 0) - (Number(s.discountAmount) || 0);
+          out.push({
+            date:    d,
+            service: "Shop",
+            amount:  net,
+            source:  "shop"
+          });
+        }
       });
+      return out;
+    }
+
+    function srcFilterChanged() {
+      var src = document.getElementById("srcFilter").value || "all";
+      var svcEl = document.getElementById("svcFilter");
+      svcEl.style.display = (src === "shop") ? "none" : "";
+      renderIncome();
     }
 
     function renderIncome() {
+      var src  = (document.getElementById("srcFilter").value || "all");
       var svc  = (document.getElementById("svcFilter").value || "all");
       var from = (document.getElementById("dateFrom").value || "");
       var to   = (document.getElementById("dateTo").value || "");
 
-      var records = getDeliveredRecords().filter(function (s) {
-        var matchSvc  = (svc === "all") || ((s.deliveredService || "") === svc);
-        var matchFrom = !from || s.deliveredDate >= from;
-        var matchTo   = !to   || s.deliveredDate <= to;
-        return matchSvc && matchFrom && matchTo;
+      var records = getIncomeRecords().filter(function (s) {
+        var matchSrc  = (src === "all") || (s.source === src);
+        var matchSvc  = (s.source === "shop") || (svc === "all") || (s.service === svc);
+        var matchFrom = !from || s.date >= from;
+        var matchTo   = !to   || s.date <= to;
+        return matchSrc && matchSvc && matchFrom && matchTo;
       });
 
-      // Group by deliveredDate + deliveredService — one card per combination
+      // Group by date + service + source — one card per combination
       var groups = {};
       var order = []; // preserves first-seen (date, service) combos for stable sort
       records.forEach(function (s) {
-        var date = s.deliveredDate;
-        var service = s.deliveredService || "-";
-        var key = date + "||" + service;
+        var date = s.date;
+        var service = s.service || "-";
+        var key = date + "||" + s.source + "||" + service;
         if (!groups[key]) {
-          groups[key] = { date: date, service: service, total: 0, count: 0 };
+          groups[key] = { date: date, service: service, source: s.source, total: 0, count: 0 };
           order.push(key);
         }
-        groups[key].total += Number(s.deliveredAmount) || 0;
+        groups[key].total += Number(s.amount) || 0;
         groups[key].count += 1;
       });
 
@@ -284,7 +323,7 @@
       var html = "";
 
       if (order.length === 0) {
-        html = '<p class="empty-state">Delivered order မရှိသေးပါ။<br>Order ကို "Delivered" လုပ်တာနဲ့ ဒီစာရင်းမှာ အလိုအလျောက် ပေါ်လာပါမယ်။</p>';
+        html = '<p class="empty-state">ဝင်ငွေ မရှိသေးပါ။<br>Delivery order ကို "Delivered" လုပ်တာနဲ့ (သို့) Shop mode နဲ့ အရောင်းသိမ်းတာနဲ့ ဒီစာရင်းမှာ အလိုအလျောက် ပေါ်လာပါမယ်။</p>';
       }
 
       order.forEach(function (key) {
@@ -294,14 +333,16 @@
                     '--service-tint:' + col.tint + ';' +
                     '--service-line:' + col.line + ';' +
                     '--service-gradient:' + col.gradient + ';';
+        var icon = (g.source === "shop") ? "🛒" : "🚚";
+        var unitLabel = (g.source === "shop") ? " sale" : " order";
         html += '<div class="day-card" style="' + style + '">' +
                   '<div class="day-head">' +
                     '<span class="day-date">' + formatDRDate(g.date) + '</span>' +
                     '<span class="day-amount">' + fmt(g.total) + '</span>' +
                   '</div>' +
                   '<div class="day-body">' +
-                    '<span class="day-service">🚚 ' + g.service + '</span>' +
-                    '<span class="day-count">' + g.count + ' order</span>' +
+                    '<span class="day-service">' + icon + ' ' + g.service + '</span>' +
+                    '<span class="day-count">' + g.count + unitLabel + '</span>' +
                   '</div>' +
                 '</div>';
       });
