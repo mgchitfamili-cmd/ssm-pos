@@ -685,7 +685,7 @@
       <p>POS System</p>
     </div>
     <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> ဝင်ငွေ (Delivery + Shop)</div>
+    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
     <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
     <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
@@ -1480,6 +1480,7 @@
       updateCartCount();
 
       document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
+      applyPromoDiscount();
       calculateNet();
 
       // Reset
@@ -1539,6 +1540,7 @@
       updateCartCount();
 
       document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
+      applyPromoDiscount();
       calculateNet();
     }
 
@@ -1639,6 +1641,31 @@
     // ── Get Discount Amount (save အတွက်) ──────────────────────────
     function getDiscountAmount() {
       return Number(document.getElementById("discountValue").value) || 0;
+    }
+
+    // ── Promo Discount Rule ────────────────────────────────────────
+    // 7000 ကျပ်တန် item (product တူ/မတူ) — ကိုယ်စားလှယ်ဈေး (repPrice) မဟုတ်တဲ့
+    // item တွေကိုသာ ရေတွက်သည် (ကိုယ်စားလှယ်ဈေးက 10% လျော့ပြီးသားဖြစ်၍ ဒီ promo
+    // rule 2 ခုနှင့် မသက်ဆိုင်) — unit အရေအတွက် စုစုပေါင်းအလိုက်:
+    //   • 10 ခု (နှင့်အထက်) ရောက်ရင် → item အားလုံးကို 1 ခုလျှင် 6500 နှုန်း
+    //     ဖြစ်အောင် (count × 500) discount ပေး (10 ခု=5000, 12 ခု=6000, ...)
+    //   • 10 ခု မပြည့်သေးရင် → ၃ ခုစီအတွက် 1000 discount (3-ခု rule)
+    function computePromoDiscount() {
+      var count = 0;
+      items.forEach(function (it) {
+        if (it.repPrice) return;   // ကိုယ်စားလှယ်ဈေး item များကို promo မှ ချန်
+        if (Number(it.price) === 7000) count += Number(it.qty) || 0;
+      });
+      if (count >= 10) return count * 500;
+      return Math.floor(count / 3) * 1000;
+    }
+
+    // items ပြောင်းတိုင်း (add/delete) ခေါ်ပြီး discount field ကို auto ဖြည့်ပေးသည်
+    function applyPromoDiscount() {
+      var dv = document.getElementById("discountValue");
+      if (!dv) return;
+      var promo = computePromoDiscount();
+      dv.value = promo > 0 ? promo : "";
     }
 
     // ── On-page message banner (alert() can be suppressed on mobile) ──
