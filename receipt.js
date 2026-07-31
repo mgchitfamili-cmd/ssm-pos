@@ -135,7 +135,13 @@
     }
 
     var payLabel = "\u1021\u102D\u1019\u103A\u101B\u1031\u102C\u1000\u103A\u1004\u103D\u1031\u1001\u103B\u1031";
-    if (sale.payStatus === "Prepaid") payLabel = "\u1015\u1005\u1039\u1005\u100A\u103A\u1038\u1016\u102D\u102F\u1038+\u1015\u102D\u102F\u1037\u1001 \u1021\u102C\u1038\u101C\u102F\u1036\u1038\u101B\u103E\u1004\u103A\u1038\u1015\u103C\u102E\u1038";
+    if (sale.shopMode) {
+      // Shop mode: payStatus (COD/Partial/Prepaid) ရဲ့ အဓိပ္ပါယ်က
+      // လက်ငင်း (Cash) / Online & Cash / Fully Online payment ဖြစ်တယ် (index.html အတိုင်း)
+      if (sale.payStatus === "Prepaid") payLabel = "Fully Online payment";
+      else if (sale.payStatus === "Partial") payLabel = "Online & Cash";
+      else payLabel = "လက်ငင်း (Cash)";
+    } else if (sale.payStatus === "Prepaid") payLabel = "\u1015\u1005\u1039\u1005\u100A\u103A\u1038\u1016\u102D\u102F\u1038+\u1015\u102D\u102F\u1037\u1001 \u1021\u102C\u1038\u101C\u102F\u1036\u1038\u101B\u103E\u1004\u103A\u1038\u1015\u103C\u102E\u1038";
     else if (sale.payStatus === "Partial") payLabel = "\u1015\u1005\u1039\u1005\u100A\u103A\u1038\u1016\u102D\u102F\u1038\u101B\u103E\u1004\u103A\u1038\u1015\u103C\u102E\u1038 \u1015\u102D\u102F\u1037\u1001 \u101E\u102C\u1000\u1031\u102C\u1000\u103A\u101B\u1014\u103A";
 
     var netNum = getNetNumber(sale);

@@ -349,7 +349,7 @@
       <p>POS System</p>
     </div>
     <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> ဝင်ငွေ (Delivery + Shop)</div>
+    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
     <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
     <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
@@ -538,7 +538,14 @@
         var _isWI = /-WI-/.test(String(sale.orderNo || "")) || sale.payMode;
         if (_isWI) payStatus = "Cash";   // walk-in (ဆိုင်ရောင်း) = Cash
         var _isShop = !!sale.shopMode;   // created while app was in Shop mode (index.html mode switch)
-        if (payStatus === "Cash")         payBadge = `<span class="badge badge-cash">Cash</span>`;
+        if (_isShop && !_isWI) {
+          // Shop mode: payStatus က COD/Partial/Prepaid အသုံးပြုထားပေမယ့် အဓိပ္ပါယ်က
+          // လက်ငင်း (Cash) / Online & Cash / Fully Online payment ဖြစ်တယ် (index.html အတိုင်း)
+          if (payStatus === "Prepaid")      payBadge = `<span class="badge badge-prepaid">Fully Online payment</span>`;
+          else if (payStatus === "Partial") payBadge = `<span class="badge badge-partial">Online & Cash</span>`;
+          else                              payBadge = `<span class="badge badge-cash">လက်ငင်း (Cash)</span>`;
+        }
+        else if (payStatus === "Cash")         payBadge = `<span class="badge badge-cash">Cash</span>`;
         else if (payStatus === "Prepaid") payBadge = `<span class="badge badge-prepaid">Prepaid</span>`;
         else if (payStatus === "Partial") payBadge = `<span class="badge badge-partial">ပစ္စည်းဖိုးပြီး</span>`;
         else                              payBadge = `<span class="badge badge-cod">COD</span>`;
