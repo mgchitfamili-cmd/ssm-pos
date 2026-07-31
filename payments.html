@@ -139,6 +139,9 @@
       display:flex; align-items:center; justify-content:center; }
     .btn-edit{ background:var(--surface); color:var(--brand-ink); border:1px solid var(--brand-line); box-shadow:none; }
     .btn-delete{ background:var(--surface); color:var(--red); border:1px solid var(--red-line); box-shadow:none; }
+    .btn-verify{ background:var(--surface); color:var(--ink-2); border:1px solid var(--line-2); box-shadow:none; }
+    .btn-verify.verified{ background:var(--green-tint); color:var(--green); border-color:var(--green-line); }
+    .verified-tag{ color:var(--green) !important; font-weight:600; }
     .empty{ color:var(--ink-3); text-align:center; margin-top:52px; font-size:14px; line-height:1.6; }
 
     /* Duplicate transferId warning bar */
@@ -702,6 +705,15 @@
       }
     }
 
+    // "စစ်ပြီးပါပြီ" — admin က ငွေလွှဲတစ်ခုချင်းစီကို စစ်ဆေးပြီးကြောင်း အမှတ်ခြစ်/ပြန်ဖြုတ်
+    function toggleVerified(id) {
+      let p = paymentsList.find(function (x) { return x.id === id; });
+      if (!p) return;
+      p.verified = !p.verified;
+      localStorage.setItem("paymentsList", JSON.stringify(paymentsList));
+      loadPayments();
+    }
+
     function deletePayment(index) {
       showConfirm("ဒီ ငွေလွှဲမှတ်တမ်းကို ဖျက်မှာလား?", function () {
         let removed = paymentsList[index];
@@ -786,6 +798,7 @@
         let _locked = SELECT_MODE && isLocked(p);
         let _selected = SELECT_MODE && selectedIds.has(p.id);
         let _linked = !SELECT_MODE && !!p.linkedSaleId;
+        let _verified = !!p.verified;
         let _cardClass = "pay-card" + (SELECT_MODE ? " selectable" : "") + (_selected ? " selected" : "") + (_locked ? " locked" : "") + (_linked ? " linked" : "");
         let _cardClick = (SELECT_MODE && !_locked) ? `onclick="toggleSelectCard(event, '${p.id}')"` : "";
         html += `
@@ -796,6 +809,7 @@
                 <div class="pay-amt">${fmtKs(p.amount)}</div>
                 <span class="tag ${methodTagClass(p.method)}">${methodLabel(p.method)}</span>
                 ${isAdmin ? `<div class="pay-actions">
+                  <button class="icon-btn btn-verify${_verified ? " verified" : ""}" onclick="event.stopPropagation(); toggleVerified('${p.id}')" aria-label="Verify">${_verified ? "✅" : "☐"}</button>
                   <button class="icon-btn btn-edit"   onclick="event.stopPropagation(); openForm(${index})" aria-label="Edit">✏️</button>
                   <button class="icon-btn btn-delete" onclick="event.stopPropagation(); deletePayment(${index})" aria-label="Delete">🗑️</button>
                 </div>` : ""}
@@ -809,6 +823,7 @@
             </div>
             ${_locked ? `<div class="pay-mid lock-tag">🔒 တခြား အော်ဒါတွင် အသုံးပြုပြီးသား</div>` : ""}
             ${_linked ? `<div class="pay-mid linked-tag">✅ Order ချိတ်ပြီးသား — ${p.linkedSaleId}</div>` : ""}
+            ${_verified ? `<div class="pay-mid verified-tag">✅ စစ်ပြီးပါပြီ</div>` : ""}
           </div>`;
       });
 
