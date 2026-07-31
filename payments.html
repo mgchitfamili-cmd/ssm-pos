@@ -141,6 +141,24 @@
     .btn-delete{ background:var(--surface); color:var(--red); border:1px solid var(--red-line); box-shadow:none; }
     .empty{ color:var(--ink-3); text-align:center; margin-top:52px; font-size:14px; line-height:1.6; }
 
+    /* Duplicate transferId warning bar */
+    .dup-warn-bar{
+      display:flex; align-items:flex-start; gap:9px; margin:0 0 12px;
+      padding:11px 13px; border-radius:var(--r-sm);
+      background:var(--amber-tint); border:1px solid var(--amber-line);
+      color:var(--amber-ink); font-size:13px; line-height:1.55;
+    }
+    .dup-warn-bar .dup-ic{ flex:none; font-size:16px; line-height:1.4; }
+    .dup-warn-bar b{ font-weight:700; }
+    .dup-warn-bar .dup-warn-text{ flex:1; min-width:0; }
+    .dup-warn-bar .dup-warn-close{
+      flex:none; width:22px; height:22px; padding:0; margin:0;
+      background:transparent; box-shadow:none; color:var(--amber-ink);
+      border:none; font-size:13px; line-height:1; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; cursor:pointer;
+    }
+    .dup-warn-bar .dup-warn-close:active{ background:rgba(0,0,0,.06); }
+
     /* SS photo picker */
     .ss-picker{ display:flex; align-items:center; justify-content:space-between; gap:8px;
       border:1px dashed var(--line-2); border-radius:var(--r-sm); padding:8px;
@@ -319,6 +337,7 @@
     </div>
 
     <div class="wrap">
+      <div id="dupWarnBar" style="display:none;"></div>
       <div id="paymentsListEl"></div>
     </div>
 
@@ -623,6 +642,25 @@
 
       if (!currentSSDataUrl) { alert("ငွေလွှဲ SS ဓါတ်ပုံ ရွေးပါ"); return; }
 
+      // ငွေလွှဲ ID ထပ်နေလား စစ် (ပြင်နေတဲ့ record ကိုယ်တိုင်ကို ချန်ထား)
+      let isDup = paymentsList.some(function (p, i) {
+        return i !== editingIndex && String(p.transferId || "").trim() === transferId;
+      });
+
+      if (isDup) {
+        showConfirm(
+          "ဒီ ငွေလွှဲ ID (" + transferId + ") ကို အရင်က တစ်ခါ သုံးပြီးသားပါ။\nဆက်လုပ်မလား၊ ပြန်စစ်ဦးမလား?",
+          function () { doSavePayment(amount, transferId); },
+          null,
+          { yes: "သေချာပါတယ်၊ ဆက်လုပ်မယ်", no: "ပြန်စစ်ဦးမယ်" }
+        );
+        return;
+      }
+
+      doSavePayment(amount, transferId);
+    }
+
+    function doSavePayment(amount, transferId) {
       let existing = editingIndex !== null ? paymentsList[editingIndex] : null;
       let paymentId = (existing && existing.id) || genId();
 
@@ -775,8 +813,66 @@
       });
 
       document.getElementById("paymentsListEl").innerHTML = html;
+      renderDupWarnBar();
       applyFilters();
       if (SELECT_MODE) updateSelectBar();
+    }
+
+    // ── Duplicate ငွေလွှဲ ID (transferId) warning bar ──────────────
+    // ID တူနေတဲ့ record တွေကို group လုပ်ပြီး "ဘယ် ID က ဘယ် record
+    // တွေမှာ ထပ်နေလဲ" ဆိုတာကို header အောက် bar နဲ့ ပြသည် — ထပ်နေမှသာ ပေါ်။
+    function renderDupWarnBar() {
+      var bar = document.getElementById("dupWarnBar");
+      if (!bar) return;
+
+      var groups = {};
+      paymentsList.forEach(function (p) {
+        var tid = String(p.transferId || "").trim();
+        if (!tid) return;
+        (groups[tid] = groups[tid] || []).push(p);
+      });
+
+      var dupTids = [];
+      var dupLines = [];
+      Object.keys(groups).forEach(function (tid) {
+        if (groups[tid].length > 1) {
+          dupTids.push(tid);
+          var amounts = groups[tid].map(function (p) { return fmtKs(p.amount); }).join(" / ");
+          dupLines.push("<b>" + tid + "</b> — " + groups[tid].length + " ခု (" + amounts + ")");
+        }
+      });
+
+      if (!dupLines.length) {
+        bar.style.display = "none";
+        bar.innerHTML = "";
+        try { localStorage.removeItem("ssm_dupWarnDismissed"); } catch (e) {}
+        return;
+      }
+
+      // စစ်ပြီးပါပြီ ဆိုပြီး ပိတ်လိုက်ပြီးသား duplicate set တူနေရင် ထပ်မပြ
+      var sig = dupTids.slice().sort().join("|");
+      var dismissedSig = "";
+      try { dismissedSig = localStorage.getItem("ssm_dupWarnDismissed") || ""; } catch (e) {}
+      if (sig === dismissedSig) {
+        bar.style.display = "none";
+        bar.innerHTML = "";
+        return;
+      }
+
+      bar.className = "dup-warn-bar";
+      bar.innerHTML =
+        '<span class="dup-ic">⚠️</span>' +
+        '<span class="dup-warn-text">ငွေလွှဲ ID ထပ်နေသည် —<br>' + dupLines.join("<br>") + '</span>' +
+        '<button type="button" class="dup-warn-close" onclick="dismissDupWarnBar(\'' + sig.replace(/'/g, "\\'") + '\')" aria-label="Close">✕</button>';
+      bar.style.display = "flex";
+    }
+
+    // "စစ်ပြီးပါပြီ" — ဒီ duplicate set အတွက် bar ကို ပိတ်ထားပြီး မှတ်ထား
+    // (duplicate list မပြောင်းသေးသရွေ့ ပြန်မပေါ်)
+    function dismissDupWarnBar(sig) {
+      try { localStorage.setItem("ssm_dupWarnDismissed", sig); } catch (e) {}
+      var bar = document.getElementById("dupWarnBar");
+      if (bar) { bar.style.display = "none"; bar.innerHTML = ""; }
     }
 
     // ── Search + method filter ──────────────────────────────────────
@@ -834,11 +930,12 @@
       var ok = document.createElement("button"); ok.textContent = "ရပြီ"; ok.onclick = close;
       actEl.appendChild(ok); ov.classList.add("show"); ok.focus();
     };
-    window.showConfirm = function (message, onYes, onNo) {
-      msgEl.textContent = message; iconEl.textContent = "❓"; actEl.innerHTML = "";
+    window.showConfirm = function (message, onYes, onNo, opts) {
+      opts = opts || {};
+      msgEl.textContent = message; msgEl.style.whiteSpace = "pre-line"; iconEl.textContent = opts.icon || "❓"; actEl.innerHTML = "";
       var cancel = document.createElement("button"); cancel.className = "popup-cancel";
-      cancel.textContent = "မလုပ်တော့"; cancel.onclick = function(){ close(); if(onNo) onNo(); };
-      var yes = document.createElement("button"); yes.textContent = "ဟုတ်ကဲ့";
+      cancel.textContent = opts.no || "မလုပ်တော့"; cancel.onclick = function(){ close(); if(onNo) onNo(); };
+      var yes = document.createElement("button"); yes.textContent = opts.yes || "ဟုတ်ကဲ့";
       yes.onclick = function(){ close(); if(onYes) onYes(); };
       actEl.appendChild(cancel); actEl.appendChild(yes); ov.classList.add("show");
     };
