@@ -867,6 +867,22 @@
         var di = (ono != null) ? salesHistory.findIndex(function (s) { return s && String(s.orderNo) === String(ono); }) : index;
         if (di >= 0) salesHistory.splice(di, 1);
         localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+
+        // Receipt ဖျက်လိုက်ရင် ဒီ receipt နဲ့ ချိတ်ထားတဲ့ payment(s) ကို
+        // ပြန်ဖြေလိုက် (linkedSaleId ဖျက်) — မဟုတ်ရင် payment ဟာ "locked"
+        // အဖြစ် ဆက်ကျန်ပြီး နောက် order တစ်ခုနဲ့ ပြန်ချိတ်လို့ မရတော့ပါ။
+        if (ono != null) {
+          var _pay = JSON.parse(localStorage.getItem("paymentsList")) || [];
+          var _payChanged = false;
+          _pay.forEach(function (p) {
+            if (p && String(p.linkedSaleId) === String(ono)) {
+              delete p.linkedSaleId;
+              _payChanged = true;
+            }
+          });
+          if (_payChanged) localStorage.setItem("paymentsList", JSON.stringify(_pay));
+        }
+
         openIndex = null;
         renderHistory();
       });
