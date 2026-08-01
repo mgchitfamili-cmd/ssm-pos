@@ -2,7 +2,18 @@
 (function () {
   function num(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
   function fmt(n){ return Number(n||0).toLocaleString(); }
-  function getNetNumber(s){ return num(s.grandTotal) - num(s.discountAmount) - num(s.deposit) + num(s.delivery); }
+  // Online Payment (payments.html) linked to this receipt — same as
+  // index.html's onlinePayTotal / receipts.html's getNetNumber().
+  function linkedPayTotal(sale){
+    if (!sale.linkedPayments || !sale.linkedPayments.length) return 0;
+    var all;
+    try { all = JSON.parse(localStorage.getItem("paymentsList")) || []; } catch (e) { all = []; }
+    return sale.linkedPayments.reduce(function (s, pid) {
+      var p = all.find(function (x) { return x.id === pid; });
+      return s + (p ? num(p.amount) : 0);
+    }, 0);
+  }
+  function getNetNumber(s){ return num(s.grandTotal) - num(s.discountAmount) - num(s.deposit) + num(s.delivery) - linkedPayTotal(s); }
 
   // Receiver block (name / phone / address) — only rendered when at least one field exists.
   function hasReceiverData(sale){
@@ -148,7 +159,7 @@
     // Walk-in (ဆိုင်ရောင်း) — ငွေချေနည်း label + net = total − discount − deposit
     if (sale.payModeLabel) {
       payLabel = sale.payModeLabel;
-      netNum = num(sale.grandTotal) - num(sale.discountAmount) - num(sale.deposit);
+      netNum = num(sale.grandTotal) - num(sale.discountAmount) - num(sale.deposit) - linkedPayTotal(sale);
     }
 
     return '' +
