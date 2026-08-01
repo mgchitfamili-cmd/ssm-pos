@@ -53,8 +53,10 @@
   }
 
   // Bottom customer block — repeats buyer name/phone/address below the thank-you footer.
+  // Only shown for Royal Express deliveries (index.html Delivery Service = "Royal").
   // Hidden for walk-in sales (same rule as the top block) and hidden entirely if no data.
   function buildBottomCustomerHTML(sale){
+    if (sale.deliveryService !== "Royal") return "";
     if (/-WI-/.test(String(sale.orderNo || "")) || sale.payMode) return "";
     if (!hasCustomerData(sale)) return "";
     var html = '<hr>' + '<div class="recv-label mm">ဝယ်သူ</div>';
