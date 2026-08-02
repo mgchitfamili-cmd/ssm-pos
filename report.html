@@ -16,7 +16,6 @@
   <meta name="apple-mobile-web-app-title" content="Sone Sone Mommy">
   <link rel="apple-touch-icon" href="icon-180.png">
   <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("service-worker.js").catch(function(){});});}</script>
-  <script>(function(){try{if((localStorage.getItem('ssm_role')||'staff')!=='admin'){location.replace('index.html');}}catch(e){}})();</script>
   <style>
     :root{
       --bg:#f4f5f8; --surface:#ffffff; --line:#eaecf1; --line-2:#dcdfe7;
@@ -252,7 +251,7 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
+    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
     <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
     <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
@@ -269,7 +268,7 @@
   </div>
 
   <!-- Period -->
-  <div class="rpillnav" id="rpillnav">
+  <div class="rpillnav admin-only" id="rpillnav">
     <div class="rpillnav-scroll">
       <div class="rpillnav-thumb" id="rpillThumb"></div>
       <button class="rchip active" data-p="today" onclick="setPeriod('today', this)">ဒီနေ့</button>
@@ -280,7 +279,7 @@
   </div>
 
   <!-- Date range (receipts style) -->
-  <div class="rdates">
+  <div class="rdates admin-only">
     <div class="rdate">
       <div class="rdate-box">
         <span class="rdate-label">From</span><span class="rdate-sep">|</span>
@@ -312,6 +311,20 @@
   </div>
 
   <div class="rpt-grid">
+  <!-- Today's Summary -->
+  <div class="box" id="todayCard">
+    <h1 style="margin:0 0 10px 0;">📅 ယနေ့အတွက် စာရင်း</h1>
+    <div class="rank-item"><span class="name">Total order</span><span class="count" id="tdTotalOrders">0 ခု</span></div>
+    <div id="tdServiceCounts"></div>
+    <hr class="total-divider">
+    <div class="rank-item"><span class="name">Total amount</span><span class="count" id="tdTotalAmount">0</span></div>
+    <div id="tdServiceAmounts"></div>
+    <hr class="total-divider">
+    <div class="rank-item"><span class="name">Cod</span><span class="count" id="tdCod">0 ခု</span></div>
+    <div class="rank-item"><span class="name">Prepaid</span><span class="count" id="tdPrepaid">0 ခု</span></div>
+  </div>
+
+  <div class="admin-only">
   <!-- Main Stats -->
   <div class="total-card">
     <div class="th-top">
@@ -373,6 +386,7 @@
   <!-- Order source app -->
   <h2>📱 App အလိုက် Order အဝင်</h2>
   <div class="box" id="appChart"></div>
+  </div><!-- /admin-only -->
   </div><!-- /rpt-grid -->
 
   <script>
@@ -492,10 +506,53 @@
       applyDateRange();
     }
 
+    // ── Today's Summary card (always "today", independent of period filter) ──
+    function renderTodayCard() {
+      var todayStr = new Date().toLocaleDateString();
+      var todays = salesHistory.filter(function (s) {
+        var ds = getOrderDate(s);
+        var od = ds ? new Date(ds) : null;
+        return od && !isNaN(od.getTime()) && od.toLocaleDateString() === todayStr;
+      });
+
+      document.getElementById("tdTotalOrders").innerText = todays.length + " ခု";
+
+      var svcCount = {}, svcAmount = {}, codCount = 0, prepaidCount = 0, totalAmount = 0;
+      todays.forEach(function (s) {
+        var name = s.deliveryService || "(မရွေး)";
+        svcCount[name] = (svcCount[name] || 0) + 1;
+        var amt = saleAmount(s);
+        svcAmount[name] = (svcAmount[name] || 0) + amt;
+        totalAmount += amt;
+        if (isOnlinePay(s)) prepaidCount++; else codCount++;
+      });
+
+      var names = Object.keys(svcCount).sort(function (a, b) { return svcCount[b] - svcCount[a]; });
+
+      var countHtml = "";
+      names.forEach(function (n) {
+        countHtml += '<div class="rank-item"><span class="name">' + n + '</span><span class="count">' + svcCount[n] + ' ခု</span></div>';
+      });
+      document.getElementById("tdServiceCounts").innerHTML = countHtml;
+
+      document.getElementById("tdTotalAmount").innerText = totalAmount.toLocaleString();
+
+      var amtHtml = "";
+      names.forEach(function (n) {
+        amtHtml += '<div class="rank-item"><span class="name">' + n + ' amount</span><span class="count">' + svcAmount[n].toLocaleString() + '</span></div>';
+      });
+      document.getElementById("tdServiceAmounts").innerHTML = amtHtml;
+
+      document.getElementById("tdCod").innerText = codCount + " ခု";
+      document.getElementById("tdPrepaid").innerText = prepaidCount + " ခု";
+    }
+
     // ── Render ────────────────────────────────────────────────────
     function render() {
       salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
       let orders = salesHistory.filter(inPeriod);
+
+      renderTodayCard();
 
       // Main stats
       // ── Sales summary — mutually exclusive by mode (shopMode) x payment type (payStatus) ──
