@@ -10,7 +10,14 @@
     try { all = JSON.parse(localStorage.getItem("paymentsList")) || []; } catch (e) { all = []; }
     return sale.linkedPayments.reduce(function (s, pid) {
       var p = all.find(function (x) { return x.id === pid; });
-      return s + (p ? num(p.amount) : 0);
+      if (!p) return s;
+      // A payment can be split across multiple orders — use only THIS
+      // order's share (p.allocations[orderNo]) when present, else fall
+      // back to its full amount (legacy single-order payments).
+      var alloc = p.allocations;
+      if (!alloc && p.linkedSaleId) { alloc = {}; alloc[p.linkedSaleId] = num(p.amount); }
+      var share = (alloc && alloc[sale.orderNo] != null) ? num(alloc[sale.orderNo]) : num(p.amount);
+      return s + share;
     }, 0);
   }
   // "Paid so far" — sale.deposit is set once at order creation to the sum of the

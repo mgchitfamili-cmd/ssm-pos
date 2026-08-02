@@ -260,6 +260,10 @@
     .pay-card.linked{ background:linear-gradient(165deg, #d7f3e3 0%, #aee3c4 55%, #7fd1a2 100%);
       border-color:var(--green-line); }
     .linked-tag{ color:var(--green) !important; font-weight:600; }
+    .split-avail-tag{ color:var(--brand); font-weight:600; }
+    .split-amt-row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .split-amt-input{ width:92px; padding:5px 8px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; font-family:inherit; }
+    .split-amt-max{ font-size:12.5px; color:var(--ink-2); }
 
     .select-bar{
       position:fixed; left:0; right:0; bottom:0; z-index:150;
@@ -433,11 +437,45 @@
     var SELECT_MODE = _qs.get("select") === "1";
     var SALE_KEY = _qs.get("sale") || "";
     var selectedIds = new Set((_qs.get("pre") || "").split(",").filter(Boolean));
+    var pendingAmounts = {}; // id -> amount being allocated to SALE_KEY, live-edited in select mode
+
+    // ── Split-payment allocation helpers ──────────────────────────
+    // A single payment can now be shared across multiple orders.
+    // p.allocations = { [saleKey]: amountAllocatedToThatSale, ... }
+    // (old records only had a single p.linkedSaleId — migrated in-place below)
+    function migrateAlloc(p) {
+      if (!p.allocations) {
+        p.allocations = {};
+        if (p.linkedSaleId) p.allocations[p.linkedSaleId] = Number(p.amount) || 0;
+        delete p.linkedSaleId;
+      }
+      return p.allocations;
+    }
+    function allocTotal(p) {
+      var m = migrateAlloc(p), s = 0;
+      for (var k in m) s += Number(m[k]) || 0;
+      return s;
+    }
+    function allocFor(p, saleKey) {
+      return Number(migrateAlloc(p)[saleKey]) || 0;
+    }
+    // Max this sale could still claim: its own current share + whatever
+    // hasn't already been claimed by other sales.
+    function remainingFor(p, saleKey) {
+      return (Number(p.amount) || 0) - (allocTotal(p) - allocFor(p, saleKey));
+    }
+    function getAmt(id) {
+      if (pendingAmounts[id] != null) return pendingAmounts[id];
+      var p = paymentsList.find(function (x) { return x.id === id; });
+      if (!p) return 0;
+      var f = allocFor(p, SALE_KEY);
+      return f > 0 ? f : remainingFor(p, SALE_KEY);
+    }
 
     function isLocked(p) {
-      // A payment already linked to a *different* sale can't be picked here —
-      // this is what stops the same payment from being double-counted.
-      return !!(p.linkedSaleId && String(p.linkedSaleId) !== String(SALE_KEY));
+      // Nothing left of this payment to give this sale, and this sale
+      // doesn't already hold a share of it — so it can't be picked here.
+      return remainingFor(p, SALE_KEY) <= 0 && allocFor(p, SALE_KEY) <= 0;
     }
 
     if (SELECT_MODE) {
@@ -730,18 +768,29 @@
     // ── Select mode: pick existing payments to link to the current sale ──
     function toggleSelectCard(ev, id) {
       if (ev && ev.target && ev.target.closest && ev.target.closest(".pay-actions")) return;
+      if (ev && ev.target && ev.target.closest && ev.target.closest(".split-amt-row")) return;
       let p = paymentsList.find(function (x) { return x.id === id; });
       if (!p || isLocked(p)) return;
-      let card = document.querySelector('.pay-card[data-id="' + id + '"]');
       if (selectedIds.has(id)) {
         selectedIds.delete(id);
-        if (card) card.classList.remove("selected");
+        delete pendingAmounts[id];
       } else {
         selectedIds.add(id);
-        if (card) card.classList.add("selected");
+        pendingAmounts[id] = getAmt(id); // seed with default share
       }
-      let chk = card && card.querySelector(".pay-check");
-      if (chk) chk.classList.toggle("checked", selectedIds.has(id));
+      loadPayments(); // re-render so the amount box shows/hides correctly
+    }
+
+    // Live edit of "how much of this payment goes to THIS order" while
+    // selecting — clamped so it can never exceed what's left unclaimed.
+    function onSplitAmtInput(ev, id) {
+      let p = paymentsList.find(function (x) { return x.id === id; });
+      if (!p) return;
+      let max = remainingFor(p, SALE_KEY);
+      let v = Math.round(Number(ev.target.value) || 0);
+      if (v > max) v = max;
+      if (v < 0) v = 0;
+      pendingAmounts[id] = v;
       updateSelectBar();
     }
 
@@ -750,27 +799,38 @@
       if (!bar) return;
       let ids = Array.from(selectedIds);
       let total = 0;
-      ids.forEach(function (id) {
-        let p = paymentsList.find(function (x) { return x.id === id; });
-        if (p) total += Number(p.amount) || 0;
-      });
+      ids.forEach(function (id) { total += Number(getAmt(id)) || 0; });
       document.getElementById("selectCount").textContent = ids.length + " ခု ရွေးထားသည်";
       document.getElementById("selectTotal").textContent = fmtKs(total);
       bar.style.display = "flex";
     }
 
     function finishSelection() {
-      // Persist which sale each selected payment now belongs to, and free
-      // up any payment that was linked to this sale but got deselected —
-      // this is what makes "already used elsewhere" locking work correctly.
+      // Persist how much of each selected payment is now allocated to this
+      // sale, and free up any share this sale held but deselected — this is
+      // what makes "already used elsewhere" locking work correctly while
+      // still letting the same payment be shared across several orders.
       paymentsList.forEach(function (p) {
-        if (selectedIds.has(p.id)) p.linkedSaleId = SALE_KEY;
-        else if (p.linkedSaleId === SALE_KEY) delete p.linkedSaleId;
+        let m = migrateAlloc(p);
+        if (selectedIds.has(p.id)) {
+          let max = remainingFor(p, SALE_KEY);
+          let amt = getAmt(p.id);
+          if (amt > max) amt = max;
+          if (amt < 0) amt = 0;
+          if (amt > 0) m[SALE_KEY] = amt; else delete m[SALE_KEY];
+        } else if (m[SALE_KEY] != null) {
+          delete m[SALE_KEY];
+        }
       });
       localStorage.setItem("paymentsList", JSON.stringify(paymentsList));
-      let chosen = paymentsList.filter(function (p) { return selectedIds.has(p.id); });
+      let chosen = paymentsList.filter(function (p) { return selectedIds.has(p.id) && allocFor(p, SALE_KEY) > 0; });
+      let payload = chosen.map(function (p) {
+        let c = Object.assign({}, p);
+        c.allocatedAmount = allocFor(p, SALE_KEY); // this order's share only
+        return c;
+      });
       try {
-        window.parent.postMessage({ source: "ssm-payments", type: "selected", payments: chosen }, "*");
+        window.parent.postMessage({ source: "ssm-payments", type: "selected", payments: payload }, "*");
       } catch (e) {}
     }
 
@@ -797,7 +857,7 @@
         let p = row.p, index = row.i;
         let _locked = SELECT_MODE && isLocked(p);
         let _selected = SELECT_MODE && selectedIds.has(p.id);
-        let _linked = !SELECT_MODE && !!p.linkedSaleId;
+        let _linked = !SELECT_MODE && allocTotal(p) > 0;
         let _verified = !!p.verified;
         let _cardClass = "pay-card" + (SELECT_MODE ? " selectable" : "") + (_selected ? " selected" : "") + (_locked ? " locked" : "") + (_linked ? " linked" : "");
         let _cardClick = (SELECT_MODE && !_locked) ? `onclick="toggleSelectCard(event, '${p.id}')"` : "";
@@ -822,7 +882,13 @@
               </div>` : ""}
             </div>
             ${_locked ? `<div class="pay-mid lock-tag">🔒 တခြား အော်ဒါတွင် အသုံးပြုပြီးသား</div>` : ""}
-            ${_linked ? `<div class="pay-mid linked-tag">✅ Order ချိတ်ပြီးသား — ${p.linkedSaleId}</div>` : ""}
+            ${_linked ? `<div class="pay-mid linked-tag">✅ Order ချိတ်ပြီးသား — ${Object.keys(migrateAlloc(p)).map(function (k) { return k + " (" + fmtKs(migrateAlloc(p)[k]) + ")"; }).join("၊ ")}${allocTotal(p) < (Number(p.amount) || 0) ? " • မချိတ်ရသေး " + fmtKs((Number(p.amount) || 0) - allocTotal(p)) : ""}</div>` : ""}
+            ${(SELECT_MODE && !_locked && !_selected && allocTotal(p) > 0) ? `<div class="pay-mid split-avail-tag">↪️ ဒီ Order အတွက် ${fmtKs(remainingFor(p, SALE_KEY))} ရနိုင်သည် (တခြား Order တွေနဲ့ ခွဲသုံးထားသည်)</div>` : ""}
+            ${(SELECT_MODE && _selected) ? `<div class="pay-mid split-amt-row">
+                <span>ဒီ Order အတွက်ငွေပမာဏ —</span>
+                <input type="number" class="split-amt-input" min="0" max="${remainingFor(p, SALE_KEY)}" value="${getAmt(p.id)}" onclick="event.stopPropagation();" oninput="onSplitAmtInput(event, '${p.id}')">
+                <span class="split-amt-max">/ ${fmtKs(p.amount)}</span>
+              </div>` : ""}
             ${_verified ? `<div class="pay-mid verified-tag">✅ စစ်ပြီးပါပြီ</div>` : ""}
           </div>`;
       });

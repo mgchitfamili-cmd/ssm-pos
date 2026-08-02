@@ -1124,6 +1124,12 @@
       n = Number(n) || 0;
       return n.toLocaleString("en-US") + " Ks";
     }
+    // A payment can now be split across multiple orders (payments.html).
+    // Use the share allocated to THIS order when present, else its full amount
+    // (older single-order payments, or a payment not yet re-selected here).
+    function payAmt(p) {
+      return Number((p && p.allocatedAmount != null) ? p.allocatedAmount : (p && p.amount)) || 0;
+    }
     function payMethodLabel(m) {
       return m === "Bank" ? "ဘဏ်လွှဲ" : (m || "အခြား");
     }
@@ -1140,9 +1146,9 @@
         if (footShow) footShow.hidden = true;
         return;
       }
-      var total = selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+      var total = selectedPayments.reduce(function (s, p) { return s + payAmt(p); }, 0);
       var chips = selectedPayments.map(function (p) {
-        return '<span class="pay-summary-chip">' + payMethodLabel(p.method) + ' • <b>' + fmtPayKs(p.amount) + '</b></span>';
+        return '<span class="pay-summary-chip">' + payMethodLabel(p.method) + ' • <b>' + fmtPayKs(payAmt(p)) + '</b></span>';
       }).join("");
       box.innerHTML =
         '<div class="pay-summary-total"><span>💳 စရံ / ကြိုတင်ပေးငွေ (Deposit) (' + selectedPayments.length + ')</span><span>' + fmtPayKs(total) + '</span></div>' +
@@ -1562,7 +1568,7 @@
     function calculateNet() {
       let delivery = Number(document.getElementById("delivery").value);
       let discountAmount = Number(document.getElementById("discountValue").value) || 0;
-      let onlinePayTotal = selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+      let onlinePayTotal = selectedPayments.reduce(function (s, p) { return s + payAmt(p); }, 0);
 
       let discountShow = document.getElementById("discountFeeShow");
       if (discountShow) {
@@ -1621,7 +1627,7 @@
     function computePayStatus() {
       let delivery = Number(document.getElementById("delivery").value) || 0;
       let discountAmount = getDiscountAmount();
-      let onlinePayTotal = selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
+      let onlinePayTotal = selectedPayments.reduce(function (s, p) { return s + payAmt(p); }, 0);
       let itemNet = grandTotal - discountAmount;
       let totalWithDelivery = itemNet + delivery;
 
@@ -1748,13 +1754,13 @@
         deliveryFeeReal: "",
         charge:          "",
         deliveryPhoto:   "",
-        deposit:         selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0),
+        deposit:         selectedPayments.reduce(function (s, p) { return s + payAmt(p); }, 0),
         depositBase:     0,
         payStatus:       computePayStatus(),
         payType:         selectedPayments.map(function (p) { return payMethodLabel(p.method); }).join(", "),
         payCode:         selectedPayments.map(function (p) { return p.transferId; }).filter(Boolean).join(", "),
         paySS:           "",
-        payAmount:       selectedPayments.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0),
+        payAmount:       selectedPayments.reduce(function (s, p) { return s + payAmt(p); }, 0),
         payDate:         (selectedPayments.length ? new Date(Math.max.apply(null, selectedPayments.map(function (p) { return p.createdAt || 0; }))).toISOString().slice(0, 10) : ""),
         linkedPayments:  selectedPayments.map(function (p) { return p.id; }),
         note:            document.getElementById("note").value,
@@ -1933,7 +1939,14 @@
         var _allPay = JSON.parse(localStorage.getItem("paymentsList")) || [];
         receipt.linkedPayments.forEach(function (pid) {
           var found = _allPay.find(function (p) { return p.id === pid; });
-          if (found) selectedPayments.push(found);
+          if (found) {
+            // this order's own share of the payment (falls back to the
+            // legacy single p.linkedSaleId / full-amount shape)
+            var _alloc = found.allocations;
+            if (!_alloc && found.linkedSaleId) { _alloc = {}; _alloc[found.linkedSaleId] = Number(found.amount) || 0; }
+            found.allocatedAmount = (_alloc && _alloc[receipt.orderNo] != null) ? Number(_alloc[receipt.orderNo]) : (Number(found.amount) || 0);
+            selectedPayments.push(found);
+          }
         });
       }
       renderPaySummary();

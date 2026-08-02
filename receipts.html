@@ -417,6 +417,15 @@
       }
 
       var _allPayRecords = JSON.parse(localStorage.getItem("paymentsList")) || [];
+      // A payment can be split across multiple orders — this returns its
+      // {orderNo: amount} share map, migrating legacy single-order records.
+      function _allocMap(p) {
+        if (!p.allocations) {
+          p.allocations = {};
+          if (p.linkedSaleId) p.allocations[p.linkedSaleId] = Number(p.amount) || 0;
+        }
+        return p.allocations;
+      }
 
       salesHistory
         .map(function (sale, index) { return { sale: sale, index: index }; })
@@ -438,13 +447,19 @@
         // Online Payment summary (payments.html records linked to this receipt)
         var _linkedPays = (sale.linkedPayments || [])
           .map(function (pid) { return _allPayRecords.find(function (p) { return p.id === pid; }); })
-          .filter(Boolean);
+          .filter(Boolean)
+          .map(function (p) {
+            var m = _allocMap(p);
+            var amt = (m[sale.orderNo] != null) ? Number(m[sale.orderNo]) : (Number(p.amount) || 0);
+            return { p: p, amt: amt };
+          })
+          .filter(function (x) { return x.amt > 0; });
         var paySummaryHtml = "";
         if (_linkedPays.length) {
-          var _payTotal = _linkedPays.reduce(function (s, p) { return s + (Number(p.amount) || 0); }, 0);
-          var _chips = _linkedPays.map(function (p) {
-            var _mLabel = p.method === "Bank" ? "ဘဏ်လွှဲ" : (p.method || "အခြား");
-            return '<span class="pay-summary-chip">' + _mLabel + ' • <b>' + (Number(p.amount) || 0).toLocaleString("en-US") + ' Ks</b></span>';
+          var _payTotal = _linkedPays.reduce(function (s, x) { return s + x.amt; }, 0);
+          var _chips = _linkedPays.map(function (x) {
+            var _mLabel = x.p.method === "Bank" ? "ဘဏ်လွှဲ" : (x.p.method || "အခြား");
+            return '<span class="pay-summary-chip">' + _mLabel + ' • <b>' + x.amt.toLocaleString("en-US") + ' Ks</b></span>';
           }).join("");
           paySummaryHtml =
             '<div class="pay-summary-total"><span>💳 Online Payment (' + _linkedPays.length + ')</span><span>' + _payTotal.toLocaleString("en-US") + ' Ks</span></div>' +
@@ -564,7 +579,11 @@
         var _allPay = JSON.parse(localStorage.getItem("paymentsList")) || [];
         paid = sale.linkedPayments.reduce(function (s, pid) {
           var p = _allPay.find(function (x) { return x.id === pid; });
-          return s + (p ? (n(p.amount)) : 0);
+          if (!p) return s;
+          var m = p.allocations;
+          if (!m && p.linkedSaleId) { m = {}; m[p.linkedSaleId] = n(p.amount); }
+          var share = (m && m[sale.orderNo] != null) ? n(m[sale.orderNo]) : n(p.amount);
+          return s + share;
         }, 0);
       } else {
         paid = n(sale.deposit);
@@ -661,7 +680,15 @@
           var _pay = JSON.parse(localStorage.getItem("paymentsList")) || [];
           var _payChanged = false;
           _pay.forEach(function (p) {
-            if (p && String(p.linkedSaleId) === String(ono)) {
+            if (!p) return;
+            var m = p.allocations;
+            if (!m && p.linkedSaleId) { m = {}; m[p.linkedSaleId] = Number(p.amount) || 0; }
+            if (m && m[ono] != null) {
+              delete m[ono];
+              p.allocations = m;
+              delete p.linkedSaleId;
+              _payChanged = true;
+            } else if (String(p.linkedSaleId) === String(ono)) {
               delete p.linkedSaleId;
               _payChanged = true;
             }
