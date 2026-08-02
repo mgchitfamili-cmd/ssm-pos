@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script src="icons.js"></script>
   <title>Income (Delivery + Shop)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -135,15 +136,15 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> ဝင်ငွေ (Delivery + Shop)</div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
-    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
-    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
-    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
-    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
-    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
-    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic" data-icon="income" data-icon-size="20"></span> ဝင်ငွေ (Delivery + Shop)</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
+    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
+    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic" data-icon="delivery" data-icon-size="20"></span> ပို့ဆောင်ရေး</div>
+    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic" data-icon="cash" data-icon-size="20"></span> ငွေလွှဲစာရင်း</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic" data-icon="package" data-icon-size="20"></span> ပစ္စည်းများ</div>
+    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic" data-icon="user" data-icon-size="20"></span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic" data-icon="settings" data-icon-size="20"></span> Settings</div>
   </div>
 
   <div class="top-bar">
@@ -180,7 +181,7 @@
         <input type="date" id="dateTo" class="dr-native" onchange="updateDRDateLabel('dateTo','dateToLabel'); renderIncome();">
       </div>
     </div>
-    <button class="dr-clear" onclick="clearDateRange()" aria-label="Clear">✕</button>
+    <button class="dr-clear" onclick="clearDateRange()" aria-label="Clear"><span data-icon="close" data-icon-size="14"></span></button>
   </div>
 
   <div id="dayList"></div>
@@ -333,7 +334,7 @@
                     '--service-tint:' + col.tint + ';' +
                     '--service-line:' + col.line + ';' +
                     '--service-gradient:' + col.gradient + ';';
-        var icon = (g.source === "shop") ? "🛒" : "🚚";
+        var icon = (g.source === "shop") ? ssmIcon("cart",{size:14}) : ssmIcon("delivery",{size:14});
         var unitLabel = (g.source === "shop") ? " sale" : " order";
         html += '<div class="day-card" style="' + style + '">' +
                   '<div class="day-head">' +

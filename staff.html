@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="my">
 <head>
+  <script src="icons.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Staff</title>
@@ -175,15 +176,15 @@
         <h2>Sone Sone Mommy</h2>
         <p>POS System</p>
       </div>
-      <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-      <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
-      <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
-      <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
-      <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
-      <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
-      <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
-      <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
-      <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+      <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+      <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic" data-icon="income" data-icon-size="20"></span> Delivery ဆီမှရငွေ</div>
+      <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
+      <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
+      <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic" data-icon="delivery" data-icon-size="20"></span> ပို့ဆောင်ရေး</div>
+      <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic" data-icon="cash" data-icon-size="20"></span> ငွေလွှဲစာရင်း</div>
+      <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic" data-icon="package" data-icon-size="20"></span> ပစ္စည်းများ</div>
+      <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic" data-icon="user" data-icon-size="20"></span> ဝန်ထမ်းများ</div>
+      <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic" data-icon="settings" data-icon-size="20"></span> Settings</div>
     </div>
 
     <div class="top-bar">
@@ -201,7 +202,7 @@
   <!-- ══ FORM PAGE ══ -->
   <div id="formPage">
     <div class="top-bar">
-      <button class="iconbtn" onclick="closeForm()" aria-label="Back">←</button>
+      <button class="iconbtn" onclick="closeForm()" aria-label="Back"><span data-icon="back" data-icon-size="18"></span></button>
       <h1 id="formTitle">ဝန်ထမ်း အသစ် ထည့်မည်</h1>
     </div>
     <div class="wrap">
@@ -214,7 +215,7 @@
           <label class="lbl">ဖုန်း (optional)</label>
           <input id="staffPhone" placeholder="ဖုန်းနံပါတ်">
         </div>
-        <button class="btn-save" id="saveBtn" onclick="saveStaff()">💾 Save</button>
+        <button class="btn-save" id="saveBtn" onclick="saveStaff()"><span data-icon="save" data-icon-size="16"></span> Save</button>
       </section>
     </div>
   </div>
@@ -284,14 +285,14 @@
       staffList.forEach(function (s, index) {
         html += `
           <div class="staff-card">
-            <div class="avatar">👤</div>
+            <div class="avatar">${ssmIcon("user",{size:22})}</div>
             <div class="info">
               <h3>${s.name}</h3>
               <p>${s.phone || "—"}</p>
             </div>
             <div class="actions">
-              <button class="icon-btn btn-edit"   onclick="openForm(${index})" aria-label="Edit">✏️</button>
-              <button class="icon-btn btn-delete" onclick="deleteStaff(${index})" aria-label="Delete">🗑️</button>
+              <button class="icon-btn btn-edit"   onclick="openForm(${index})" aria-label="Edit">${ssmIcon("edit",{size:15})}</button>
+              <button class="icon-btn btn-delete" onclick="deleteStaff(${index})" aria-label="Delete">${ssmIcon("trash",{size:15})}</button>
             </div>
           </div>`;
       });
@@ -325,7 +326,7 @@
     ov.className = "popup-overlay";
     ov.innerHTML =
       '<div class="popup-card" role="dialog" aria-modal="true">' +
-        '<div class="popup-icon" id="popIcon">ℹ️</div>' +
+        '<div class="popup-icon" id="popIcon"></div>' +
         '<p class="popup-msg" id="popMsg"></p>' +
         '<div class="popup-actions" id="popActions"></div>' +
       '</div>';
@@ -333,17 +334,17 @@
     var msgEl = ov.querySelector("#popMsg"), iconEl = ov.querySelector("#popIcon"), actEl = ov.querySelector("#popActions");
     function close() { ov.classList.remove("show"); }
     function pickIcon(m){ m=String(m);
-      if (/✅|ပြီး|success/i.test(m)) return "✅";
-      if (/⚠️|မ|ပါ|error|fail/i.test(m)) return "⚠️";
-      return "ℹ️"; }
+      if (/✅|ပြီး|success/i.test(m)) return "checkCircle";
+      if (/⚠️|မ|ပါ|error|fail/i.test(m)) return "warning";
+      return "help"; }
     window.alert = function (message) {
-      msgEl.textContent = message; iconEl.textContent = pickIcon(message);
+      msgEl.textContent = message; iconEl.innerHTML = window.ssmIcon(pickIcon(message), {size:28});
       actEl.innerHTML = "";
       var ok = document.createElement("button"); ok.textContent = "ရပြီ"; ok.onclick = close;
       actEl.appendChild(ok); ov.classList.add("show"); ok.focus();
     };
     window.showConfirm = function (message, onYes, onNo) {
-      msgEl.textContent = message; iconEl.textContent = "❓"; actEl.innerHTML = "";
+      msgEl.textContent = message; iconEl.innerHTML = window.ssmIcon("help", {size:28}); actEl.innerHTML = "";
       var cancel = document.createElement("button"); cancel.className = "popup-cancel";
       cancel.textContent = "မလုပ်တော့"; cancel.onclick = function(){ close(); if(onNo) onNo(); };
       var yes = document.createElement("button"); yes.textContent = "ဟုတ်ကဲ့";

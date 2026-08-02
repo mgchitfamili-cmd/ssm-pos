@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="my">
 <head>
+  <script src="icons.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Settings</title>
@@ -185,15 +186,15 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
-    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
-    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
-    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
-    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
-    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
-    <div class="menu-item" data-page="setting.html"  onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic" data-icon="income" data-icon-size="20"></span> Delivery ဆီမှရငွေ</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
+    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
+    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic" data-icon="delivery" data-icon-size="20"></span> ပို့ဆောင်ရေး</div>
+    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic" data-icon="cash" data-icon-size="20"></span> ငွေလွှဲစာရင်း</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic" data-icon="package" data-icon-size="20"></span> ပစ္စည်းများ</div>
+    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic" data-icon="user" data-icon-size="20"></span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="setting.html"  onclick="location.href='setting.html'"><span class="ic" data-icon="settings" data-icon-size="20"></span> Settings</div>
   </div>
 
   <div class="top-bar">
@@ -207,7 +208,7 @@
       <p class="eyebrow"><span class="dot"></span>အသွင်အပြင်</p>
       <div class="switch-row">
         <div>
-          <div class="s-label">🌙 Dark Mode</div>
+          <div class="s-label"><span data-icon="moon" data-icon-size="16"></span> Dark Mode</div>
           <div class="s-sub">အမှောင် theme — page အားလုံးမှာ သက်ရောက်မယ်</div>
         </div>
         <label class="switch">
@@ -222,13 +223,13 @@
 
     <!-- Admin -->
     <section class="card">
-      <p class="eyebrow"><span class="dot"></span>🔐 Admin</p>
+      <p class="eyebrow"><span class="dot"></span><span data-icon="lock" data-icon-size="14"></span> Admin</p>
       <div class="switch-row">
         <div>
           <div class="s-label" id="roleLabel">Role: Staff</div>
           <div class="s-sub" id="roleSub">စာရင်းချုပ် / ပစ္စည်းများ ကြည့်ဖို့ Admin ဝင်ပါ</div>
         </div>
-        <button id="adminBtn" style="width:auto;padding:11px 16px;" onclick="adminToggle()">🔓 Admin</button>
+        <button id="adminBtn" style="width:auto;padding:11px 16px;" onclick="adminToggle()"><span data-icon="unlock" data-icon-size="16"></span> Admin</button>
       </div>
       <div class="field" id="pinChangeWrap" style="margin-top:14px; display:none;">
         <label class="lbl">Admin PIN ပြောင်းရန်</label>
@@ -240,7 +241,7 @@
     </section>
 
     <section class="card admin-only">
-      <p class="eyebrow"><span class="dot"></span>📟 Device Code</p>
+      <p class="eyebrow"><span class="dot"></span><span data-icon="device" data-icon-size="14"></span> Device Code</p>
       <div class="field">
         <label class="lbl">ဒီ device ရဲ့ code <span style="font-weight:500;color:var(--ink-3);">(A, B, ... — device တစ်ခုစီ မတူအောင်)</span></label>
         <input id="deviceCode" maxlength="6" placeholder="ဥပမာ - A" style="text-transform:uppercase;">
@@ -250,9 +251,9 @@
 
     <!-- Logo -->
     <section class="card admin-only">
-      <p class="eyebrow"><span class="dot"></span>🖼️ ဆိုင် Logo</p>
+      <p class="eyebrow"><span class="dot"></span><span data-icon="image" data-icon-size="14"></span> ဆိုင် Logo</p>
       <input type="file" id="logoInput" accept="image/*" style="display:none" onchange="uploadLogo(event)">
-      <button class="btn-upload" onclick="document.getElementById('logoInput').click()">📷 Logo ပုံ ရွေးရန်</button>
+      <button class="btn-upload" onclick="document.getElementById('logoInput').click()"><span data-icon="camera" data-icon-size="16"></span> Logo ပုံ ရွေးရန်</button>
       <div class="logo-stage">
         <img id="logoPreview" class="logo-preview" style="display:none;">
       </div>
@@ -266,7 +267,7 @@
     </section>
 
     <section class="card admin-only">
-      <p class="eyebrow"><span class="dot"></span>📝 ကျေးဇူးတင်စာ (Receipt)</p>
+      <p class="eyebrow"><span class="dot"></span><span data-icon="note" data-icon-size="14"></span> ကျေးဇူးတင်စာ (Receipt)</p>
       <div class="field">
         <label class="lbl">ကျေးဇူးတင်စာ <span style="font-weight:500;color:var(--ink-3);">(Receipt အောက်ခြေ · Enter ခေါက်၍ စာကြောင်းဆင်း)</span></label>
         <textarea id="thankYou" oninput="updatePreview()"></textarea>
@@ -274,12 +275,12 @@
     </section>
 
     <section class="card admin-only">
-      <button class="btn-save" onclick="saveSettings()">💾 Save</button>
-      <button class="btn-reset" onclick="resetSettings()">↺ Default ပြန်ထား</button>
+      <button class="btn-save" onclick="saveSettings()"><span data-icon="save" data-icon-size="16"></span> Save</button>
+      <button class="btn-reset" onclick="resetSettings()"><span data-icon="undo" data-icon-size="16"></span> Default ပြန်ထား</button>
     </section>
 
         <section class="card admin-only">
-      <button class="btn-reset" style="background:#dc2626;color:#fff;border-color:#dc2626;" onclick="ssmLogout()">🚪 Logout (ထွက်မယ်)</button>
+      <button class="btn-reset" style="background:#dc2626;color:#fff;border-color:#dc2626;" onclick="ssmLogout()"><span data-icon="logout" data-icon-size="16"></span> Logout (ထွက်မယ်)</button>
     </section>
 
   </div>
@@ -380,7 +381,7 @@
         logoSize: document.getElementById("logoSize").value
       };
       localStorage.setItem("shopSettings", JSON.stringify(settings));
-      alert("Settings သိမ်းပြီးပါပြီ ✅");
+      alert("Settings သိမ်းပြီးပါပြီ");
     }
 
     function resetSettings() {
@@ -426,7 +427,7 @@
       else {
         showPrompt('Admin PIN ထည့်ပါ', function (p) {
           if (!p) return;
-          if (p === pin()){ localStorage.setItem('ssm_role','admin'); renderRole(); alert('Admin ဝင်ပြီးပါပြီ ✅'); }
+          if (p === pin()){ localStorage.setItem('ssm_role','admin'); renderRole(); alert('Admin ဝင်ပြီးပါပြီ'); }
           else alert('PIN မှားနေပါတယ်');
         }, null, { type: 'password', inputmode: 'numeric' });
       }
@@ -436,7 +437,7 @@
       if (!v){ alert('PIN ထည့်ပါ'); return; }
       localStorage.setItem('ssm_admin_pin', v);
       document.getElementById('newPin').value = '';
-      alert('Admin PIN ပြောင်းပြီးပါပြီ ✅');
+      alert('Admin PIN ပြောင်းပြီးပါပြီ');
     };
     function renderRole(){
       var isAdmin = role() === 'admin';
@@ -444,7 +445,7 @@
           btn=document.getElementById('adminBtn'), pw=document.getElementById('pinChangeWrap');
       if(lbl) lbl.textContent = 'Role: ' + (isAdmin ? 'Admin' : 'Staff');
       if(sub) sub.textContent = isAdmin ? 'စာရင်းချုပ် / ပစ္စည်းများ ကြည့်ခွင့် ရှိ' : 'စာရင်းချုပ် / ပစ္စည်းများ ကြည့်ဖို့ Admin ဝင်ပါ';
-      if(btn) btn.textContent = isAdmin ? '🔒 Lock (Staff)' : '🔓 Admin';
+      if(btn) btn.innerHTML = isAdmin ? (ssmIcon("lock",{size:16}) + ' Lock (Staff)') : (ssmIcon("unlock",{size:16}) + ' Admin');
       if(pw) pw.style.display = isAdmin ? 'block' : 'none';
       document.querySelectorAll('.admin-only').forEach(function(e){ e.style.display = isAdmin ? '' : 'none'; });
     }
@@ -461,7 +462,7 @@
     ov.className = "popup-overlay";
     ov.innerHTML =
       '<div class="popup-card" role="dialog" aria-modal="true">' +
-        '<div class="popup-icon" id="popIcon">ℹ️</div>' +
+        '<div class="popup-icon" id="popIcon"></div>' +
         '<p class="popup-msg" id="popMsg"></p>' +
         '<div class="popup-actions" id="popActions"></div>' +
       '</div>';
@@ -469,16 +470,16 @@
     var msgEl = ov.querySelector("#popMsg"), iconEl = ov.querySelector("#popIcon"), actEl = ov.querySelector("#popActions");
     function close(){ ov.classList.remove("show"); }
     function pickIcon(m){ m=String(m);
-      if (/✅|ပြီး|success/i.test(m)) return "✅";
-      if (/⚠️|မ|ပါ|error|fail/i.test(m)) return "⚠️";
-      return "ℹ️"; }
+      if (/✅|ပြီး|success/i.test(m)) return "checkCircle";
+      if (/⚠️|မ|ပါ|error|fail/i.test(m)) return "warning";
+      return "help"; }
     window.alert = function (message){
-      msgEl.textContent = message; iconEl.textContent = pickIcon(message); actEl.innerHTML = "";
+      msgEl.textContent = message; iconEl.innerHTML = window.ssmIcon(pickIcon(message), {size:28}); actEl.innerHTML = "";
       var ok = document.createElement("button"); ok.textContent = "ရပြီ"; ok.onclick = close;
       actEl.appendChild(ok); ov.classList.add("show"); ok.focus();
     };
     window.showConfirm = function (message, onYes, onNo){
-      msgEl.textContent = message; iconEl.textContent = "❓"; actEl.innerHTML = "";
+      msgEl.textContent = message; iconEl.innerHTML = window.ssmIcon("help", {size:28}); actEl.innerHTML = "";
       var cancel = document.createElement("button"); cancel.className = "popup-cancel";
       cancel.textContent = "မလုပ်တော့"; cancel.onclick = function(){ close(); if(onNo) onNo(); };
       var yes = document.createElement("button"); yes.textContent = "ဟုတ်ကဲ့";
@@ -519,9 +520,9 @@
       var waited = 0;
       function tick() {
         if (!el) return;
-        if (window.SSM_SYNC_VER) { el.textContent = "✅ Sync version: " + window.SSM_SYNC_VER; el.style.color = "#16a34a"; return; }
+        if (window.SSM_SYNC_VER) { el.innerHTML = ssmIcon("checkCircle",{size:14}) + " Sync version: " + window.SSM_SYNC_VER; el.style.color = "#16a34a"; return; }
         waited += 1000;
-        if (waited >= 12000) { el.textContent = "⚠️ ကုဒ်အဟောင်း — update မဝင်သေး (app ပိတ်/ဖွင့်ပါ)"; el.style.color = "#dc2626"; return; }
+        if (waited >= 12000) { el.innerHTML = ssmIcon("warning",{size:14}) + " ကုဒ်အဟောင်း — update မဝင်သေး (app ပိတ်/ဖွင့်ပါ)"; el.style.color = "#dc2626"; return; }
         el.textContent = "Sync version စစ်နေသည် …"; el.style.color = "#9ca3af";
         setTimeout(tick, 1000);
       }

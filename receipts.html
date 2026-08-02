@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script src="icons.js"></script>
   <title>Receipt History</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
@@ -338,15 +339,15 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
-    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
-    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
-    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
-    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
-    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
-    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic" data-icon="income" data-icon-size="20"></span> Delivery ဆီမှရငွေ</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
+    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
+    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic" data-icon="delivery" data-icon-size="20"></span> ပို့ဆောင်ရေး</div>
+    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic" data-icon="cash" data-icon-size="20"></span> ငွေလွှဲစာရင်း</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic" data-icon="package" data-icon-size="20"></span> ပစ္စည်းများ</div>
+    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic" data-icon="user" data-icon-size="20"></span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic" data-icon="settings" data-icon-size="20"></span> Settings</div>
   </div>
 
   <div class="top-bar">
@@ -367,22 +368,22 @@
   <div id="historyList"></div>
 
   <div id="loadMoreWrap" style="max-width:920px;margin:14px auto 24px;padding:0 14px;text-align:center;">
-    <button id="loadMoreBtn" class="btn btn-payment" style="width:auto;padding:11px 22px;" onclick="loadMoreReceipts()">🔄 နောက်ထပ် ၂၀ ရက်စာ ကြည့်ရန်</button>
+    <button id="loadMoreBtn" class="btn btn-payment" style="width:auto;padding:11px 22px;" onclick="loadMoreReceipts()"><span data-icon="refresh" data-icon-size="16"></span> နောက်ထပ် ၂၀ ရက်စာ ကြည့်ရန်</button>
     <p id="loadMoreNote" style="font-size:12.5px;color:var(--ink-3);margin-top:8px;"></p>
   </div>
 
   <!-- SS Modal -->
   <div id="ssModal">
     <img id="ssModalImg">
-    <button onclick="closeSS()">✖ Close</button>
+    <button onclick="closeSS()"><span data-icon="close" data-icon-size="16"></span> Close</button>
   </div>
 
   <!-- Online Payment modal (embeds payments.html, same as index.html) -->
   <div class="pay-modal-overlay" id="onlinePayModalOverlay" onclick="if(event.target===this) closeOnlinePaymentModal()">
     <div class="pay-modal-sheet" role="dialog" aria-modal="true" aria-label="Online Payment">
       <div class="pay-modal-head">
-        <h2>💳 Online Payment</h2>
-        <button type="button" class="pay-modal-close" onclick="closeOnlinePaymentModal()" aria-label="Close">✕</button>
+        <h2><span data-icon="card" data-icon-size="18"></span> Online Payment</h2>
+        <button type="button" class="pay-modal-close" onclick="closeOnlinePaymentModal()" aria-label="Close"><span data-icon="close" data-icon-size="16"></span></button>
       </div>
       <div class="pay-modal-body">
         <iframe id="onlinePayModalFrame" title="Online Payment" src="about:blank"></iframe>
@@ -435,8 +436,8 @@
         let itemHtml = "";
         if (sale.items) {
           sale.items.forEach(function (item) {
-            let giftTag = item.isGift ? " 🎁" : "";
-            let repTag  = item.repPrice ? " 🏷️" : "";
+            let giftTag = item.isGift ? " " + ssmIcon("gift",{size:12}) : "";
+            let repTag  = item.repPrice ? " " + ssmIcon("tag",{size:12}) : "";
             let wsub = item.saleType === "weight"
               ? (item.weightText ? item.weightText : ((item.size || "") + " | " + item.qty + " x " + item.price))
               : ((item.isGift ? "လက်ဆောင် | " : (item.size ? item.size + " | " : "")) + item.qty + " x " + item.price);
@@ -462,7 +463,7 @@
             return '<span class="pay-summary-chip">' + _mLabel + ' • <b>' + x.amt.toLocaleString("en-US") + ' Ks</b></span>';
           }).join("");
           paySummaryHtml =
-            '<div class="pay-summary-total"><span>💳 Online Payment (' + _linkedPays.length + ')</span><span>' + _payTotal.toLocaleString("en-US") + ' Ks</span></div>' +
+            '<div class="pay-summary-total"><span>' + ssmIcon("card",{size:14}) + ' Online Payment (' + _linkedPays.length + ')</span><span>' + _payTotal.toLocaleString("en-US") + ' Ks</span></div>' +
             '<div class="pay-summary-chips">' + _chips + '</div>';
         }
 
@@ -471,8 +472,8 @@
         // "🖨️ မထုတ်ရသေး" ဟု မပြပါ — Online mode နှင့် Delivery ရွေးထားသော Shop voucher များကို မထိခိုက်စေပါ။
         var _noDeliveryShopVoucher = !!sale.shopMode && !sale.deliveryService;
         let printBadge = sale.printed
-          ? `<span class="badge badge-printed">🖨️ Print ပြီး</span>`
-          : (_noDeliveryShopVoucher ? "" : `<span class="badge badge-notprinted">🖨️ မထုတ်ရသေး</span>`);
+          ? `<span class="badge badge-printed">${ssmIcon("print",{size:12})} Print ပြီး</span>`
+          : (_noDeliveryShopVoucher ? "" : `<span class="badge badge-notprinted">${ssmIcon("print",{size:12})} မထုတ်ရသေး</span>`);
 
 
         // Payment badge
@@ -543,7 +544,7 @@
               <div id="paySummary-${index}" class="pay-summary-box" style="${_linkedPays.length ? '' : 'display:none;'}">${paySummaryHtml}</div>
 
               <div class="actions">
-                <button class="btn btn-onlinepay" onclick="openOnlinePaymentModal(${index})">💳 Online Payment</button>
+                <button class="btn btn-onlinepay" onclick="openOnlinePaymentModal(${index})">${ssmIcon("card",{size:14})} Online Payment</button>
                 <button class="btn btn-print"   onclick="printReceipt(${index})">${ssmIcon("print", {size:16})} Print</button>
                 <button class="btn btn-share"   onclick="shareReceipt(${index})">${ssmIcon("share", {size:16})} Share</button>
                 <button class="btn btn-edit"    onclick="editReceipt(${index})">${ssmIcon("edit", {size:16})} Edit</button>
@@ -623,7 +624,7 @@
       note.textContent = "";
       window.ssmLoadMoreSales(function (res) {
         btn.disabled = false;
-        btn.textContent = "🔄 နောက်ထပ် ၂၀ ရက်စာ ကြည့်ရန်";
+        btn.innerHTML = ssmIcon("refresh",{size:16}) + " နောက်ထပ် ၂၀ ရက်စာ ကြည့်ရန်";
         if (res && res.error) {
           note.textContent = "မဆွဲနိုင်ပါ — ထပ်ကြိုးစားကြည့်ပါ";
           return;
@@ -648,7 +649,7 @@
       }
       // local မှာ silent ဖယ်ထားရင် — cloud ကနေ ဆွဲ
       imgEl.removeAttribute("src");
-      imgEl.alt = "☁️ cloud ကနေ ဆွဲနေသည် ...";
+      imgEl.alt = "cloud ကနေ ဆွဲနေသည် ...";
       modal.style.display = "flex";
       if (window.ssmGetCloudImages) {
         window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
@@ -827,7 +828,7 @@
     ov.className = "popup-overlay";
     ov.innerHTML =
       '<div class="popup-card" role="dialog" aria-modal="true">' +
-        '<div class="popup-icon" id="popIcon">ℹ️</div>' +
+        '<div class="popup-icon" id="popIcon"></div>' +
         '<p class="popup-msg" id="popMsg"></p>' +
         '<div class="popup-actions" id="popActions"></div>' +
       '</div>';
@@ -835,17 +836,17 @@
     var msgEl = ov.querySelector("#popMsg"), iconEl = ov.querySelector("#popIcon"), actEl = ov.querySelector("#popActions");
     function close(){ ov.classList.remove("show"); }
     function pickIcon(m){ m=String(m);
-      if (/✅|ပြီး|success/i.test(m)) return "✅";
-      if (/⚠|မ|ပါ|error|fail/i.test(m)) return "⚠️";
-      return "ℹ️"; }
+      if (/✅|ပြီး|success/i.test(m)) return "checkCircle";
+      if (/⚠|မ|ပါ|error|fail/i.test(m)) return "warning";
+      return "help"; }
     window.alert = function (message){
-      msgEl.textContent = message; msgEl.style.whiteSpace = "normal"; iconEl.textContent = pickIcon(message); actEl.innerHTML = "";
+      msgEl.textContent = message; msgEl.style.whiteSpace = "normal"; iconEl.innerHTML = window.ssmIcon(pickIcon(message), {size:28}); actEl.innerHTML = "";
       var ok = document.createElement("button"); ok.textContent = "ရပြီ"; ok.onclick = close;
       actEl.appendChild(ok); ov.classList.add("show"); ok.focus();
     };
     window.showConfirm = function (message, onYes, onNo, opts){
       opts = opts || {};
-      msgEl.textContent = message; msgEl.style.whiteSpace = "pre-line"; iconEl.textContent = opts.icon || "❓"; actEl.innerHTML = "";
+      msgEl.textContent = message; msgEl.style.whiteSpace = "pre-line"; iconEl.innerHTML = window.ssmIcon(opts.icon || "help", {size:28}); actEl.innerHTML = "";
       var cancel = document.createElement("button"); cancel.className = "popup-cancel";
       cancel.textContent = opts.no || "မလုပ်တော့"; cancel.onclick = function(){ close(); if(onNo) onNo(); };
       var yes = document.createElement("button"); yes.textContent = opts.yes || "ဟုတ်ကဲ့";

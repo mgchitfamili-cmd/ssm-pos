@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script src="icons.js"></script>
   <title>Sales Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -251,15 +252,15 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
-    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
-    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
-    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
-    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
-    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
-    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic" data-icon="income" data-icon-size="20"></span> Delivery ဆီမှရငွေ</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
+    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
+    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic" data-icon="delivery" data-icon-size="20"></span> ပို့ဆောင်ရေး</div>
+    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic" data-icon="cash" data-icon-size="20"></span> ငွေလွှဲစာရင်း</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic" data-icon="package" data-icon-size="20"></span> ပစ္စည်းများ</div>
+    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic" data-icon="user" data-icon-size="20"></span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic" data-icon="settings" data-icon-size="20"></span> Settings</div>
   </div>
 
   <div class="top-bar">
@@ -307,13 +308,13 @@
         <input type="date" id="repTo" class="rdate-native" onchange="handleRepDateChange('repTo','repToLabel')">
       </div>
     </div>
-    <button class="rclear" onclick="clearRepRange()" aria-label="Clear dates">✕</button>
+    <button class="rclear" onclick="clearRepRange()" aria-label="Clear dates"><span data-icon="close" data-icon-size="14"></span></button>
   </div>
 
   <div class="rpt-grid">
   <!-- Today's Summary -->
   <div class="box" id="todayCard">
-    <h1 style="margin:0 0 10px 0;">📅 ယနေ့အတွက် စာရင်း</h1>
+    <h1 style="margin:0 0 10px 0;"><span data-icon="calendar" data-icon-size="20"></span> ယနေ့အတွက် စာရင်း</h1>
     <div class="rank-item"><span class="name">Total order</span><span class="count" id="tdTotalOrders">0 ခု</span></div>
     <div id="tdServiceCounts"></div>
     <hr class="total-divider">
@@ -360,31 +361,31 @@
   </div>
 
   <!-- Daily chart -->
-  <h2>📈 နေ့အလိုက် ရောင်းအား (၇ ရက်)</h2>
+  <h2><span data-icon="trendingUp" data-icon-size="18"></span> နေ့အလိုက် ရောင်းအား (၇ ရက်)</h2>
   <div class="box" id="dailyChart"></div>
 
   <!-- Monthly chart -->
-  <h2>📊 လအလိုက် ရောင်းအား (၆ လ)</h2>
+  <h2><span data-icon="report" data-icon-size="18"></span> လအလိုက် ရောင်းအား (၆ လ)</h2>
   <div class="box" id="monthlyChart"></div>
 
   <!-- Top Products -->
-  <h2>📦 အရောင်းရဆုံး Products</h2>
+  <h2><span data-icon="package" data-icon-size="18"></span> အရောင်းရဆုံး Products</h2>
   <div class="box" id="topProducts"></div>
 
   <!-- Staff -->
-  <h2>👤 Staff အလိုက် Order</h2>
+  <h2><span data-icon="user" data-icon-size="18"></span> Staff အလိုက် Order</h2>
   <div class="box" id="staffStats"></div>
 
   <!-- Delivery Service -->
-  <h2>🚚 Delivery Service အလိုက်</h2>
+  <h2><span data-icon="delivery" data-icon-size="18"></span> Delivery Service အလိုက်</h2>
   <div id="serviceStats"></div>
 
   <!-- Top Townships -->
-  <h2>📍 ရောင်းရအများဆုံး မြို့နယ် (Top 10)</h2>
+  <h2><span data-icon="pin" data-icon-size="18"></span> ရောင်းရအများဆုံး မြို့နယ် (Top 10)</h2>
   <div class="box" id="townshipChart"></div>
 
   <!-- Order source app -->
-  <h2>📱 App အလိုက် Order အဝင်</h2>
+  <h2><span data-icon="phone" data-icon-size="18"></span> App အလိုက် Order အဝင်</h2>
   <div class="box" id="appChart"></div>
   </div><!-- /admin-only -->
   </div><!-- /rpt-grid -->
@@ -633,7 +634,7 @@
         return;
       }
 
-      var medals = ["🥇", "🥈", "🥉"];   // rank 1 = ရွှေ, 2 = ငွေ, 3 = ကြေး
+      var medals = [ssmIcon("medal",{size:16,color:"#d4af37"}), ssmIcon("medal",{size:16,color:"#a8a9ad"}), ssmIcon("medal",{size:16,color:"#c17a3f"})];   // rank 1 = ရွှေ, 2 = ငွေ, 3 = ကြေး
       let html = "";
       arr.forEach(function (item, i) {
         if (withRank) {

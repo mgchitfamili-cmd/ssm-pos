@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="my">
 <head>
+  <script src="icons.js"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>ငွေလွှဲစာရင်း</title>
@@ -252,7 +253,7 @@
       transition:background .15s, border-color .15s;
     }
     .pay-check.checked{ background:var(--brand); border-color:var(--brand); }
-    .pay-check.checked::after{ content:"✓"; color:#fff; font-size:13px; font-weight:800; }
+    .pay-check.checked::after{ content:""; width:14px; height:14px; background:currentColor; -webkit-mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>') center/contain no-repeat; mask:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>') center/contain no-repeat; }
     .pay-card.selectable{ cursor:pointer; -webkit-tap-highlight-color:transparent; }
     .pay-card.selected{ border-color:var(--brand); box-shadow:0 0 0 2px rgba(79,51,147,.16); }
     .pay-card.locked{ opacity:.55; }
@@ -318,15 +319,15 @@
         <h2>Sone Sone Mommy</h2>
         <p>POS System</p>
       </div>
-      <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-      <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
-      <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
-      <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
-      <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
-      <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
-      <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
-      <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
-      <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+      <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+      <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic" data-icon="income" data-icon-size="20"></span> Delivery ဆီမှရငွေ</div>
+      <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
+      <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
+      <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic" data-icon="delivery" data-icon-size="20"></span> ပို့ဆောင်ရေး</div>
+      <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic" data-icon="cash" data-icon-size="20"></span> ငွေလွှဲစာရင်း</div>
+      <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic" data-icon="package" data-icon-size="20"></span> ပစ္စည်းများ</div>
+      <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic" data-icon="user" data-icon-size="20"></span> ဝန်ထမ်းများ</div>
+      <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic" data-icon="settings" data-icon-size="20"></span> Settings</div>
     </div>
 
     <div class="top-bar">
@@ -356,7 +357,7 @@
         <span id="selectCount">0 ခု ရွေးထားသည်</span>
         <span id="selectTotal">0 Ks</span>
       </div>
-      <button type="button" id="selectDoneBtn" onclick="finishSelection()">✅ ရွေးပြီး</button>
+      <button type="button" id="selectDoneBtn" onclick="finishSelection()"><span data-icon="checkCircle" data-icon-size="16"></span> ရွေးပြီး</button>
     </div>
   </div>
 
@@ -368,7 +369,7 @@
   <!-- ══ FORM PAGE ══ -->
   <div id="formPage">
     <div class="top-bar">
-      <button class="iconbtn" onclick="closeForm()" aria-label="Back">←</button>
+      <button class="iconbtn" onclick="closeForm()" aria-label="Back"><span data-icon="back" data-icon-size="18"></span></button>
       <h1 id="formTitle">ငွေလွှဲ အသစ် မှတ်မည်</h1>
     </div>
     <div class="wrap">
@@ -401,15 +402,15 @@
           <div class="ss-picker" id="ssPicker">
             <div class="ss-picker-empty" id="ssPickerEmpty">
               <button type="button" class="ss-choice-btn" onclick="document.getElementById('paySSFileGallery').click()">
-                <span>📁</span><span>Folder ထဲက ယူရန်</span>
+                <span data-icon="folder" data-icon-size="18"></span><span>Folder ထဲက ယူရန်</span>
               </button>
               <button type="button" class="ss-choice-btn" onclick="document.getElementById('paySSFileCamera').click()">
-                <span>📷</span><span>ပုံရိုက်ရန်</span>
+                <span data-icon="camera" data-icon-size="18"></span><span>ပုံရိုက်ရန်</span>
               </button>
             </div>
             <img id="ssPreviewImg" style="display:none;" onclick="viewSSImage();" alt="SS">
             <button type="button" class="ss-remove" id="ssRemoveBtn" style="display:none;"
-              onclick="clearSSImage();" aria-label="Remove">✕</button>
+              onclick="clearSSImage();" aria-label="Remove"><span data-icon="close" data-icon-size="14"></span></button>
           </div>
           <input type="file" id="paySSFileGallery" accept="image/*" style="display:none" onchange="handleSSFile(event)">
           <input type="file" id="paySSFileCamera" accept="image/*" capture="environment" style="display:none" onchange="handleSSFile(event)">
@@ -418,7 +419,7 @@
           <label class="lbl">လွှဲသူ နာမည် / ဖုန်း <span style="font-weight:500;color:var(--ink-3);">(optional)</span></label>
           <input id="paySender" placeholder="နာမည် (သို့) ဖုန်းနံပါတ်">
         </div>
-        <button class="btn-save" id="saveBtn" onclick="savePayment()">💾 Save</button>
+        <button class="btn-save" id="saveBtn" onclick="savePayment()"><span data-icon="save" data-icon-size="16"></span> Save</button>
       </section>
     </div>
   </div>
@@ -484,7 +485,7 @@
       if (_h1) _h1.textContent = "ငွေလွှဲ ရွေးရန်";
       var _menuBtn = document.getElementById("menuBtn");
       if (_menuBtn) {
-        _menuBtn.textContent = "✕";
+        _menuBtn.innerHTML = ssmIcon("close", {size:16});
         _menuBtn.setAttribute("aria-label", "Close");
         _menuBtn.onclick = cancelSelection;
       }
@@ -646,10 +647,10 @@
       let empty = document.getElementById("ssPickerEmpty");
       empty.innerHTML =
         '<button type="button" class="ss-choice-btn" onclick="document.getElementById(\'paySSFileGallery\').click()">' +
-          '<span>📁</span><span>Folder ထဲက ယူရန်</span>' +
+          '<span data-icon="folder" data-icon-size="18"></span><span>Folder ထဲက ယူရန်</span>' +
         '</button>' +
         '<button type="button" class="ss-choice-btn" onclick="document.getElementById(\'paySSFileCamera\').click()">' +
-          '<span>📷</span><span>ပုံရိုက်ရန်</span>' +
+          '<span data-icon="camera" data-icon-size="18"></span><span>ပုံရိုက်ရန်</span>' +
         '</button>';
       empty.style.display = "flex";
       document.getElementById("ssRemoveBtn").style.display = "none";
@@ -869,27 +870,27 @@
                 <div class="pay-amt">${fmtKs(p.amount)}</div>
                 <span class="tag ${methodTagClass(p.method)}">${methodLabel(p.method)}</span>
                 ${isAdmin ? `<div class="pay-actions">
-                  <button class="icon-btn btn-verify${_verified ? " verified" : ""}" onclick="event.stopPropagation(); toggleVerified('${p.id}')" aria-label="Verify">${_verified ? "✅" : "☐"}</button>
-                  <button class="icon-btn btn-edit"   onclick="event.stopPropagation(); openForm(${index})" aria-label="Edit">✏️</button>
-                  <button class="icon-btn btn-delete" onclick="event.stopPropagation(); deletePayment(${index})" aria-label="Delete">🗑️</button>
+                  <button class="icon-btn btn-verify${_verified ? " verified" : ""}" onclick="event.stopPropagation(); toggleVerified('${p.id}')" aria-label="Verify">${_verified ? ssmIcon("checkCircle",{size:15}) : ssmIcon("check",{size:15})}</button>
+                  <button class="icon-btn btn-edit"   onclick="event.stopPropagation(); openForm(${index})" aria-label="Edit">${ssmIcon("edit",{size:15})}</button>
+                  <button class="icon-btn btn-delete" onclick="event.stopPropagation(); deletePayment(${index})" aria-label="Delete">${ssmIcon("trash",{size:15})}</button>
                 </div>` : ""}
               </div>
               ${(p.sender || p.transferId || p.hasSS) ? `<div class="pay-info-right">
                 ${p.sender ? `<div class="pay-mid">လွှဲသူ - <b>${p.sender}</b></div>` : ""}
                 ${p.transferId ? `<div class="pay-mid">ငွေလွှဲ ID - <b>${p.transferId}</b></div>` : ""}
                 ${p.hasSS ? `<div class="pay-mid" style="display:flex;align-items:center;justify-content:flex-start;gap:9px;">SS -
-                  <button type="button" class="ss-view-btn" onclick="event.stopPropagation(); viewCloudSS('${p.id}', this)">🖼️ ကြည့်ရန်</button></div>` : ""}
+                  <button type="button" class="ss-view-btn" onclick="event.stopPropagation(); viewCloudSS('${p.id}', this)">${ssmIcon("image",{size:14})} ကြည့်ရန်</button></div>` : ""}
               </div>` : ""}
             </div>
-            ${_locked ? `<div class="pay-mid lock-tag">🔒 တခြား အော်ဒါတွင် အသုံးပြုပြီးသား</div>` : ""}
-            ${_linked ? `<div class="pay-mid linked-tag">✅ Order ချိတ်ပြီးသား — ${Object.keys(migrateAlloc(p)).map(function (k) { return k + " (" + fmtKs(migrateAlloc(p)[k]) + ")"; }).join("၊ ")}${allocTotal(p) < (Number(p.amount) || 0) ? " • မချိတ်ရသေး " + fmtKs((Number(p.amount) || 0) - allocTotal(p)) : ""}</div>` : ""}
-            ${(SELECT_MODE && !_locked && !_selected && allocTotal(p) > 0) ? `<div class="pay-mid split-avail-tag">↪️ ဒီ Order အတွက် ${fmtKs(remainingFor(p, SALE_KEY))} ရနိုင်သည် (တခြား Order တွေနဲ့ ခွဲသုံးထားသည်)</div>` : ""}
+            ${_locked ? `<div class="pay-mid lock-tag">${ssmIcon("lock",{size:13})} တခြား အော်ဒါတွင် အသုံးပြုပြီးသား</div>` : ""}
+            ${_linked ? `<div class="pay-mid linked-tag">${ssmIcon("checkCircle",{size:13})} Order ချိတ်ပြီးသား — ${Object.keys(migrateAlloc(p)).map(function (k) { return k + " (" + fmtKs(migrateAlloc(p)[k]) + ")"; }).join("၊ ")}${allocTotal(p) < (Number(p.amount) || 0) ? " • မချိတ်ရသေး " + fmtKs((Number(p.amount) || 0) - allocTotal(p)) : ""}</div>` : ""}
+            ${(SELECT_MODE && !_locked && !_selected && allocTotal(p) > 0) ? `<div class="pay-mid split-avail-tag">${ssmIcon("splitArrow",{size:13})} ဒီ Order အတွက် ${fmtKs(remainingFor(p, SALE_KEY))} ရနိုင်သည် (တခြား Order တွေနဲ့ ခွဲသုံးထားသည်)</div>` : ""}
             ${(SELECT_MODE && _selected) ? `<div class="pay-mid split-amt-row">
                 <span>ဒီ Order အတွက်ငွေပမာဏ —</span>
                 <input type="number" class="split-amt-input" min="0" max="${remainingFor(p, SALE_KEY)}" value="${getAmt(p.id)}" onclick="event.stopPropagation();" oninput="onSplitAmtInput(event, '${p.id}')">
                 <span class="split-amt-max">/ ${fmtKs(p.amount)}</span>
               </div>` : ""}
-            ${_verified ? `<div class="pay-mid verified-tag">✅ စစ်ပြီးပါပြီ</div>` : ""}
+            ${_verified ? `<div class="pay-mid verified-tag">${ssmIcon("checkCircle",{size:13})} စစ်ပြီးပါပြီ</div>` : ""}
           </div>`;
       });
 
@@ -942,9 +943,9 @@
 
       bar.className = "dup-warn-bar";
       bar.innerHTML =
-        '<span class="dup-ic">⚠️</span>' +
+        '<span class="dup-ic">' + ssmIcon("warning",{size:16}) + '</span>' +
         '<span class="dup-warn-text">ငွေလွှဲ ID ထပ်နေသည် —<br>' + dupLines.join("<br>") + '</span>' +
-        '<button type="button" class="dup-warn-close" onclick="dismissDupWarnBar(\'' + sig.replace(/'/g, "\\'") + '\')" aria-label="Close">✕</button>';
+        '<button type="button" class="dup-warn-close" onclick="dismissDupWarnBar(\'' + sig.replace(/'/g, "\\'") + '\')" aria-label="Close">' + ssmIcon("close",{size:14}) + '</button>';
       bar.style.display = "flex";
     }
 
@@ -994,7 +995,7 @@
     ov.className = "popup-overlay";
     ov.innerHTML =
       '<div class="popup-card" role="dialog" aria-modal="true">' +
-        '<div class="popup-icon" id="popIcon">ℹ️</div>' +
+        '<div class="popup-icon" id="popIcon"></div>' +
         '<p class="popup-msg" id="popMsg"></p>' +
         '<div class="popup-actions" id="popActions"></div>' +
       '</div>';
@@ -1002,18 +1003,18 @@
     var msgEl = ov.querySelector("#popMsg"), iconEl = ov.querySelector("#popIcon"), actEl = ov.querySelector("#popActions");
     function close() { ov.classList.remove("show"); }
     function pickIcon(m){ m=String(m);
-      if (/✅|ပြီး|success/i.test(m)) return "✅";
-      if (/⚠️|မ|ပါ|error|fail/i.test(m)) return "⚠️";
-      return "ℹ️"; }
+      if (/✅|ပြီး|success/i.test(m)) return "checkCircle";
+      if (/⚠️|မ|ပါ|error|fail/i.test(m)) return "warning";
+      return "help"; }
     window.alert = function (message) {
-      msgEl.textContent = message; iconEl.textContent = pickIcon(message);
+      msgEl.textContent = message; iconEl.innerHTML = window.ssmIcon(pickIcon(message), {size:28});
       actEl.innerHTML = "";
       var ok = document.createElement("button"); ok.textContent = "ရပြီ"; ok.onclick = close;
       actEl.appendChild(ok); ov.classList.add("show"); ok.focus();
     };
     window.showConfirm = function (message, onYes, onNo, opts) {
       opts = opts || {};
-      msgEl.textContent = message; msgEl.style.whiteSpace = "pre-line"; iconEl.textContent = opts.icon || "❓"; actEl.innerHTML = "";
+      msgEl.textContent = message; msgEl.style.whiteSpace = "pre-line"; iconEl.innerHTML = window.ssmIcon(opts.icon || "help", {size:28}); actEl.innerHTML = "";
       var cancel = document.createElement("button"); cancel.className = "popup-cancel";
       cancel.textContent = opts.no || "မလုပ်တော့"; cancel.onclick = function(){ close(); if(onNo) onNo(); };
       var yes = document.createElement("button"); yes.textContent = opts.yes || "ဟုတ်ကဲ့";

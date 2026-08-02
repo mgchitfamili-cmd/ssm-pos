@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script src="icons.js"></script>
   <title>Delivery Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -389,14 +390,14 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
-    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
-    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
-    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
-    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
-    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
-    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
+    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
+    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic" data-icon="delivery" data-icon-size="20"></span> ပို့ဆောင်ရေး</div>
+    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic" data-icon="cash" data-icon-size="20"></span> ငွေလွှဲစာရင်း</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic" data-icon="package" data-icon-size="20"></span> ပစ္စည်းများ</div>
+    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic" data-icon="user" data-icon-size="20"></span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic" data-icon="settings" data-icon-size="20"></span> Settings</div>
   </div>
 
   <div class="top-bar">
@@ -455,7 +456,7 @@
         <input type="date" id="dateTo" class="dr-native" onchange="handleDRDateChange('dateTo','dateToLabel')">
       </div>
     </div>
-    <button class="dr-clear" onclick="clearDateRange()" aria-label="Clear">✕</button>
+    <button class="dr-clear" onclick="clearDateRange()" aria-label="Clear"><span data-icon="close" data-icon-size="14"></span></button>
   </div>
 
   <div class="alert-banner-row">
@@ -466,7 +467,7 @@
   <div id="cardList"></div>
 
   <div id="loadMoreWrap" style="max-width:920px;margin:14px auto 24px;padding:0 14px;text-align:center;">
-    <button id="loadMoreBtn" class="btn btn-photo" style="width:auto;padding:11px 22px;" onclick="loadMoreDeliveries()">🔄 နောက်ထပ် ၂၀ ရက်စာ ကြည့်ရန်</button>
+    <button id="loadMoreBtn" class="btn btn-photo" style="width:auto;padding:11px 22px;" onclick="loadMoreDeliveries()"><span data-icon="refresh" data-icon-size="16"></span> နောက်ထပ် ၂၀ ရက်စာ ကြည့်ရန်</button>
     <p id="loadMoreNote" style="font-size:12.5px;color:var(--ink-3);margin-top:8px;"></p>
   </div>
 
@@ -480,8 +481,8 @@
   <div id="photoModal">
     <img id="modalImage">
     <div class="modal-btns">
-      <button class="btn-delete" style="background:#dc2626" onclick="deletePhoto()">🗑️ Delete</button>
-      <button style="background:#6b7280" onclick="closePhoto()">✖ Close</button>
+      <button class="btn-delete" style="background:#dc2626" onclick="deletePhoto()"><span data-icon="trash" data-icon-size="16"></span> Delete</button>
+      <button style="background:#6b7280" onclick="closePhoto()"><span data-icon="close" data-icon-size="16"></span> Close</button>
     </div>
   </div>
 
@@ -503,7 +504,7 @@
       var n = arr.filter(function (s) { return s && s.deliveryService == "Royal" && !s.deliveryCode; }).length;
       var b = document.getElementById("noCodeBanner");
       if (!b) return;
-      if (n > 0) { b.style.display = "flex"; b.innerHTML = '⚠️ Code ထည့်ရန်ကျန် <b style="margin:0 3px">' + n + '</b> ခု'; }
+      if (n > 0) { b.style.display = "flex"; b.innerHTML = ssmIcon("warning",{size:14}) + ' Code ထည့်ရန်ကျန် <b style="margin:0 3px">' + n + '</b> ခု'; }
       else { b.style.display = "none"; }
     }
 
@@ -539,7 +540,7 @@
       note.textContent = "";
       window.ssmLoadMoreSales(function (res) {
         btn.disabled = false;
-        btn.textContent = "🔄 နောက်ထပ် ၂၀ ရက်စာ ကြည့်ရန်";
+        btn.innerHTML = ssmIcon("refresh",{size:16}) + " နောက်ထပ် ၂၀ ရက်စာ ကြည့်ရန်";
         if (res && res.error) {
           note.textContent = "မဆွဲနိုင်ပါ — ထပ်ကြိုးစားကြည့်ပါ";
           return;
@@ -608,7 +609,7 @@
 
         // Photo button visibility (unchanged condition, computed once so it can be placed in either row)
         var showPhotoBtn = !(/-WI-/.test(String(sale.orderNo || "")) || sale.payMode);
-        var photoBtnInner = `${sale.deliveryPhoto ? "👁 Photo" : (sale.hasDel || sale._hadDelivery) ? "☁️ Photo" : "📷 Photo"}`;
+        var photoBtnInner = sale.deliveryPhoto ? (ssmIcon("eye",{size:14}) + " Photo") : (sale.hasDel || sale._hadDelivery) ? (ssmIcon("cloud",{size:14}) + " Photo") : (ssmIcon("camera",{size:14}) + " Photo");
 
         html += `
           <div class="card ${status} ${_isShop ? 'ShopOrder' : ''}" id="card-${index}">
@@ -627,8 +628,8 @@
             ${_isShop ? "" : `
             <div class="badge-row" onclick="toggleCard(${index})">
               <span class="status-badge badge-${status}">${status}</span>
-              <span class="badge-parcel ${sale.deliveryParcel ? 'parcel-yes' : 'parcel-no'}">${sale.deliveryParcel ? '📦 ထုပ်ပြီး' : '📦 မထုပ်ရသေး'}</span>
-              ${(sale.deliveryService == "Royal" && !sale.deliveryCode) ? '<span class="badge-nocode" id="nocode-badge-' + index + '">⚠️ Code ကျန်</span>' : ''}
+              <span class="badge-parcel ${sale.deliveryParcel ? 'parcel-yes' : 'parcel-no'}">${ssmIcon("package",{size:14})} ${sale.deliveryParcel ? 'ထုပ်ပြီး' : 'မထုပ်ရသေး'}</span>
+              ${(sale.deliveryService == "Royal" && !sale.deliveryCode) ? '<span class="badge-nocode" id="nocode-badge-' + index + '">' + ssmIcon("warning",{size:14}) + ' Code ကျန်</span>' : ''}
             </div>`}
 
             <!-- Detail -->
@@ -641,7 +642,7 @@
                 ${sale.deliveryService == "Royal" ? `<p class="info-line"><b>Royal Charge:</b> ${received.charge}</p>` : `<p class="info-line"></p>`}
 
                 <p class="info-line"><b>Grand Total:</b> ${sale.grandTotal || 0}</p>
-                <p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}${deliFeeAlert ? ` <span class="fee-flag">${deliFeeAlert === "over" ? "🔴" : "🟢"}</span>` : ""}</p>
+                <p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}${deliFeeAlert ? ` <span class="fee-flag">${ssmIcon("dot",{size:10, color: deliFeeAlert === "over" ? "#dc2626" : "#16a34a"})}</span>` : ""}</p>
                 <p class="info-line"><b>Deposit:</b> ${sale.deposit || 0}</p>
                 <p class="info-line"><b>Net Total:</b> ${netNum}</p>
               </div>`}
@@ -707,8 +708,8 @@
                 <button class="btn btn-photo" onclick="uploadPhoto(${index})">
                   ${photoBtnInner}
                 </button>` : ""}
-                <button class="btn btn-edit admin-del" onclick="editOrder(${index})">✏️ Edit</button>
-                <button class="btn btn-delete admin-del" onclick="deleteOrder(${index})">🗑️ Delete</button>
+                <button class="btn btn-edit admin-del" onclick="editOrder(${index})">${ssmIcon("edit",{size:14})} Edit</button>
+                <button class="btn btn-delete admin-del" onclick="deleteOrder(${index})">${ssmIcon("trash",{size:14})} Delete</button>
               </div>
 
             </div>
@@ -870,7 +871,7 @@
       var code = codes[pIdx] || "";
       var complete = code.length === 9;
       var pStatus = pStatuses[pIdx] || "Pending";
-      var photoBtnInner = photoFlags[pIdx] ? "☁️ Photo" : "📷 Photo";
+      var photoBtnInner = photoFlags[pIdx] ? (ssmIcon("cloud",{size:14}) + " Photo") : (ssmIcon("camera",{size:14}) + " Photo");
       return `
               <div class="field-row parcel-field">
                 <div class="field field-status">
@@ -1181,7 +1182,7 @@
       var imgEl = document.getElementById("modalImage");
       var modal = document.getElementById("photoModal");
       imgEl.removeAttribute("src");
-      imgEl.alt = "☁️ cloud ကနေ ဆွဲနေသည် ...";
+      imgEl.alt = "cloud ကနေ ဆွဲနေသည် ...";
       modal.style.display = "flex";
       if (window.ssmGetCloudImages) {
         window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
@@ -1207,7 +1208,7 @@
       }
       // local မှာ silent ဖယ်ထားရင် — cloud ကနေ ဆွဲ
       imgEl.removeAttribute("src");
-      imgEl.alt = "☁️ cloud ကနေ ဆွဲနေသည် ...";
+      imgEl.alt = "cloud ကနေ ဆွဲနေသည် ...";
       modal.style.display = "flex";
       if (window.ssmGetCloudImages) {
         window.ssmGetCloudImages(sale.orderNo).then(function (imgs) {
@@ -1368,7 +1369,7 @@
     ov.className = "popup-overlay";
     ov.innerHTML =
       '<div class="popup-card" role="dialog" aria-modal="true">' +
-        '<div class="popup-icon" id="popIcon">\u2139\ufe0f</div>' +
+        '<div class="popup-icon" id="popIcon"></div>' +
         '<p class="popup-msg" id="popMsg"></p>' +
         '<div class="popup-actions" id="popActions"></div>' +
       '</div>';
@@ -1382,14 +1383,14 @@
 
     function pickIcon(m) {
       m = String(m);
-      if (/\u2705|\u1015\u103c\u102e\u1038|success/i.test(m)) return "\u2705";
-      if (/\u26a0|\u1019|\u1015\u102b|error|fail/i.test(m)) return "\u26a0\ufe0f";
-      return "\u2139\ufe0f";
+      if (/\u2705|\u1015\u103c\u102e\u1038|success/i.test(m)) return "checkCircle";
+      if (/\u26a0|\u1019|\u1015\u102b|error|fail/i.test(m)) return "warning";
+      return "help";
     }
 
     window.alert = function (message) {
       msgEl.textContent = message;
-      iconEl.textContent = pickIcon(message);
+      iconEl.innerHTML = window.ssmIcon(pickIcon(message), {size:28});
       actEl.innerHTML = "";
       var ok = document.createElement("button");
       ok.textContent = "\u101b\u1015\u103c\u102e";
@@ -1401,7 +1402,7 @@
 
     window.showConfirm = function (message, onYes, onNo) {
       msgEl.textContent = message;
-      iconEl.textContent = "\u2753";
+      iconEl.innerHTML = window.ssmIcon("help", {size:28});
       actEl.innerHTML = "";
       var cancel = document.createElement("button");
       cancel.className = "popup-cancel";

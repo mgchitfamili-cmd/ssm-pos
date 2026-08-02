@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script src="icons.js"></script>
   <title>Print Receipt</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -72,8 +73,8 @@
 <body>
 
   <div class="btn-bar">
-    <button onclick="window.print()">🖨️ Print</button>
-    <button class="back" onclick="location.href='receipts.html'">← Back</button>
+    <button onclick="window.print()"><span data-icon="print" data-icon-size="16"></span> Print</button>
+    <button class="back" onclick="location.href='receipts.html'"><span data-icon="back" data-icon-size="16"></span> Back</button>
   </div>
 
   <div id="receipt"></div>

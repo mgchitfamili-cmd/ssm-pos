@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <script src="icons.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sone Sone Mommy POS v2</title>
@@ -684,15 +685,15 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
-    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic">💰</span> Delivery ဆီမှရငွေ</div>
-    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
-    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
-    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
-    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic">💵</span> ငွေလွှဲစာရင်း</div>
-    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic">📦</span> ပစ္စည်းများ</div>
-    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic">👤</span> ဝန်ထမ်းများ</div>
-    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic">⚙️</span> Settings</div>
+    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+    <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic" data-icon="income" data-icon-size="20"></span> Delivery ဆီမှရငွေ</div>
+    <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
+    <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
+    <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic" data-icon="delivery" data-icon-size="20"></span> ပို့ဆောင်ရေး</div>
+    <div class="menu-item" data-page="payments.html" onclick="location.href='payments.html'"><span class="ic" data-icon="cash" data-icon-size="20"></span> ငွေလွှဲစာရင်း</div>
+    <div class="menu-item admin-only" data-page="products.html" onclick="location.href='products.html'"><span class="ic" data-icon="package" data-icon-size="20"></span> ပစ္စည်းများ</div>
+    <div class="menu-item admin-only" data-page="staff.html"    onclick="location.href='staff.html'"><span class="ic" data-icon="user" data-icon-size="20"></span> ဝန်ထမ်းများ</div>
+    <div class="menu-item" data-page="setting.html" onclick="location.href='setting.html'"><span class="ic" data-icon="settings" data-icon-size="20"></span> Settings</div>
   </div>
 
   <!-- App bar -->
@@ -879,11 +880,11 @@
           </div>
         </div>
         <div class="field">
-          <textarea id="note" placeholder="📝 Delivery မှတ်ချက် (receipt အောက်ခြေ)"></textarea>
+          <textarea id="note" placeholder="Delivery မှတ်ချက် (receipt အောက်ခြေ)"></textarea>
         </div>
 
         <div class="order-info-toggle-row">
-          <button type="button" id="onlinePayToggleBtn" class="order-info-toggle-btn" style="display:inline-flex;" onclick="openPaymentModal()" aria-haspopup="dialog">💳 Online Payment ထည့်ရန်</button>
+          <button type="button" id="onlinePayToggleBtn" class="order-info-toggle-btn" style="display:inline-flex;" onclick="openPaymentModal()" aria-haspopup="dialog"><span data-icon="card" data-icon-size="16"></span> Online Payment ထည့်ရန်</button>
         </div>
         <div id="paySummary" class="pay-summary-box" style="display:none;"></div>
       </section>
@@ -914,10 +915,10 @@
 
     <!-- After save -->
     <div id="afterSaveActions" class="no-print">
-      <h3>✅ Receipt သိမ်းပြီးပါပြီ</h3>
+      <h3><span data-icon="checkCircle" data-icon-size="20"></span> Receipt သိမ်းပြီးပါပြီ</h3>
       <div class="save-actions">
-        <button class="btn-print" onclick="printReceipt()">🖨️ Print</button>
-        <button class="btn-share" onclick="shareReceipt()">📤 Share</button>
+        <button class="btn-print" onclick="printReceipt()"><span data-icon="print" data-icon-size="16"></span> Print</button>
+        <button class="btn-share" onclick="shareReceipt()"><span data-icon="share" data-icon-size="16"></span> Share</button>
         <button class="btn-new" onclick="newReceipt()"><span data-icon="add" data-icon-size="16"></span> New Receipt</button>
       </div>
     </div>
@@ -930,15 +931,15 @@
       <small id="netStatusLabel">Grand Total</small>
       <h2 id="netTotal">Grand Total : 0</h2>
     </div>
-    <button id="saveBtn" onclick="saveReceipt()">💾 Save</button>
+    <button id="saveBtn" onclick="saveReceipt()"><span data-icon="save" data-icon-size="16"></span> Save</button>
   </div>
 
   <!-- Online Payment modal (embeds payments.html as the single payment UI) -->
   <div class="pay-modal-overlay no-print" id="payModalOverlay" onclick="if(event.target===this) closePaymentModal()">
     <div class="pay-modal-sheet" role="dialog" aria-modal="true" aria-label="Online Payment">
       <div class="pay-modal-head">
-        <h2>💳 Online Payment</h2>
-        <button type="button" class="pay-modal-close" onclick="closePaymentModal()" aria-label="Close">✕</button>
+        <h2><span data-icon="card" data-icon-size="18"></span> Online Payment</h2>
+        <button type="button" class="pay-modal-close" onclick="closePaymentModal()" aria-label="Close"><span data-icon="close" data-icon-size="16"></span></button>
       </div>
       <div class="pay-modal-body">
         <iframe id="payModalFrame" title="Online Payment" src="about:blank"></iframe>
@@ -1142,7 +1143,7 @@
       if (!selectedPayments.length) {
         box.style.display = "none";
         box.innerHTML = "";
-        if (btn) btn.textContent = "💳 Online Payment ထည့်ရန်";
+        if (btn) btn.innerHTML = ssmIcon("card",{size:16}) + " Online Payment ထည့်ရန်";
         if (footShow) footShow.hidden = true;
         return;
       }
@@ -1151,10 +1152,10 @@
         return '<span class="pay-summary-chip">' + payMethodLabel(p.method) + ' • <b>' + fmtPayKs(payAmt(p)) + '</b></span>';
       }).join("");
       box.innerHTML =
-        '<div class="pay-summary-total"><span>💳 စရံ / ကြိုတင်ပေးငွေ (Deposit) (' + selectedPayments.length + ')</span><span>' + fmtPayKs(total) + '</span></div>' +
+        '<div class="pay-summary-total"><span>' + ssmIcon("card",{size:14}) + ' စရံ / ကြိုတင်ပေးငွေ (Deposit) (' + selectedPayments.length + ')</span><span>' + fmtPayKs(total) + '</span></div>' +
         '<div class="pay-summary-chips">' + chips + '</div>';
       box.style.display = "block";
-      if (btn) btn.textContent = "✏️ Online Payment ပြင်ရန် (" + selectedPayments.length + ")";
+      if (btn) btn.innerHTML = ssmIcon("edit",{size:16}) + " Online Payment ပြင်ရန် (" + selectedPayments.length + ")";
       if (footShow) {
         document.getElementById("onlinePayFeeShowCount").textContent = selectedPayments.length;
         document.getElementById("onlinePayFeeShowVal").textContent = "-" + total;
@@ -1464,8 +1465,8 @@
       grandTotal += total;
       ssmBeep(700, 0.08);   // Add Item အသံ (တိုတို/မြင့်မြင့်)
 
-      let giftTag = isGift ? " 🎁" : "";
-      let repTag  = repPrice ? " 🏷️" : "";
+      let giftTag = isGift ? " " + ssmIcon("gift",{size:12}) : "";
+      let repTag  = repPrice ? " " + ssmIcon("tag",{size:12}) : "";
 
       var _sub = (saleType === "weight")
         ? weightText
@@ -1476,7 +1477,7 @@
             <div class="rcart-main">
               <div class="item-name">${product}${giftTag}${repTag}</div>
               <div class="item-sub"><span>${_sub}</span><span>${total}</span></div>
-              ${remark ? `<div class="item-remark">→ ${remark}</div>` : ""}
+              ${remark ? `<div class="item-remark">${ssmIcon("back",{size:10})} ${remark}</div>` : ""}
             </div>
             <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">${ssmIcon("edit",{size:15})}</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">${ssmIcon("trash",{size:15})}</button></span>
           </div>`;
@@ -1688,7 +1689,7 @@
       }
       b.style.background = isError ? "#dc2626" : "#16a34a";
       b.style.color = "#fff";
-      b.textContent = msg + (isError ? "\n(တို့ပြီး ပိတ်ရန်)" : "");
+      b.innerHTML = msg + (isError ? "\n(တို့ပြီး ပိတ်ရန်)" : "");
       b.style.display = "block";
       if (isError) { try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {} }
       if (!isError) setTimeout(function(){ if (b) b.style.display = "none"; }, 2500);
@@ -1716,7 +1717,7 @@
       });
       if (typeof items === "undefined" || !items || items.length === 0) _miss.push("ပစ္စည်း (အနည်းဆုံး ၁ ခု)");
       if (_miss.length) {
-        showSaveMsg("⚠️ အောက်ပါတို့ ဖြည့်ပါ —\n• " + _miss.join("\n• "), true);
+        showSaveMsg(ssmIcon("warning",{size:16}) + " အောက်ပါတို့ ဖြည့်ပါ —\n• " + _miss.join("\n• "), true);
         return;
       }
 
@@ -1790,11 +1791,11 @@
       }
 
       document.getElementById("saveBtn").disabled  = true;
-      document.getElementById("saveBtn").innerText = "✅ Saved";
+      document.getElementById("saveBtn").innerHTML = ssmIcon("checkCircle",{size:16}) + " Saved";
       var _asa = document.getElementById("afterSaveActions");
       _asa.style.display = "block";
       ssmBeep(1000, 0.16);   // Save အောင်မြင်ကြောင်း အသံ (မြင့်ပြီး အနည်းငယ်ရှည်)
-      showSaveMsg("✅ ဘောင်ချာ သိမ်းပြီးပါပြီ — " + savedData.orderNo, false);
+      showSaveMsg(ssmIcon("checkCircle",{size:16}) + " ဘောင်ချာ သိမ်းပြီးပါပြီ — " + savedData.orderNo, false);
       // edit ပြီးရင် identity ရှင်း → နောက် order အသစ်မှာ stale edit မဖြစ်အောင်
       if (isEditMode) { editIndex = null; window.editOrderNo = null; window.editOrderDate = null; try { sessionStorage.removeItem("ssm_editOrderNo"); sessionStorage.removeItem("ssm_editOrderNoT"); } catch (e) {} }
       try { _asa.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e) {}
@@ -1802,7 +1803,7 @@
       try { buildReceiptPreview(savedData); }
       catch (pe) { console.error("preview error", pe); }
      } catch (err) {
-      showSaveMsg("⚠️ Save Error: " + (err && err.message ? err.message : err), true);
+      showSaveMsg(ssmIcon("warning",{size:16}) + " Save Error: " + (err && err.message ? err.message : err), true);
      }
     }
 
@@ -1831,7 +1832,7 @@
 
       let itemHtml = "";
       data.items.forEach(function (item) {
-        let giftTag = item.isGift ? " 🎁(လက်ဆောင်)" : "";
+        let giftTag = item.isGift ? " " + ssmIcon("gift",{size:12}) + "(လက်ဆောင်)" : "";
         itemHtml += `<p>${item.product}${giftTag} | ${item.size} | ${item.qty} x ${item.price} = ${item.total}</p>`;
       });
       document.getElementById("rp-items").innerHTML = itemHtml;
@@ -1956,7 +1957,7 @@
         items.push(item);
         grandTotal += Number(item.total);
 
-        let giftTag = item.isGift ? " 🎁" : "";
+        let giftTag = item.isGift ? " " + ssmIcon("gift",{size:12}) : "";
         var _sub2 = (item.saleType === "weight")
           ? (item.weightText ? item.weightText : ((item.size || "") + " | " + item.qty + " x " + item.price))
           : ((item.isGift ? "လက်ဆောင် | " : "") + item.qty + " x " + item.price);
@@ -1965,7 +1966,7 @@
             <div class="rcart-main">
               <div class="item-name">${item.product}${giftTag}</div>
               <div class="item-sub"><span>${_sub2}</span><span>${item.total}</span></div>
-              ${item.remark ? `<div class="item-remark">→ ${item.remark}</div>` : ""}
+              ${item.remark ? `<div class="item-remark">${ssmIcon("back",{size:10})} ${item.remark}</div>` : ""}
             </div>
             <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">${ssmIcon("edit",{size:15})}</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">${ssmIcon("trash",{size:15})}</button></span>
           </div>`;
@@ -2000,10 +2001,10 @@
 
       if (parcelPending === 0 && printPending === 0) {
         alertBox.classList.add("alert-ok");
-        alertBox.innerHTML = "✅ Parcel & Print အားလုံး ပြီးပါပြီ";
+        alertBox.innerHTML = ssmIcon("checkCircle",{size:16}) + " Parcel & Print အားလုံး ပြီးပါပြီ";
       } else {
         alertBox.classList.add("alert-warn");
-        alertBox.innerHTML = "⚠️ Parcel မထုတ်ရ " + parcelPending + " ခု · Print မထုတ်ရ " + printPending + " ခု";
+        alertBox.innerHTML = ssmIcon("warning",{size:16}) + " Parcel မထုတ်ရ " + parcelPending + " ခု · Print မထုတ်ရ " + printPending + " ခု";
       }
     }
 
@@ -2040,7 +2041,7 @@
     ov.className = "popup-overlay";
     ov.innerHTML =
       '<div class="popup-card" role="dialog" aria-modal="true">' +
-        '<div class="popup-icon" id="popIcon">\u2139\ufe0f</div>' +
+        '<div class="popup-icon" id="popIcon"></div>' +
         '<p class="popup-msg" id="popMsg"></p>' +
         '<div class="popup-actions" id="popActions"></div>' +
       '</div>';
@@ -2054,15 +2055,15 @@
 
     function pickIcon(m) {
       m = String(m);
-      if (/\u2705|\u1015\u103c\u102e\u1038|success/i.test(m)) return "\u2705";
-      if (/\u26a0|\u1019|\u1015\u102b|error|fail/i.test(m)) return "\u26a0\ufe0f";
-      return "\u2139\ufe0f";
+      if (/\u2705|\u1015\u103c\u102e\u1038|success/i.test(m)) return "checkCircle";
+      if (/\u26a0|\u1019|\u1015\u102b|error|fail/i.test(m)) return "warning";
+      return "help";
     }
 
     window.alert = function (message) {
       msgEl.textContent = message;
       msgEl.style.whiteSpace = "normal";
-      iconEl.textContent = pickIcon(message);
+      iconEl.innerHTML = window.ssmIcon(pickIcon(message), {size:28});
       actEl.innerHTML = "";
       var ok = document.createElement("button");
       ok.textContent = "\u101b\u1015\u103c\u102e";
@@ -2076,7 +2077,7 @@
       opts = opts || {};
       msgEl.textContent = message;
       msgEl.style.whiteSpace = "pre-line";
-      iconEl.textContent = opts.icon || "\u2753";
+      iconEl.innerHTML = window.ssmIcon(opts.icon || "help", {size:28});
       actEl.innerHTML = "";
       var cancel = document.createElement("button");
       cancel.className = "popup-cancel";
@@ -2095,7 +2096,7 @@
       opts = opts || {};
       var ov2 = document.createElement("div"); ov2.className = "popup-overlay";
       ov2.innerHTML = '<div class="popup-card" role="dialog" aria-modal="true">' +
-        '<div class="popup-icon">\u26a0\ufe0f</div>' +
+        '<div class="popup-icon">' + window.ssmIcon("warning", {size:28}) + '</div>' +
         '<p class="popup-msg" style="white-space:pre-line"></p>' +
         '<input class="popup-input" style="width:100%;margin:2px 0 14px;padding:11px 12px;font-size:15px;border-radius:11px;font-family:inherit;outline:none;box-sizing:border-box;">' +
         '<div class="popup-actions"></div></div>';
