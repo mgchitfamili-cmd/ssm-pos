@@ -168,30 +168,6 @@
       box-shadow:none; }
     .btn-delete{ background:linear-gradient(180deg, var(--surface) 0%, var(--red-tint) 100%);
       color:var(--red); border:1px solid var(--red-line); box-shadow:none; }
-    /* Compact Screenshot / Select-from-Folder buttons — scoped to this row only,
-       leaves other .btn/.btn-payment usages (Payment, Load More) untouched */
-    .ss-upload-row{ margin:0 0 4px; }
-    .ss-upload-row .btn{ padding:6px 8px; font-size:11px; min-width:0; }
-
-    /* payment modal */
-    #payModal{ display:none; position:fixed; inset:0; background:rgba(15,17,25,.5);
-      backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
-      z-index:9999; overflow-y:auto; padding:20px; }
-    .modal-box{ background:var(--surface); border:1px solid var(--line); border-radius:18px;
-      padding:20px; max-width:450px; margin:24px auto; box-shadow:0 22px 55px rgba(0,0,0,.3); }
-    .modal-box h2{ margin:0 0 6px; font-size:18px; font-weight:800; }
-    .modal-box label{ font-size:12.5px; font-weight:600; color:var(--ink-2); display:block; margin:13px 0 5px; }
-    .modal-box input, .modal-box select{
-      padding:11px 12px; width:100%; font-size:15px; line-height:1.45; color:var(--ink);
-      background:var(--surface); border:1px solid var(--line-2); border-radius:var(--r-sm);
-      outline:none; -webkit-appearance:none; appearance:none; font-family:inherit;
-    }
-    .modal-box input:focus, .modal-box select:focus{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(79,51,147,.13); }
-    .modal-box .modal-actions{ display:flex; gap:9px; margin-top:20px; }
-    .modal-box .modal-actions button{ flex:1; padding:12px; border-radius:var(--r-sm); border:none;
-      color:#fff; font-size:15px; font-weight:600; font-family:inherit; cursor:pointer; }
-    #ssPreview{ max-width:100%; max-height:150px; border-radius:10px; margin-top:8px; display:none; }
-
     .receipt-preview-hidden{ position:absolute; left:-9999px; top:0; width:300px; background:#fff; color:#000;
       padding:14px; font-family:'Courier New',monospace; font-size:11px; line-height:1.3; }
     .receipt-preview-hidden hr{ border:none; border-top:1px dashed #000; margin:5px 0; }
@@ -331,8 +307,7 @@
     }
     html.dark .top-bar{ background:rgba(18,20,26,.82); }
     html.dark .pay-modal-head{ background:rgba(18,20,26,.92); }
-    html.dark input, html.dark select, html.dark textarea,
-    html.dark .modal-box input, html.dark .modal-box select{ background-color:#1e222a; }
+    html.dark input, html.dark select, html.dark textarea{ background-color:#1e222a; }
     html.dark input:focus, html.dark select:focus, html.dark textarea:focus{ box-shadow:0 0 0 3px rgba(139,92,246,.22); }
     html.dark .badge-cash{ background:rgba(13,148,136,.18); color:#5eead4; border-color:rgba(94,234,212,.35); }
   </style>
@@ -381,54 +356,6 @@
     <p id="loadMoreNote" style="font-size:12.5px;color:var(--ink-3);margin-top:8px;"></p>
   </div>
 
-  <!-- Hidden SS file input -->
-  <input type="file" id="ssInput" accept="image/*" style="display:none" onchange="loadSS(event)">
-  <input type="file" id="ssInputCam" accept="image/*" capture="environment" style="display:none" onchange="loadSS(event)">
-
-  <!-- Payment Modal -->
-  <div id="payModal">
-    <div class="modal-box">
-      <h2>💵 Payment ထည့်ရန်</h2>
-
-      <label>Payment အခြေအနေ <span style="font-weight:500;color:var(--ink-3);">(receipt အောက် label)</span></label>
-      <select id="payStatus">
-        <option value="COD">အိမ်ရောက်ငွေချေ (COD)</option>
-        <option value="Partial">ပစ္စည်းဖိုးရှင်းပြီး ပို့ခ သာကောက်ရန်</option>
-        <option value="Prepaid">ပစ္စည်းဖိုး+ပို့ခ အားလုံးရှင်းပြီး</option>
-      </select>
-
-      <label>ကြိုတင်ပေးငွေ ပမာဏ (Deposit)</label>
-      <input id="payAmount" placeholder="0" type="number" oninput="togglePrepaidFields()">
-
-      <div id="prepaidFields">
-        <label>Online Payment Type</label>
-        <select id="payType">
-          <option value="">ရွေးပါ</option>
-          <option value="KPay">KPay</option>
-          <option value="Wave Pay">Wave Pay</option>
-          <option value="AYA Pay">AYA Pay</option>
-          <option value="CB Pay">CB Pay</option>
-          <option value="Mobile Banking">Mobile Banking</option>
-        </select>
-
-        <label>ငွေလွှဲ Screenshot (ပုံ ထည့်မှ Code ထည့်လို့ရ)</label>
-        <div class="ss-upload-row" style="display:flex; gap:8px;">
-          <button class="btn btn-payment" style="flex:1;" onclick="document.getElementById('ssInputCam').click()">📷 ဓာတ်ပုံ ရိုက်ရန်</button>
-          <button class="btn btn-payment" style="flex:1;" onclick="document.getElementById('ssInput').click()">🖼️ Folder ကနေ ရွေးရန်</button>
-        </div>
-        <img id="ssPreview">
-
-        <label>Transaction Code (နောက်ဆုံး ၆ လုံး)</label>
-        <input id="payCode" maxlength="6" placeholder="ပုံ ထည့်ပြီးမှ ရိုက်ပါ" disabled>
-      </div>
-
-      <div class="modal-actions">
-        <button style="background:#6b7280" onclick="closePayModal()">ပယ်ဖျက်</button>
-        <button style="background:#16a34a" onclick="savePayment()">💾 Save</button>
-      </div>
-    </div>
-  </div>
-
   <!-- SS Modal -->
   <div id="ssModal">
     <img id="ssModalImg">
@@ -463,21 +390,7 @@
 
     let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
 
-    // ── legacy fix: paySS ကို cloud ဖြုတ်ပြီးသား ဒါပေမဲ့ hasPay flag မရှိတဲ့ order — payCode/payAmount ရှိရင် flag ပြန်တင် ──
-    (function ssmFixPayFlags(){
-      try {
-        var a = JSON.parse(localStorage.getItem("salesHistory")) || [], f = false;
-        a.forEach(function(s){
-          if (!s) return;
-          if (!s.paySS && !s.hasPay && !s._hadPay && ((s.payCode && String(s.payCode).trim()) || Number(s.payAmount) > 0)) { s.hasPay = true; f = true; }
-        });
-        if (f) localStorage.setItem("salesHistory", JSON.stringify(a));
-      } catch(e){}
-    })();
     let openIndex    = null;
-    let payingIndex  = null;
-    let payingOrderNo = null;
-    let tempSS       = "";       // ယာယီ SS data
 
     // ── Render List ───────────────────────────────────────────────
     function renderHistory() {
@@ -590,7 +503,7 @@
               `}
               <p class="info-line"><b>Grand Total:</b> ${sale.grandTotal || 0}</p>
               ${_isWI ? "" : `<p class="info-line"><b>Delivery Fee:</b> ${sale.delivery || 0}</p>`}
-              ${Number(sale.deposit) > 0 ? `<p class="info-line"><b>Deposit:</b> ${sale.deposit}</p>` : ""}
+              ${Array.isArray(sale.linkedPayments) ? (_payTotal > 0 ? `<p class="info-line"><b>Deposit:</b> ${_payTotal}</p>` : "") : (Number(sale.deposit) > 0 ? `<p class="info-line"><b>Deposit:</b> ${sale.deposit}</p>` : "")}
               <p class="info-line"><b>Net Total:</b> ${getNetNumber(sale)}</p>
 
               <div class="items-box">
@@ -625,12 +538,14 @@
       function n(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
       // "Paid so far" — sale.deposit is set once at order creation to the sum of
       // the online payments chosen at that time (index.html), the SAME payments as
-      // sale.linkedPayments. When linkedPayments exists, use its live total (stays
-      // accurate if payments are added/removed later); only fall back to
-      // sale.deposit for the older manual/cash-deposit flow with no linked
-      // payments. Using both double-counts the same money.
+      // sale.linkedPayments. Whenever linkedPayments exists as an array (even
+      // emptied out after unlinking), use its live total — it stays accurate as
+      // payments are added/removed, including going back down to 0. Only fall
+      // back to sale.deposit for the older manual/cash-deposit flow that never
+      // had a linkedPayments array at all. Checking .length here would wrongly
+      // fall back to the stale sale.deposit once every linked payment is unlinked.
       var paid;
-      if (sale.linkedPayments && sale.linkedPayments.length) {
+      if (Array.isArray(sale.linkedPayments)) {
         var _allPay = JSON.parse(localStorage.getItem("paymentsList")) || [];
         paid = sale.linkedPayments.reduce(function (s, pid) {
           var p = _allPay.find(function (x) { return x.id === pid; });
@@ -658,166 +573,6 @@
         detail.style.display = "block";
         openIndex = index;
       }
-    }
-
-    // ── Payment Modal ─────────────────────────────────────────────
-    function openPayModal(index) {
-      payingIndex = index;
-      payingOrderNo = salesHistory[index] ? salesHistory[index].orderNo : null;
-      tempSS = salesHistory[index].paySS || "";
-
-      // ရှိပြီးသား data ဖြည့်
-      document.getElementById("payStatus").value = salesHistory[index].payStatus || "COD";
-      document.getElementById("payType").value   = salesHistory[index].payType   || "";
-      document.getElementById("payCode").value   = salesHistory[index].payCode   || "";
-      document.getElementById("payAmount").value = salesHistory[index].payAmount || salesHistory[index].deposit || "";
-
-      // SS preview
-      let ssPreview = document.getElementById("ssPreview");
-      if (tempSS) {
-        ssPreview.src = tempSS;
-        ssPreview.style.display = "block";
-        document.getElementById("payCode").disabled = false;
-      } else {
-        ssPreview.style.display = "none";
-        document.getElementById("payCode").disabled = true;
-      }
-
-      togglePrepaidFields();
-      document.getElementById("payModal").style.display = "block";
-    }
-
-    function closePayModal() {
-      document.getElementById("payModal").style.display = "none";
-      tempSS = "";
-    }
-
-    // COD ဆို prepaid fields ဖျောက်
-    document.getElementById("payStatus").addEventListener("change", function () {
-      autoFillPayAmount();
-      togglePrepaidFields();
-    });
-    // Payment status ရွေးလိုက်ရင် Deposit ကို auto ဖြည့်ပေးမယ် (COD ဆို ပုံမှန်အတိုင်း မပြောင်း) — Index page အတိုင်း
-    function autoFillPayAmount() {
-      var status = document.getElementById("payStatus").value;
-      if (status !== "Partial" && status !== "Prepaid") return;
-      if (payingIndex == null) return;
-      var sale = salesHistory[payingIndex];
-      if (!sale) return;
-      var itemsNet = Number(sale.grandTotal || 0) - Number(sale.discountAmount || 0);   // Delivery မပါတဲ့ ဘောင်ချာ တန်ဖိုး
-      var delivery = Number(sale.delivery || 0);
-      var amt = (status === "Partial") ? itemsNet : itemsNet + delivery;
-      document.getElementById("payAmount").value = Math.round(amt);
-    }
-    function togglePrepaidFields() {
-      let status = document.getElementById("payStatus").value;
-      let amt = Number(document.getElementById("payAmount").value) || 0;
-      document.getElementById("prepaidFields").style.display =
-        (status !== "COD" || amt > 0) ? "block" : "none";
-    }
-
-    // ── Load SS (ပုံ ထည့်မှ code box ဖွင့်) ───────────────────────
-    function resizeImageFile(file, cb) {
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        var img = new Image();
-        img.onload = function () {
-          var MAX = 1000, w = img.width, h = img.height;
-          if (w > h && w > MAX)      { h = Math.round(h * MAX / w); w = MAX; }
-          else if (h >= w && h > MAX){ w = Math.round(w * MAX / h); h = MAX; }
-          var c = document.createElement("canvas");
-          c.width = w; c.height = h;
-          c.getContext("2d").drawImage(img, 0, 0, w, h);
-          cb(c.toDataURL("image/jpeg", 0.7));
-        };
-        img.onerror = function () { cb(null); };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-    function loadSS(event) {
-      var input = event.target;
-      var file = input.files[0];
-      if (!file) return;
-      resizeImageFile(file, function (dataUrl) {
-        input.value = "";   // ဖိုင်တူ ပြန်ရွေးရင်ပါ onchange fire ဖို့
-        if (!dataUrl) { alert("ဓာတ်ပုံ ဖတ်လို့ မရပါ။ ပြန်ကြိုးစားပါ။"); return; }
-        tempSS = dataUrl;
-        let ssPreview = document.getElementById("ssPreview");
-        ssPreview.src = tempSS;
-        ssPreview.style.display = "block";
-        // Code box ဖွင့်
-        document.getElementById("payCode").disabled = false;
-      });
-    }
-
-    // ── Save Payment ──────────────────────────────────────────────
-    function savePayment() {
-      // index ရွှေ့သွားနိုင်လို့ (merge re-sort / multi-device) salesHistory ကို fresh ဖတ်ပြီး orderNo နဲ့ ပြန်ရှာ
-      salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
-      if (payingOrderNo != null) {
-        var _pi = salesHistory.findIndex(function (s) { return s && String(s.orderNo) === String(payingOrderNo); });
-        if (_pi >= 0) payingIndex = _pi;
-      }
-      let status    = document.getElementById("payStatus").value;
-      let sale      = salesHistory[payingIndex];
-      if (!sale) { alert("ဘောင်ချာ ရှာမတွေ့ပါ"); return; }
-      let payType   = document.getElementById("payType").value;
-      let payCode   = document.getElementById("payCode").value.trim();
-      let payAmount = Number(document.getElementById("payAmount").value) || 0;
-
-      // No deposit amount entered
-      if (payAmount <= 0) {
-        if (status !== "COD") { alert("ငွေ ပမာဏ ထည့်ပါ"); return; }
-        sale.payStatus = "COD";
-        sale.payType = ""; sale.payCode = ""; sale.payAmount = ""; sale.paySS = "";
-        sale.deposit = 0;
-        finishSave();
-        return;
-      }
-
-      // There IS a deposit/payment → require proof (SS + type + 6-digit code)
-      if (!tempSS)              { alert("ငွေလွှဲ ပုံ ထည့်ပါ"); return; }
-      if (!payType)             { alert("Payment Type ရွေးပါ"); return; }
-      if (payCode.length !== 6) { alert("Code ၆ လုံး ရိုက်ပါ"); return; }
-
-      // ── Code Duplicate Check ──
-      let duplicate = null;
-      salesHistory.forEach(function (s, i) {
-        if (i !== payingIndex && s.payCode === payCode && s.payCode) duplicate = s;
-      });
-
-      function commitPayment() {
-        sale.payStatus = status;
-        sale.payType   = payType;
-        sale.payCode   = payCode;
-        sale.payAmount = payAmount;
-        sale.deposit   = payAmount;   // deposit = the confirmed payment amount
-        sale.depositBase = 0;
-        sale.paySS     = tempSS;
-        sale.payDate   = new Date().toLocaleDateString();
-        finishSave();
-      }
-
-      if (duplicate) {
-        showConfirm(
-          "ယခုထည့်ထားသော " + payCode + " မှာ " + duplicate.orderNo + " တွင် အသုံးပြုပြီးဖြစ်ပါသည်။\n\nသေချာအောင် ပြန်လည်စစ်ဆေးပါ။",
-          function () { commitPayment(); },   // သေချာပါသည် → ဆက်သိမ်း
-          null,                                // ပြန်စစ်ပါမည် → ရပ်
-          { yes: "သေချာပါသည်", no: "ပြန်စစ်ပါမည်" }
-        );
-        return;
-      }
-
-      commitPayment();
-    }
-
-    function finishSave() {
-      localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
-      closePayModal();
-      openIndex = payingIndex;
-      renderHistory();
-      alert("Payment သိမ်းပြီးပါပြီ ✅");
     }
 
     // ── View SS fullscreen ────────────────────────────────────────

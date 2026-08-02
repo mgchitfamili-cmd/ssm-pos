@@ -15,12 +15,14 @@
   }
   // "Paid so far" — sale.deposit is set once at order creation to the sum of the
   // online payments chosen at that time (index.html), which are the SAME payments
-  // as sale.linkedPayments. So when linkedPayments exists, use its live total
-  // (it stays accurate if payments are added/removed later); only fall back to
-  // sale.deposit for the older manual/cash-deposit flow that has no linked payments.
-  // Subtracting both double-counts the same money.
+  // as sale.linkedPayments. So whenever linkedPayments exists as an array (even
+  // emptied out after unlinking), use its live total — it stays accurate as
+  // payments are added/removed later, including going back to 0. Only fall back
+  // to sale.deposit for the older manual/cash-deposit flow that never had a
+  // linkedPayments array at all. Checking .length here would wrongly fall back
+  // to the stale sale.deposit once every linked payment gets unlinked.
   function paidTotal(sale){
-    return (sale.linkedPayments && sale.linkedPayments.length) ? linkedPayTotal(sale) : num(sale.deposit);
+    return Array.isArray(sale.linkedPayments) ? linkedPayTotal(sale) : num(sale.deposit);
   }
   function getNetNumber(s){ return num(s.grandTotal) - num(s.discountAmount) - paidTotal(s) + num(s.delivery); }
 
