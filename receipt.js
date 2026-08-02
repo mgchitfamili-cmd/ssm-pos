@@ -152,8 +152,9 @@
     }
 
     var depositLine = "";
-    if (num(sale.deposit) > 0) {
-      depositLine = '<div class="line"><span>Deposit</span><span>' + fmt(sale.deposit) + '</span></div>';
+    var paidSoFar = paidTotal(sale);
+    if (paidSoFar > 0) {
+      depositLine = '<div class="line"><span>Deposit</span><span>' + fmt(paidSoFar) + '</span></div>';
     }
 
     var payLabel = "\u1021\u102D\u1019\u103A\u101B\u1031\u102C\u1000\u103A\u1004\u103D\u1031\u1001\u103B\u1031";
