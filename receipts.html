@@ -119,10 +119,25 @@
 
     /* receipt card */
     .card{ position:relative; isolation:isolate; overflow:hidden;
-      background:linear-gradient(165deg, var(--surface) 0%, var(--surface) 55%, var(--brand-tint) 100%);
+      background:var(--surface);
       border:1px solid var(--line); border-radius:var(--r);
       margin-bottom:10px; box-shadow:var(--shadow); }
     .card::before{ content:none; }
+    /* Shop-mode sales — full-card gradient using the exact same color income.html
+       assigns to "Shop" (🛒), so shop receipts look like income's day-card at a
+       glance. Collapsed summary gets the color + white text; expanded detail
+       stays on a plain surface so the item list/buttons remain readable. */
+    .card.card-shop{
+      background:linear-gradient(135deg, #6d28d9 0%, rgb(170,130,233) 100%);
+      border-color:transparent;
+    }
+    .card.card-shop .summary-left h3{ color:#fff; }
+    .card.card-shop .summary-left p{ color:rgba(255,255,255,.8); }
+    .card.card-shop .summary-right .net{ color:#fff; }
+    .card.card-shop .summary-right .order-no{ color:rgba(255,255,255,.75); }
+    .card.card-shop .badge{ background:rgba(255,255,255,.22); color:#fff; border-color:rgba(255,255,255,.3); }
+    .card.card-shop .card-detail{ background:var(--surface); border-top:none;
+      border-radius:0 0 var(--r) var(--r); }
     .card-summary{ display:flex; justify-content:space-between; align-items:flex-start;
       gap:12px; padding:13px 14px; cursor:pointer; }
     .summary-left{ min-width:0; }
@@ -464,7 +479,7 @@
         else                              payBadge = `<span class="badge badge-cod">COD</span>`;
 
         html += `
-          <div class="card receipt-card" id="card-${index}" data-status="${payStatus}" data-date="${(sale.orderDate || '').slice(0,10)}">
+          <div class="card receipt-card${_isShop ? ' card-shop' : ''}" id="card-${index}" data-status="${payStatus}" data-date="${(sale.orderDate || '').slice(0,10)}">
 
             <div class="card-summary" onclick="toggleCard(${index})">
               <div class="summary-left">
