@@ -13,7 +13,16 @@
       return s + (p ? num(p.amount) : 0);
     }, 0);
   }
-  function getNetNumber(s){ return num(s.grandTotal) - num(s.discountAmount) - num(s.deposit) + num(s.delivery) - linkedPayTotal(s); }
+  // "Paid so far" — sale.deposit is set once at order creation to the sum of the
+  // online payments chosen at that time (index.html), which are the SAME payments
+  // as sale.linkedPayments. So when linkedPayments exists, use its live total
+  // (it stays accurate if payments are added/removed later); only fall back to
+  // sale.deposit for the older manual/cash-deposit flow that has no linked payments.
+  // Subtracting both double-counts the same money.
+  function paidTotal(sale){
+    return (sale.linkedPayments && sale.linkedPayments.length) ? linkedPayTotal(sale) : num(sale.deposit);
+  }
+  function getNetNumber(s){ return num(s.grandTotal) - num(s.discountAmount) - paidTotal(s) + num(s.delivery); }
 
   // Receiver block (name / phone / address) — only rendered when at least one field exists.
   function hasReceiverData(sale){
@@ -161,7 +170,7 @@
     // Walk-in (ဆိုင်ရောင်း) — ငွေချေနည်း label + net = total − discount − deposit
     if (sale.payModeLabel) {
       payLabel = sale.payModeLabel;
-      netNum = num(sale.grandTotal) - num(sale.discountAmount) - num(sale.deposit) - linkedPayTotal(sale);
+      netNum = num(sale.grandTotal) - num(sale.discountAmount) - paidTotal(sale);
     }
 
     return '' +

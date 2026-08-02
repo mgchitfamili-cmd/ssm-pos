@@ -623,22 +623,28 @@
     // ── Net number only ───────────────────────────────────────────
     function getNetNumber(sale) {
       function n(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
-      // Online Payment (payments.html) linked to this receipt — same as
-      // index.html's onlinePayTotal, subtracted from the total just like deposit.
-      var linkedTotal = 0;
+      // "Paid so far" — sale.deposit is set once at order creation to the sum of
+      // the online payments chosen at that time (index.html), the SAME payments as
+      // sale.linkedPayments. When linkedPayments exists, use its live total (stays
+      // accurate if payments are added/removed later); only fall back to
+      // sale.deposit for the older manual/cash-deposit flow with no linked
+      // payments. Using both double-counts the same money.
+      var paid;
       if (sale.linkedPayments && sale.linkedPayments.length) {
         var _allPay = JSON.parse(localStorage.getItem("paymentsList")) || [];
-        linkedTotal = sale.linkedPayments.reduce(function (s, pid) {
+        paid = sale.linkedPayments.reduce(function (s, pid) {
           var p = _allPay.find(function (x) { return x.id === pid; });
           return s + (p ? (n(p.amount)) : 0);
         }, 0);
+      } else {
+        paid = n(sale.deposit);
       }
-      // walk-in (ဆိုင်ရောင်း) — total − discount − deposit − online payment (deposit ပေးထားရင် နုတ်)
+      // walk-in (ဆိုင်ရောင်း) — total − discount − paid (deposit/online payment ပေးထားရင် နုတ်)
       if (/-WI-/.test(String(sale.orderNo || "")) || sale.payMode) {
-        return n(sale.grandTotal) - n(sale.discountAmount) - n(sale.deposit) - linkedTotal;
+        return n(sale.grandTotal) - n(sale.discountAmount) - paid;
       }
-      // total - discount - deposit - online payment + delivery
-      return n(sale.grandTotal) - n(sale.discountAmount) - n(sale.deposit) + n(sale.delivery) - linkedTotal;
+      // total - discount - paid + delivery
+      return n(sale.grandTotal) - n(sale.discountAmount) - paid + n(sale.delivery);
     }
 
     // ── Toggle Card ───────────────────────────────────────────────
