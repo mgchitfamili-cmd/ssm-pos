@@ -389,7 +389,7 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
+    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic">📊</span> စာရင်းချုပ်</div>
     <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic">🛒</span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic">🧾</span> ဘောင်ချာများ</div>
     <div class="menu-item" data-page="delivery.html" onclick="location.href='delivery.html'"><span class="ic">🚚</span> ပို့ဆောင်ရေး</div>
@@ -1079,6 +1079,13 @@
           var prev = salesHistory[currentPhotoIndex].deliveryPhoto;
           salesHistory[currentPhotoIndex].deliveryPhoto  = dataUrl;
           salesHistory[currentPhotoIndex].deliveryParcel = true;
+          // Photo ကို အမှန်တကယ် upload တင်တဲ့ ရက် — Report ရဲ့ "ယနေ့အတွက် စာရင်း"
+          // ကတ်က ဒီ ရက်စွဲကို အခြေခံပြီး ရေတွက်တာမို့ upload တင်တိုင်း refresh လုပ်ပေးရမယ်
+          (function () {
+            var d = new Date();
+            var pad = function (n) { return String(n).padStart(2, "0"); };
+            salesHistory[currentPhotoIndex].deliveryPhotoDate = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+          })();
           try {
             localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
           } catch (err) {
@@ -1144,6 +1151,11 @@
             var flags = parcelPhotoFlagsOf(sale).slice();
             flags[pIdx] = true;
             sale.parcelPhotoFlags = flags;
+            // Parcel photo ကိုလည်း upload တင်တဲ့ ရက်အနေနဲ့ မှတ်ထား — Report ရဲ့
+            // "ယနေ့အတွက် စာရင်း" ကတ်က ဒီ ရက်စွဲကို အခြေခံပြီး ရေတွက်တာမို့
+            var d = new Date();
+            var pad = function (n) { return String(n).padStart(2, "0"); };
+            sale.deliveryPhotoDate = d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
             localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
             input.value = "";
             openCardIndex = index;
