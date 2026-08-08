@@ -8,6 +8,8 @@
 
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
   <script src="receipt.js"></script>
+  <!-- Renders the offscreen receipt DOM (built with ssmRenderReceipt) to a PNG for Share/Save -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <script src="firebase-init.js"></script>
   <link rel="manifest" href="manifest.json">
@@ -470,6 +472,9 @@
     .save-actions{ display:flex; flex-direction:column; gap:9px; }
     .btn-print{ background:var(--secondary); width:100%; }
     .btn-print:active{ background:#7b5fae; }
+    .btn-share{ background:var(--surface); color:var(--brand-ink); border:1px solid var(--brand-line);
+      width:100%; display:flex; align-items:center; justify-content:center; gap:6px; }
+    .btn-share:disabled{ opacity:.55; cursor:not-allowed; }
     .btn-new{ background:var(--surface); color:var(--red); border:1px solid var(--red-line); width:100%; display:flex; align-items:center; justify-content:center; gap:6px; }
 
     /* ── Sticky checkout bar ── */
@@ -909,6 +914,7 @@
       <h3><span data-icon="checkCircle" data-icon-size="20"></span> Receipt သိမ်းပြီးပါပြီ</h3>
       <div class="save-actions">
         <button class="btn-print" onclick="printReceipt()"><span data-icon="print" data-icon-size="16"></span> Print</button>
+        <button class="btn-share" onclick="shareReceiptPNG(this)"><span data-icon="share" data-icon-size="16"></span> Share</button>
         <button class="btn-new" onclick="newReceipt()"><span data-icon="add" data-icon-size="16"></span> New Receipt</button>
       </div>
     </div>
@@ -1818,6 +1824,117 @@
       }
       ssmBeep(900, 0.1);
       location.href = "print.html";
+    }
+
+    // ── Share Receipt as PNG (navigator.share, with Save/Download fallback) ──
+    // Same sale-lookup as printReceipt() (last saved / editIndex), same template/data
+    // as Print (ssmRenderReceipt from receipt.js) rendered offscreen, snapshotted to a
+    // high-res PNG via html2canvas, then handed to the native Share Sheet as a file.
+    // No URL is ever shared — only the image file itself.
+    function shareReceiptPNG(btnEl) {
+      let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      let last = salesHistory.length - 1;
+      if (editIndex != null) last = editIndex;
+      var sale = salesHistory[last];
+      if (!sale) return;
+
+      if (typeof window.ssmRenderReceipt !== "function" || typeof html2canvas !== "function") {
+        alert("Receipt ပုံ ထုတ်ဖို့ လိုအပ်တဲ့ library မရနိုင်ပါ (internet စစ်ပြီး ထပ်ကြိုးစားကြည့်ပါ)");
+        return;
+      }
+
+      var originalLabel = btnEl ? btnEl.innerHTML : "";
+      if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = ssmIcon("refresh", { size: 16 }) + " ...";
+      }
+
+      _renderReceiptCanvas(sale)
+        .then(function (canvas) {
+          canvas.toBlob(function (blob) {
+            _restoreShareBtn(btnEl, originalLabel);
+            if (!blob) {
+              alert("Receipt ပုံ ဖန်တီးလို့ မရပါ");
+              return;
+            }
+            var fileName = "receipt-" + (sale.orderNo || Date.now()) + ".png";
+            var file;
+            try { file = new File([blob], fileName, { type: "image/png" }); }
+            catch (e) { file = null; }
+
+            if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+              navigator.share({ files: [file], title: fileName }).catch(function (err) {
+                // AbortError = user cancelled the share sheet — not a failure, do nothing.
+                if (err && err.name !== "AbortError") _downloadPNGBlob(blob, fileName);
+              });
+            } else {
+              // navigator.share (or file-sharing support) unavailable — Save/Download fallback.
+              _downloadPNGBlob(blob, fileName);
+            }
+          }, "image/png", 1);
+        })
+        .catch(function () {
+          _restoreShareBtn(btnEl, originalLabel);
+          alert("Receipt ပုံ ဖန်တီးလို့ မရပါ");
+        });
+    }
+
+    function _restoreShareBtn(btnEl, originalLabel) {
+      if (!btnEl) return;
+      btnEl.disabled = false;
+      btnEl.innerHTML = originalLabel;
+    }
+
+    function _downloadPNGBlob(blob, fileName) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    }
+
+    // Renders `sale` offscreen with the exact receipt template (ssmRenderReceipt),
+    // waits for its logo image to finish loading, then snapshots it at high
+    // resolution. Returns a Promise<canvas>.
+    function _renderReceiptCanvas(sale) {
+      return new Promise(function (resolve, reject) {
+        var wrap = document.createElement("div");
+        wrap.style.position = "fixed";
+        wrap.style.left = "-9999px";
+        wrap.style.top = "0";
+        wrap.style.background = "#fff";
+        document.body.appendChild(wrap);
+
+        window.ssmRenderReceipt(wrap, sale);
+
+        function cleanup() { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); }
+
+        function shoot() {
+          html2canvas(wrap, {
+            backgroundColor: "#ffffff",
+            scale: Math.max(3, window.devicePixelRatio || 1),
+            useCORS: true
+          }).then(function (canvas) {
+            cleanup();
+            resolve(canvas);
+          }).catch(function (err) {
+            cleanup();
+            reject(err);
+          });
+        }
+
+        var imgs = wrap.querySelectorAll("img");
+        var pending = imgs.length;
+        if (pending === 0) { shoot(); return; }
+        imgs.forEach(function (img) {
+          if (img.complete) { if (--pending <= 0) shoot(); return; }
+          img.addEventListener("load", function () { if (--pending <= 0) shoot(); });
+          img.addEventListener("error", function () { if (--pending <= 0) shoot(); });
+        });
+      });
     }
 
     // ── New Receipt ───────────────────────────────────────────────
