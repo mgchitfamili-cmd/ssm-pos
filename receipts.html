@@ -546,7 +546,7 @@
               <div class="actions">
                 <button class="btn btn-onlinepay" onclick="openOnlinePaymentModal(${index})">${ssmIcon("card",{size:14})} Online Payment</button>
                 <button class="btn btn-print"   onclick="printReceipt(${index})">${ssmIcon("print", {size:16})} Print</button>
-                <button class="btn btn-share"   onclick="shareReceipt(${index})">${ssmIcon("share", {size:16})} Share</button>
+                <button class="btn btn-share" id="shareBtn-${index}" onclick="shareReceipt(${index}, this)">${ssmIcon("share", {size:16})} Share</button>
                 <button class="btn btn-edit"    onclick="editReceipt(${index})">${ssmIcon("edit", {size:16})} Edit</button>
                 <button class="btn btn-delete"  onclick="deleteReceipt(${index})">${ssmIcon("trash", {size:16})} Delete</button>
               </div>
@@ -731,23 +731,66 @@
     }
 
     // ── Share (image) ─────────────────────────────────────────────
-    function shareReceipt(index) {
+    // NOTE: previously this had no .catch()/timeout — if html2canvas failed
+    // or hung (slow devices, huge base64 logo, etc.) the button just sat
+    // there forever with zero feedback, unlike Print/Online Payment which
+    // navigate instantly. We now show a loading state, guard with a
+    // timeout, and always report success/failure back to the button.
+    function shareReceipt(index, btnEl) {
       let sale = salesHistory[index];
       let box  = document.getElementById("receiptPreviewHidden");
-      window.ssmRenderReceipt(box, sale);   // print.html နဲ့ တူညီတဲ့ template
+      if (!sale || !box) { alert("Receipt not found."); return; }
+
+      let btn = btnEl || document.getElementById("shareBtn-" + index);
+      let originalHTML = btn ? btn.innerHTML : null;
+      let done = false;
+
+      function finish(restore) {
+        if (done) return;
+        done = true;
+        if (btn && restore) { btn.disabled = false; btn.innerHTML = originalHTML; }
+      }
+
+      if (btn) { btn.disabled = true; btn.innerHTML = "⏳ ခဏစောင့်ပါ..."; }
+
+      // Safety net: html2canvas can hang on some mobile webviews (e.g. very
+      // large embedded logo images). Never let the button stay stuck.
+      let watchdog = setTimeout(function () {
+        if (done) return;
+        finish(true);
+        alert("Share ယူရန် အလွန်ကြာနေပါသည်။ ထပ်မံကြိုးစားကြည့်ပါ (သို့) Print ကိုသုံးပါ။");
+      }, 12000);
+
+      try {
+        window.ssmRenderReceipt(box, sale);   // print.html နဲ့ တူညီတဲ့ template
+      } catch (e) {
+        clearTimeout(watchdog);
+        finish(true);
+        alert("Receipt ပြင်ဆင်ရာတွင် အမှားရှိပါသည်: " + e.message);
+        return;
+      }
 
       html2canvas(box, { backgroundColor: "#ffffff", scale: 2, useCORS: true }).then(function (canvas) {
         canvas.toBlob(function (blob) {
+          clearTimeout(watchdog);
+          if (!blob) { finish(true); alert("ပုံဖန်တီးရာတွင် အမှားရှိပါသည်။"); return; }
           let file = new File([blob], "receipt.png", { type: "image/png" });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: "Receipt - " + sale.orderNo });
+            navigator.share({ files: [file], title: "Receipt - " + sale.orderNo })
+              .catch(function () { /* user cancelled share sheet — not an error */ })
+              .finally(function () { finish(true); });
           } else {
             let link = document.createElement("a");
             link.href = canvas.toDataURL();
             link.download = "receipt-" + sale.orderNo + ".png";
             link.click();
+            finish(true);
           }
         });
+      }).catch(function (e) {
+        clearTimeout(watchdog);
+        finish(true);
+        alert("Share Error: " + e);
       });
     }
 

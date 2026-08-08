@@ -918,7 +918,7 @@
       <h3><span data-icon="checkCircle" data-icon-size="20"></span> Receipt သိမ်းပြီးပါပြီ</h3>
       <div class="save-actions">
         <button class="btn-print" onclick="printReceipt()"><span data-icon="print" data-icon-size="16"></span> Print</button>
-        <button class="btn-share" onclick="shareReceipt()"><span data-icon="share" data-icon-size="16"></span> Share</button>
+        <button class="btn-share" id="shareBtnMain" onclick="shareReceipt(this)"><span data-icon="share" data-icon-size="16"></span> Share</button>
         <button class="btn-new" onclick="newReceipt()"><span data-icon="add" data-icon-size="16"></span> New Receipt</button>
       </div>
     </div>
@@ -1855,27 +1855,61 @@
     }
 
     // ── Share ─────────────────────────────────────────────────────
-    function shareReceipt() {
+    // NOTE: html2canvas can hang (never resolve, never reject) on some
+    // mobile webviews — a .catch() alone doesn't save you from that. We
+    // now show a loading state on the button and use a watchdog timeout
+    // so Share can never appear "stuck" the way it used to.
+    function shareReceipt(btnEl) {
+      var btn = btnEl || document.getElementById("shareBtnMain");
+      var originalHTML = btn ? btn.innerHTML : null;
+      var done = false;
+
+      function finish(restore) {
+        if (done) return;
+        done = true;
+        if (btn && restore) { btn.disabled = false; btn.innerHTML = originalHTML; }
+      }
+
+      if (btn) { btn.disabled = true; btn.innerHTML = "⏳ ခဏစောင့်ပါ..."; }
+
       var box = document.createElement("div");
       box.style.position = "fixed"; box.style.left = "-9999px"; box.style.top = "0";
       document.body.appendChild(box);
       window.ssmRenderReceipt(box, savedData);   // print.html နဲ့ တူညီတဲ့ template
+
+      var watchdog = setTimeout(function () {
+        if (done) return;
+        finish(true);
+        box.remove();
+        alert("Share ယူရန် အလွန်ကြာနေပါသည်။ ထပ်မံကြိုးစားကြည့်ပါ (သို့) Print ကိုသုံးပါ။");
+      }, 12000);
+
       html2canvas(box, { backgroundColor: "#ffffff", scale: 2 }).then(function (canvas) {
+        clearTimeout(watchdog);
         box.remove();
         ssmBeep(900, 0.1);
         canvas.toBlob(function (blob) {
+          if (!blob) { finish(true); alert("ပုံဖန်တီးရာတွင် အမှားရှိပါသည်။"); return; }
           let file = new File([blob], "receipt.png", { type: "image/png" });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: "Receipt - " + savedData.orderNo });
+            navigator.share({ files: [file], title: "Receipt - " + savedData.orderNo })
+              .catch(function () { /* user cancelled share sheet — not an error */ })
+              .finally(function () { finish(true); });
           } else {
             let link = document.createElement("a");
             link.href = canvas.toDataURL();
             link.download = "receipt-" + savedData.orderNo + ".png";
             link.click();
             alert("Share API မရှိပါ။ Image ကို Download လုပ်ပေးလိုက်ပါတယ်။");
+            finish(true);
           }
         });
-      }).catch(function (e) { box.remove(); alert("Share Error: " + e); });
+      }).catch(function (e) {
+        clearTimeout(watchdog);
+        finish(true);
+        box.remove();
+        alert("Share Error: " + e);
+      });
     }
 
     // ── New Receipt ───────────────────────────────────────────────
