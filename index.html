@@ -1882,7 +1882,13 @@
       if (btn) { btn.disabled = true; btn.innerHTML = "⏳ ခဏစောင့်ပါ..."; }
 
       var box = document.createElement("div");
-      box.style.position = "fixed"; box.style.left = "-9999px"; box.style.top = "0";
+      // html2canvas hangs on many mobile webviews when the target is
+      // positioned far off-screen (left:-9999px forces it to allocate/render
+      // a huge canvas anchored way out at those coordinates). Keep the box
+      // near (0,0) and hide it behind the app's own opaque background with
+      // z-index instead — invisible to the user, cheap for html2canvas.
+      box.style.position = "fixed"; box.style.left = "0"; box.style.top = "0";
+      box.style.zIndex = "-9999"; box.style.pointerEvents = "none";
       document.body.appendChild(box);
       window.ssmRenderReceipt(box, savedData);   // print.html နဲ့ တူညီတဲ့ template
 
@@ -1893,7 +1899,7 @@
         alert("Share ယူရန် အလွန်ကြာနေပါသည်။ ထပ်မံကြိုးစားကြည့်ပါ (သို့) Print ကိုသုံးပါ။");
       }, 12000);
 
-      html2canvas(box, { backgroundColor: "#ffffff", scale: 2 }).then(function (canvas) {
+      html2canvas(box, { backgroundColor: "#ffffff", scale: 2, useCORS: true, imageTimeout: 4000, logging: false }).then(function (canvas) {
         clearTimeout(watchdog);
         box.remove();
         ssmBeep(900, 0.1);
