@@ -318,4 +318,21 @@
     el.classList.add("ssm-receipt");
     el.innerHTML = buildHTML(sale);
   };
+
+  // Share ခလုတ် နှိပ်ချိန်မှာ html2canvas (~200KB) ကို အသစ် download ဆွဲရင်
+  // (ပထမဆုံးအကြိမ်, cache မရှိသေးရင်) စက္ကန့်ပေါင်းများစွာကြာနိုင်ပြီး၊ ဒီလောက်ကြာနေရင်
+  // browser က user ရဲ့ "tap" ကို "share ခေါ်ခွင့်ပြုချက်" အဖြစ် မမှတ်တော့ဘူး
+  // (Web Share API ရဲ့ user-gesture rule) — ဒါကြောင့် ၁ ကြိမ်မြောက် Share
+  // အလုပ်မလုပ်ဘဲ ၂ ကြိမ်မြောက်မှ အလုပ်လုပ်ရတာ ဖြစ်တယ်။ ဒါကို ကျော်ဖို့
+  // page ပွင့်တာနဲ့ background မှာ တိတ်တဆိတ် ကြိုတင် download ချထားမယ် —
+  // Share နှိပ်ချိန်ရောက်တော့ library အဆင်သင့်ရှိနေပြီး canvas render ပဲ ကျန်တော့မယ်
+  // (< ၁ စက္ကန့်) ဆိုတော့ user-gesture window အတွင်း share() ကို မီအောင်ခေါ်နိုင်တယ်.
+  function preloadHtml2Canvas() {
+    loadHtml2Canvas().catch(function () {}); // preload only — error ဖြစ်ရင် Share နှိပ်ချိန်မှာ ပြန်ကြိုးစားမယ်
+  }
+  if (document.readyState === "complete") {
+    preloadHtml2Canvas();
+  } else {
+    window.addEventListener("load", preloadHtml2Canvas);
+  }
 })();
