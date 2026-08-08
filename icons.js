@@ -28,7 +28,6 @@
     camera:        '<path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.5"/>',
     card:          '<rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/><path d="M6 15h4"/>',
     print:         '<path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><path d="M6 14h12v7H6z"/>',
-    share:         '<circle cx="6" cy="12" r="2.4"/><circle cx="18" cy="6" r="2.4"/><circle cx="18" cy="18" r="2.4"/><path d="M8.2 10.8l7.6-4.4M8.2 13.2l7.6 4.4"/>',
     gift:          '<rect x="3" y="8" width="18" height="4" rx="1"/><rect x="5" y="12" width="14" height="9" rx="1"/><path d="M12 8v13"/><path d="M12 8c-1-3-5-4-5-1s3 1 5 1zM12 8c1-3 5-4 5-1s-3 1-5 1z"/>',
     tag:           '<path d="M3 11.5V4h7.5L21 14.5 13.5 22 3 11.5z"/><circle cx="7.5" cy="7.5" r="1.4" fill="currentColor" stroke="none"/>',
     note:          '<path d="M14 3H6a1 1 0 00-1 1v16a1 1 0 001 1h12a1 1 0 001-1V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>',
@@ -49,7 +48,8 @@
     device:        '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 9h8M8 13h5"/>',
     dot:           '<circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/>',
     medal:         '<circle cx="12" cy="9" r="6"/><path d="M9 14.5L7 21l5-3 5 3-2-6.5"/>',
-    splitArrow:    '<path d="M4 4v8a4 4 0 004 4h10"/><path d="M14 12l4 4-4 4"/>'
+    splitArrow:    '<path d="M4 4v8a4 4 0 004 4h10"/><path d="M14 12l4 4-4 4"/>',
+    share:         '<path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/>'
   };
 
   window.ssmIcon = function (name, opts) {

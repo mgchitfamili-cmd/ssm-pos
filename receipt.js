@@ -1,4 +1,4 @@
-/* Sone Sone Mommy POS — shared receipt template (print + share). Keep this the single source of truth. */
+/* Sone Sone Mommy POS — shared receipt template (print). Keep this the single source of truth. */
 (function () {
   function num(v){ var x = Number(String(v==null?0:v).replace(/[^0-9.\-]/g,"")); return isNaN(x)?0:x; }
   function fmt(n){ return Number(n||0).toLocaleString(); }
@@ -235,82 +235,6 @@
       '<div style="height:22px"></div>';
   }
 
-  // ── Share (Print + Share ရဲ့ "Share" အပိုင်း) ─────────────────────────────
-  // ဘောင်ချာကို ပုံ (PNG) အဖြစ်ပြောင်းပြီး WhatsApp/Viber/Messenger တို့ကနေ
-  // customer ဆီ တိုက်ရိုက် Share နိုင်အောင် Web Share API (Level 2, files)
-  // သုံးထားတယ် — Flow: render receipt (offscreen) → html2canvas → PNG blob →
-  // navigator.share({files:[...]}). မထောက်ပံ့တဲ့ browser (Desktop/ဟောင်းတဲ့
-  // Android) ဆို PNG ကို download ချပေးမယ်, user က chat app ထဲ manual attach
-  // လုပ်ရုံပဲ ဖြစ်မယ် — ဒါက error အနည်းဆုံး/ယုံကြည်ရဆုံး fallback ဖြစ်တယ်။
-  var H2C_URL = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
-  var h2cLoading = null;
-  function loadHtml2Canvas() {
-    if (window.html2canvas) return Promise.resolve();
-    if (h2cLoading) return h2cLoading;
-    h2cLoading = new Promise(function (resolve, reject) {
-      var s = document.createElement("script");
-      s.src = H2C_URL;
-      s.onload = function () { resolve(); };
-      s.onerror = function () { h2cLoading = null; reject(new Error("html2canvas load failed")); };
-      document.head.appendChild(s);
-    });
-    return h2cLoading;
-  }
-
-  // Sale data ကနေ receipt ကို offscreen မှာ render လုပ်ပြီး PNG canvas ပြန်ပေးမယ်.
-  function receiptCanvas(sale) {
-    return loadHtml2Canvas().then(function () {
-      injectCSS();
-      var holder = document.createElement("div");
-      // display:none မလုပ်ဘူး — html2canvas အလုပ်မလုပ်တော့ဘူး။
-      // viewport အပြင်ဘက် ခေါ်ထားရုံပဲ (screen ပေါ် မမြင်ရ).
-      holder.style.cssText = "position:fixed; left:-9999px; top:0; background:#fff; z-index:-1;";
-      holder.className = "ssm-receipt";
-      holder.innerHTML = buildHTML(sale);
-      document.body.appendChild(holder);
-      function cleanup() { if (holder.parentNode) holder.parentNode.removeChild(holder); }
-      return window.html2canvas(holder, { scale: 2, backgroundColor: "#ffffff", useCORS: true })
-        .then(function (canvas) { cleanup(); return canvas; })
-        .catch(function (err) { cleanup(); throw err; });
-    });
-  }
-
-  // window.ssmShareReceipt(sale, {button}) — index.html/receipts.html က ခေါ်သုံးမယ်.
-  // {button} က ခလုတ်ကို disable/label ပြောင်းဖို့ optional ဖြစ်တယ်.
-  window.ssmShareReceipt = function (sale, opts) {
-    opts = opts || {};
-    var btn = opts.button;
-    var origLabel = btn ? btn.innerHTML : null;
-    if (btn) { btn.disabled = true; btn.innerHTML = "စီစဉ်နေ..."; } // preparing
-    return receiptCanvas(sale).then(function (canvas) {
-      return new Promise(function (resolve) { canvas.toBlob(function (blob) { resolve(blob); }, "image/png"); });
-    }).then(function (blob) {
-      if (!blob) throw new Error("Image ပြောင်းလို့ မရပါ");
-      var fileName = "receipt-" + (sale.orderNo || Date.now()) + ".png";
-      var file = new File([blob], fileName, { type: "image/png" });
-      var shareData = { files: [file], title: "\u1018\u1031\u102C\u1004\u103A\u1001\u103B\u102C", text: sale.orderNo || "" };
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        return navigator.share(shareData);
-      }
-      // Fallback — browser က file-share မထောက်ပံ့ဘူး (Desktop, ဟောင်းတဲ့ browser).
-      // Download ချပေးလိုက်မယ်, user က chat app ထဲ manual ပို့ရုံပဲ.
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
-      a.href = url; a.download = fileName;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
-      window.alert("ဘောင်ချာပုံကို Download ချပေးလိုက်ပါပြီ — WhatsApp/Viber/Messenger ထဲက Attach နှိပ်ပြီး ပို့ပေးပါ");
-    }).catch(function (err) {
-      if (err && err.name === "AbortError") return; // user က share sheet ကို ကိုယ်တိုင် ပိတ်လိုက်တာ — error မဟုတ်ဘူး
-      console.error("ssmShareReceipt error:", err);
-      window.alert("Share လုပ်လို့ မရပါ — Print နှိပ်ပြီး screenshot ရိုက်ပို့ပေးပါ");
-    }).then(function () {
-      if (btn) { btn.disabled = false; btn.innerHTML = origLabel; }
-    }, function () {
-      if (btn) { btn.disabled = false; btn.innerHTML = origLabel; }
-    });
-  };
-
   window.ssmBuildReceiptHTML = buildHTML;
   window.ssmRenderReceipt = function (el, sale) {
     if (!el || !sale) return;
@@ -318,21 +242,4 @@
     el.classList.add("ssm-receipt");
     el.innerHTML = buildHTML(sale);
   };
-
-  // Share ခလုတ် နှိပ်ချိန်မှာ html2canvas (~200KB) ကို အသစ် download ဆွဲရင်
-  // (ပထမဆုံးအကြိမ်, cache မရှိသေးရင်) စက္ကန့်ပေါင်းများစွာကြာနိုင်ပြီး၊ ဒီလောက်ကြာနေရင်
-  // browser က user ရဲ့ "tap" ကို "share ခေါ်ခွင့်ပြုချက်" အဖြစ် မမှတ်တော့ဘူး
-  // (Web Share API ရဲ့ user-gesture rule) — ဒါကြောင့် ၁ ကြိမ်မြောက် Share
-  // အလုပ်မလုပ်ဘဲ ၂ ကြိမ်မြောက်မှ အလုပ်လုပ်ရတာ ဖြစ်တယ်။ ဒါကို ကျော်ဖို့
-  // page ပွင့်တာနဲ့ background မှာ တိတ်တဆိတ် ကြိုတင် download ချထားမယ် —
-  // Share နှိပ်ချိန်ရောက်တော့ library အဆင်သင့်ရှိနေပြီး canvas render ပဲ ကျန်တော့မယ်
-  // (< ၁ စက္ကန့်) ဆိုတော့ user-gesture window အတွင်း share() ကို မီအောင်ခေါ်နိုင်တယ်.
-  function preloadHtml2Canvas() {
-    loadHtml2Canvas().catch(function () {}); // preload only — error ဖြစ်ရင် Share နှိပ်ချိန်မှာ ပြန်ကြိုးစားမယ်
-  }
-  if (document.readyState === "complete") {
-    preloadHtml2Canvas();
-  } else {
-    window.addEventListener("load", preloadHtml2Canvas);
-  }
 })();
