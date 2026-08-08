@@ -909,6 +909,7 @@
       <h3><span data-icon="checkCircle" data-icon-size="20"></span> Receipt သိမ်းပြီးပါပြီ</h3>
       <div class="save-actions">
         <button class="btn-print" onclick="printReceipt()"><span data-icon="print" data-icon-size="16"></span> Print</button>
+        <button class="btn-print" id="afterSaveShareBtn" onclick="shareReceipt(this)"><span data-icon="share" data-icon-size="16"></span> Share</button>
         <button class="btn-new" onclick="newReceipt()"><span data-icon="add" data-icon-size="16"></span> New Receipt</button>
       </div>
     </div>
@@ -1818,6 +1819,16 @@
       }
       ssmBeep(900, 0.1);
       location.href = "print.html";
+    }
+
+    // ── Share (receipt.js — ssmShareReceipt) ─────────────────────
+    function shareReceipt(btn) {
+      let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
+      let last = salesHistory.length - 1;
+      if (editIndex != null) last = editIndex;
+      if (!salesHistory[last]) return;
+      ssmBeep(900, 0.1);
+      window.ssmShareReceipt(salesHistory[last], { button: btn });
     }
 
     // ── New Receipt ───────────────────────────────────────────────

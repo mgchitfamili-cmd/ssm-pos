@@ -526,6 +526,7 @@
               <div class="actions">
                 <button class="btn btn-onlinepay" onclick="openOnlinePaymentModal(${index})">${ssmIcon("card",{size:14})} Online Payment</button>
                 <button class="btn btn-print"   onclick="printReceipt(${index})">${ssmIcon("print", {size:16})} Print</button>
+                <button class="btn btn-print"   onclick="shareReceipt(${index}, this)">${ssmIcon("share", {size:16})} Share</button>
                 <button class="btn btn-edit"    onclick="editReceipt(${index})">${ssmIcon("edit", {size:16})} Edit</button>
                 <button class="btn btn-delete"  onclick="deleteReceipt(${index})">${ssmIcon("trash", {size:16})} Delete</button>
               </div>
@@ -707,6 +708,12 @@
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
       localStorage.setItem("printReceipt", JSON.stringify(salesHistory[index]));
       location.href = "print.html";
+    }
+
+    // ── Share (receipt.js — ssmShareReceipt) ─────────────────────
+    function shareReceipt(index, btn) {
+      if (!salesHistory[index]) return;
+      window.ssmShareReceipt(salesHistory[index], { button: btn });
     }
 
     // ── Online Payment: modal embedding payments.html (same UI as index.html) ──
