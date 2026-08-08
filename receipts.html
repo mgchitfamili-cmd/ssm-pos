@@ -5,7 +5,6 @@
   <title>Receipt History</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="receipt.js"></script>
 
   <script src="firebase-init.js"></script>
@@ -178,34 +177,11 @@
     .btn .ssm-icon{ flex:none; }
     .btn-payment{ background:linear-gradient(180deg, #a68ddb 0%, #8e72c7 55%, #7458ab 100%); }
     .btn-print{ background:linear-gradient(180deg, #6b4bb0 0%, #4f3393 55%, #3a2470 100%); }
-    .btn-share{ background:linear-gradient(180deg, #5cc98c 0%, #3fae6a 55%, #2f8f54 100%); }
     .btn-edit{ background:linear-gradient(180deg, var(--surface) 0%, var(--amber-tint) 100%);
       color:var(--amber-ink, #93690a); border:1px solid var(--amber-line);
       box-shadow:none; }
     .btn-delete{ background:linear-gradient(180deg, var(--surface) 0%, var(--red-tint) 100%);
       color:var(--red); border:1px solid var(--red-line); box-shadow:none; }
-    /* html2canvas has a well-known issue: elements positioned far off-screen
-       (e.g. left:-9999px) force it to allocate/render a huge canvas anchored
-       at those coordinates, which hangs on many mobile webviews. Keep this
-       box near (0,0) instead and hide it behind the app's own opaque
-       background using z-index — invisible to the user, but "cheap" for
-       html2canvas to capture. */
-    .receipt-preview-hidden{ position:fixed; left:0; top:0; z-index:-9999; pointer-events:none;
-      width:300px; background:#fff; color:#000;
-      padding:14px; font-family:'Courier New',monospace; font-size:11px; line-height:1.3; }
-    .receipt-preview-hidden hr{ border:none; border-top:1px dashed #000; margin:5px 0; }
-    .receipt-preview-hidden .line{ display:flex; justify-content:space-between; margin:2px 0; font-family:Arial,sans-serif; }
-    .receipt-preview-hidden .mm{ font-family:Arial,sans-serif; }
-    .receipt-preview-hidden .town-mid{ font-family:Arial,sans-serif; font-size:14px; font-weight:bold; }
-    .receipt-preview-hidden .cus-mid{ font-family:Arial,sans-serif; font-size:13px; font-weight:bold; }
-    .receipt-preview-hidden .phone-clear{ font-weight:bold; font-size:12px; }
-    .receipt-preview-hidden .addr-mm{ font-family:Arial,sans-serif; font-size:10px; }
-    .receipt-preview-hidden .item-name{ font-weight:bold; margin-top:4px; }
-    .receipt-preview-hidden .item-sub{ display:flex; justify-content:space-between; font-size:10px; color:#333; }
-    .receipt-preview-hidden .item-remark{ font-size:10px; color:#000; margin-left:4px; }
-    .receipt-preview-hidden .net-box{ text-align:center; font-size:13px; font-weight:bold; border:1.5px solid #000; padding:5px; margin:5px 0; }
-    .receipt-preview-hidden .delivery-note{ text-align:center; font-family:Arial,sans-serif; font-size:11px; margin:4px 0; }
-    .receipt-preview-hidden .footer-mm{ font-family:Arial,sans-serif; text-align:center; font-size:11px; margin-top:6px; line-height:1.4; }
 
     /* popup */
     .popup-overlay{ position:fixed; inset:0; z-index:10000; padding:24px; display:none;
@@ -398,9 +374,6 @@
     </div>
   </div>
 
-  <!-- Hidden receipt preview for print/share -->
-  <div id="receiptPreviewHidden" class="receipt-preview-hidden"></div>
-
   <script>
 
     // icons.js မ load ဖြစ်ရင် (network/404) သို့ icon နာမည် မသိရင်တောင် render loop မကျိုးအောင် fallback
@@ -553,7 +526,6 @@
               <div class="actions">
                 <button class="btn btn-onlinepay" onclick="openOnlinePaymentModal(${index})">${ssmIcon("card",{size:14})} Online Payment</button>
                 <button class="btn btn-print"   onclick="printReceipt(${index})">${ssmIcon("print", {size:16})} Print</button>
-                <button class="btn btn-share" id="shareBtn-${index}" onclick="shareReceipt(${index}, this)">${ssmIcon("share", {size:16})} Share</button>
                 <button class="btn btn-edit"    onclick="editReceipt(${index})">${ssmIcon("edit", {size:16})} Edit</button>
                 <button class="btn btn-delete"  onclick="deleteReceipt(${index})">${ssmIcon("trash", {size:16})} Delete</button>
               </div>
@@ -735,88 +707,6 @@
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
       localStorage.setItem("printReceipt", JSON.stringify(salesHistory[index]));
       location.href = "print.html";
-    }
-
-    // ── Share (image) ─────────────────────────────────────────────
-    // NOTE: previously this had no .catch()/timeout — if html2canvas failed
-    // or hung (slow devices, huge base64 logo, etc.) the button just sat
-    // there forever with zero feedback, unlike Print/Online Payment which
-    // navigate instantly. We now show a loading state, guard with a
-    // timeout, and always report success/failure back to the button.
-    function shareReceipt(index, btnEl) {
-      let sale = salesHistory[index];
-      let box  = document.getElementById("receiptPreviewHidden");
-      if (!sale || !box) { alert("Receipt not found."); return; }
-
-      let btn = btnEl || document.getElementById("shareBtn-" + index);
-      let originalHTML = btn ? btn.innerHTML : null;
-      let done = false;
-
-      function finish(restore) {
-        if (done) return;
-        done = true;
-        if (btn && restore) { btn.disabled = false; btn.innerHTML = originalHTML; }
-        // The preview box is a single persistent element reused on every
-        // Share tap (unlike index.html, which creates/removes a fresh node
-        // each time). If we never clear it, a slow/failed html2canvas run
-        // leaves the last-rendered receipt sitting in the DOM — and if the
-        // z-index hide trick ever glitches mid-paint, that stale receipt
-        // becomes visible behind the list. Always empty it once we're done.
-        if (box) box.innerHTML = "";
-      }
-
-      // html2canvas library (cdnjs) is loaded via <script src="..."> in <head>.
-      // If it hasn't finished loading yet — or failed to load (no internet,
-      // CDN blocked, etc.) — calling html2canvas() throws immediately and the
-      // whole function used to die silently, leaving the button stuck until
-      // the watchdog timeout. Check for it up front and give an instant,
-      // specific error instead of a generic 12-second timeout.
-      if (typeof html2canvas === "undefined") {
-        alert("Share feature (html2canvas) မ Load ဖြစ်သေးပါ။ Internet ချိတ်ဆက်မှုကို စစ်ပြီး ခဏနေမှ ထပ်ကြိုးစားပါ (Print ကတော့ ချက်ချင်းသုံးလို့ရပါတယ်)။");
-        return;
-      }
-
-      if (btn) { btn.disabled = true; btn.innerHTML = "⏳ ခဏစောင့်ပါ..."; }
-
-      // Safety net: html2canvas can hang on some mobile webviews (e.g. very
-      // large embedded logo images). Never let the button stay stuck.
-      let watchdog = setTimeout(function () {
-        if (done) return;
-        finish(true);
-        alert("Share ယူရန် အလွန်ကြာနေပါသည်။ ထပ်မံကြိုးစားကြည့်ပါ (သို့) Print ကိုသုံးပါ။");
-      }, 12000);
-
-      try {
-        window.ssmRenderReceipt(box, sale);   // print.html နဲ့ တူညီတဲ့ template
-      } catch (e) {
-        clearTimeout(watchdog);
-        finish(true);
-        alert("Receipt ပြင်ဆင်ရာတွင် အမှားရှိပါသည်: " + e.message);
-        return;
-      }
-
-      html2canvas(box, { backgroundColor: "#ffffff", scale: 2, useCORS: true, imageTimeout: 4000, logging: false }).then(function (canvas) {
-        canvas.toBlob(function (blob) {
-          clearTimeout(watchdog);
-          if (!blob) { finish(true); alert("ပုံဖန်တီးရာတွင် အမှားရှိပါသည်။"); return; }
-          let file = new File([blob], "receipt.png", { type: "image/png" });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: "Receipt - " + sale.orderNo })
-              .catch(function () { /* user cancelled share sheet — not an error */ })
-              .finally(function () { finish(true); });
-          } else {
-            let link = document.createElement("a");
-            link.href = canvas.toDataURL();
-            link.download = "receipt-" + sale.orderNo + ".png";
-            link.click();
-            finish(true);
-          }
-        });
-      }).catch(function (e) {
-        clearTimeout(watchdog);
-        finish(true);
-        alert("Share Error: " + e);
-      });
     }
 
     // ── Online Payment: modal embedding payments.html (same UI as index.html) ──

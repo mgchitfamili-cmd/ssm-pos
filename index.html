@@ -7,7 +7,6 @@
   <title>Sone Sone Mommy POS v2</title>
 
   <script>(function(){try{if(localStorage.getItem('ssm_dark')==='1')document.documentElement.classList.add('dark');}catch(e){}})();</script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="receipt.js"></script>
 
   <script src="firebase-init.js"></script>
@@ -471,7 +470,6 @@
     .save-actions{ display:flex; flex-direction:column; gap:9px; }
     .btn-print{ background:var(--secondary); width:100%; }
     .btn-print:active{ background:#7b5fae; }
-    .btn-share{ background:var(--green); width:100%; }
     .btn-new{ background:var(--surface); color:var(--red); border:1px solid var(--red-line); width:100%; display:flex; align-items:center; justify-content:center; gap:6px; }
 
     /* ── Sticky checkout bar ── */
@@ -531,13 +529,6 @@
     }
     .menu-item.active .ic{ background:var(--surface); }
 
-
-    /* Receipt preview — Share image အတွက်ပဲ၊ screen မှာ မပြ */
-    #receiptPreview{
-      position:absolute; left:-9999px; top:0; width:340px;
-      border:2px solid #000; padding:20px; border-radius:10px; background:#fff;
-      font-family:'Courier New',monospace;
-    }
 
     /* ===== Dark mode (toggled via html.dark) ===== */
     html.dark{
@@ -918,7 +909,6 @@
       <h3><span data-icon="checkCircle" data-icon-size="20"></span> Receipt သိမ်းပြီးပါပြီ</h3>
       <div class="save-actions">
         <button class="btn-print" onclick="printReceipt()"><span data-icon="print" data-icon-size="16"></span> Print</button>
-        <button class="btn-share" id="shareBtnMain" onclick="shareReceipt(this)"><span data-icon="share" data-icon-size="16"></span> Share</button>
         <button class="btn-new" onclick="newReceipt()"><span data-icon="add" data-icon-size="16"></span> New Receipt</button>
       </div>
     </div>
@@ -946,30 +936,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Receipt Preview (Share image အတွက်ပဲ၊ screen မှာ မပြ) -->
-  <div id="receiptPreview">
-    <h2 style="text-align:center;">Sone Sone Mommy</h2>
-    <p id="rp-orderNo"></p>
-    <p id="rp-date"></p>
-    <p id="rp-staff"></p>
-    <hr>
-    <p id="rp-customer"></p>
-    <p id="rp-phone"></p>
-    <p id="rp-address"></p>
-    <p id="rp-township"></p>
-    <p id="rp-orderApp"></p>
-    <p id="rp-deliveryService"></p>
-    <hr>
-    <div id="rp-items"></div>
-    <hr>
-    <p id="rp-grandTotal"></p>
-    <p id="rp-discount"></p>
-    <p id="rp-delivery"></p>
-    <p id="rp-deposit"></p>
-    <h3 id="rp-netTotal"></h3>
-  </div>
-
 
     <script>
 
@@ -1852,79 +1818,6 @@
       }
       ssmBeep(900, 0.1);
       location.href = "print.html";
-    }
-
-    // ── Share ─────────────────────────────────────────────────────
-    // NOTE: html2canvas can hang (never resolve, never reject) on some
-    // mobile webviews — a .catch() alone doesn't save you from that. We
-    // now show a loading state on the button and use a watchdog timeout
-    // so Share can never appear "stuck" the way it used to.
-    function shareReceipt(btnEl) {
-      var btn = btnEl || document.getElementById("shareBtnMain");
-      var originalHTML = btn ? btn.innerHTML : null;
-      var done = false;
-
-      function finish(restore) {
-        if (done) return;
-        done = true;
-        if (btn && restore) { btn.disabled = false; btn.innerHTML = originalHTML; }
-      }
-
-      // See note in receipts.html's shareReceipt(): if html2canvas (loaded
-      // from cdnjs in <head>) hasn't loaded — no internet, CDN blocked, etc.
-      // — calling it throws immediately. Check up front for an instant,
-      // clear error instead of a generic 12-second timeout.
-      if (typeof html2canvas === "undefined") {
-        alert("Share feature (html2canvas) မ Load ဖြစ်သေးပါ။ Internet ချိတ်ဆက်မှုကို စစ်ပြီး ခဏနေမှ ထပ်ကြိုးစားပါ (Print ကတော့ ချက်ချင်းသုံးလို့ရပါတယ်)။");
-        return;
-      }
-
-      if (btn) { btn.disabled = true; btn.innerHTML = "⏳ ခဏစောင့်ပါ..."; }
-
-      var box = document.createElement("div");
-      // html2canvas hangs on many mobile webviews when the target is
-      // positioned far off-screen (left:-9999px forces it to allocate/render
-      // a huge canvas anchored way out at those coordinates). Keep the box
-      // near (0,0) and hide it behind the app's own opaque background with
-      // z-index instead — invisible to the user, cheap for html2canvas.
-      box.style.position = "fixed"; box.style.left = "0"; box.style.top = "0";
-      box.style.zIndex = "-9999"; box.style.pointerEvents = "none";
-      document.body.appendChild(box);
-      window.ssmRenderReceipt(box, savedData);   // print.html နဲ့ တူညီတဲ့ template
-
-      var watchdog = setTimeout(function () {
-        if (done) return;
-        finish(true);
-        box.remove();
-        alert("Share ယူရန် အလွန်ကြာနေပါသည်။ ထပ်မံကြိုးစားကြည့်ပါ (သို့) Print ကိုသုံးပါ။");
-      }, 12000);
-
-      html2canvas(box, { backgroundColor: "#ffffff", scale: 2, useCORS: true, imageTimeout: 4000, logging: false }).then(function (canvas) {
-        clearTimeout(watchdog);
-        box.remove();
-        ssmBeep(900, 0.1);
-        canvas.toBlob(function (blob) {
-          if (!blob) { finish(true); alert("ပုံဖန်တီးရာတွင် အမှားရှိပါသည်။"); return; }
-          let file = new File([blob], "receipt.png", { type: "image/png" });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ files: [file], title: "Receipt - " + savedData.orderNo })
-              .catch(function () { /* user cancelled share sheet — not an error */ })
-              .finally(function () { finish(true); });
-          } else {
-            let link = document.createElement("a");
-            link.href = canvas.toDataURL();
-            link.download = "receipt-" + savedData.orderNo + ".png";
-            link.click();
-            alert("Share API မရှိပါ။ Image ကို Download လုပ်ပေးလိုက်ပါတယ်။");
-            finish(true);
-          }
-        });
-      }).catch(function (e) {
-        clearTimeout(watchdog);
-        finish(true);
-        box.remove();
-        alert("Share Error: " + e);
-      });
     }
 
     // ── New Receipt ───────────────────────────────────────────────
