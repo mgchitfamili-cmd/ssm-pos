@@ -756,6 +756,13 @@
         if (done) return;
         done = true;
         if (btn && restore) { btn.disabled = false; btn.innerHTML = originalHTML; }
+        // The preview box is a single persistent element reused on every
+        // Share tap (unlike index.html, which creates/removes a fresh node
+        // each time). If we never clear it, a slow/failed html2canvas run
+        // leaves the last-rendered receipt sitting in the DOM — and if the
+        // z-index hide trick ever glitches mid-paint, that stale receipt
+        // becomes visible behind the list. Always empty it once we're done.
+        if (box) box.innerHTML = "";
       }
 
       // html2canvas library (cdnjs) is loaded via <script src="..."> in <head>.
