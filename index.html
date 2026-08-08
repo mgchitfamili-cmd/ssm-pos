@@ -1870,6 +1870,15 @@
         if (btn && restore) { btn.disabled = false; btn.innerHTML = originalHTML; }
       }
 
+      // See note in receipts.html's shareReceipt(): if html2canvas (loaded
+      // from cdnjs in <head>) hasn't loaded — no internet, CDN blocked, etc.
+      // — calling it throws immediately. Check up front for an instant,
+      // clear error instead of a generic 12-second timeout.
+      if (typeof html2canvas === "undefined") {
+        alert("Share feature (html2canvas) မ Load ဖြစ်သေးပါ။ Internet ချိတ်ဆက်မှုကို စစ်ပြီး ခဏနေမှ ထပ်ကြိုးစားပါ (Print ကတော့ ချက်ချင်းသုံးလို့ရပါတယ်)။");
+        return;
+      }
+
       if (btn) { btn.disabled = true; btn.innerHTML = "⏳ ခဏစောင့်ပါ..."; }
 
       var box = document.createElement("div");

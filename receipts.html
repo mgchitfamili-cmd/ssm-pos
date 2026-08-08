@@ -751,6 +751,17 @@
         if (btn && restore) { btn.disabled = false; btn.innerHTML = originalHTML; }
       }
 
+      // html2canvas library (cdnjs) is loaded via <script src="..."> in <head>.
+      // If it hasn't finished loading yet — or failed to load (no internet,
+      // CDN blocked, etc.) — calling html2canvas() throws immediately and the
+      // whole function used to die silently, leaving the button stuck until
+      // the watchdog timeout. Check for it up front and give an instant,
+      // specific error instead of a generic 12-second timeout.
+      if (typeof html2canvas === "undefined") {
+        alert("Share feature (html2canvas) မ Load ဖြစ်သေးပါ။ Internet ချိတ်ဆက်မှုကို စစ်ပြီး ခဏနေမှ ထပ်ကြိုးစားပါ (Print ကတော့ ချက်ချင်းသုံးလို့ရပါတယ်)။");
+        return;
+      }
+
       if (btn) { btn.disabled = true; btn.innerHTML = "⏳ ခဏစောင့်ပါ..."; }
 
       // Safety net: html2canvas can hang on some mobile webviews (e.g. very

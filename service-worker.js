@@ -2,7 +2,7 @@
 // ဒီ file ကို update ထုတ်တိုင်း အောက်က CACHE_NAME ကို v1 → v2 → v3 ... လို့ ပြောင်းပါ
 // (မပြောင်းရင် user တွေရဲ့ browser က ဟောင်းတဲ့ cache version ကို ဆက်သုံးနေမှာမို့
 //  ပြင်ထားတဲ့ ပြောင်းလဲမှုတွေ မမြင်ရနိုင်ပါ)
-const CACHE_NAME = "ssm-delivery-v4";
+const CACHE_NAME = "ssm-delivery-v5";
 
 // App shell — offline ဖြစ်ရင်တောင် ချက်ချင်း ပြန်ဖွင့်လို့ရအောင် အရင်ဆုံး cache ချထားမယ့် file တွေ
 // (relative path — server ပေါ်က ဘယ် folder ထားထားပဲ ဖြစ်ဖြစ် အလုပ်လုပ်အောင်)
@@ -15,6 +15,14 @@ const PRECACHE_URLS = [
   "icon-180.png",
 ];
 
+// CDN files (cross-origin) — internet ရှိစဉ်မှာ တစ်ခါ cache ချထားလိုက်ရင်
+// နောက်ပိုင်း offline/internet အားနည်းချိန်တွေမှာလည်း အလုပ်ဆက်လုပ်နိုင်ရအောင်
+// (Share ခလုတ်က ဒီ html2canvas library ကို အားကိုးနေလို့ — Print/Online Payment
+//  တို့ကတော့ local file ချည်းသုံးလို့ ဒီ cache မလိုအပ်ပါ)
+const CDN_URLS = [
+  "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+];
+
 // ── Install — app shell ကို cache ချ ──────────────────────────────────────
 self.addEventListener("install", function (event) {
   event.waitUntil(
@@ -22,11 +30,17 @@ self.addEventListener("install", function (event) {
       .then(function (cache) {
         // file တစ်ခုချင်းစီကို သီးသန့် fetch လုပ်ပြီး ရှိသလောက်ပဲ cache ချ —
         // file တစ်ခုမတွေ့လို့ (404) install တစ်ခုလုံး fail မဖြစ်အောင်
-        return Promise.all(
-          PRECACHE_URLS.map(function (url) {
-            return cache.add(url).catch(function () {});
-          })
-        );
+        var ownOrigin = PRECACHE_URLS.map(function (url) {
+          return cache.add(url).catch(function () {});
+        });
+        // CDN files — cross-origin ဖြစ်လို့ "no-cors" mode နဲ့ တောင်းရမယ်
+        // (opaque response ဖြစ်ပေမယ့် cache ထဲသိမ်းလို့ရသေးတယ်)
+        var crossOrigin = CDN_URLS.map(function (url) {
+          return fetch(url, { mode: "no-cors" })
+            .then(function (res) { return cache.put(url, res); })
+            .catch(function () {});
+        });
+        return Promise.all(ownOrigin.concat(crossOrigin));
       })
       .then(function () { return self.skipWaiting(); })
   );
@@ -57,7 +71,23 @@ self.addEventListener("fetch", function (event) {
   if (req.method !== "GET") return;               // POST/PUT စတာတွေ (Firestore write) ကို လုံးဝ မထိ
 
   var url = new URL(req.url);
-  if (url.origin !== self.location.origin) return; // cross-origin (Firebase, CDN scripts) — SW မစွက်ဘူး
+
+  // Cache ချထားတဲ့ CDN files (html2canvas) — cache-first + background update.
+  // ဒီလို မလုပ်ရင် internet အားနည်း/မရှိတဲ့အခါ Share ခလုတ်က အလုပ်မလုပ်နိုင်ပါ။
+  if (CDN_URLS.indexOf(req.url) !== -1) {
+    event.respondWith(
+      caches.match(req).then(function (cached) {
+        var fetchPromise = fetch(req, { mode: "no-cors" }).then(function (res) {
+          caches.open(CACHE_NAME).then(function (cache) { cache.put(req, res.clone()); });
+          return res;
+        }).catch(function () { return cached; });
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
+
+  if (url.origin !== self.location.origin) return; // အခြား cross-origin (Firebase) — SW မစွက်ဘူး
 
   if (req.mode === "navigate" || req.destination === "document") {
     event.respondWith(
