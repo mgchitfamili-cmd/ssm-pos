@@ -132,19 +132,10 @@
     /* ── Parcel alert ── */
     #parcelAlert{
       position:relative; overflow:hidden; isolation:isolate;
-      margin:0 0 14px 0; padding:8px 10px 8px 14px; border-radius:16px;
+      margin:0 0 14px 0; padding:8px 14px; border-radius:16px;
       font-size:13px; font-weight:700; border:none;
-      display:flex; align-items:center; justify-content:space-between; gap:8px;
       box-shadow:0 4px 14px rgba(47,35,89,.16), inset 0 1px 0 rgba(255,255,255,.45);
     }
-    #parcelAlertText{ flex:1; min-width:0; }
-    #parcelRefreshBtn{
-      flex:none; display:flex; align-items:center; justify-content:center;
-      width:28px; height:28px; padding:0; border-radius:50%;
-      border:none; background:rgba(255,255,255,.55); color:inherit;
-      cursor:pointer; transition:transform .15s, background .15s;
-    }
-    #parcelRefreshBtn:active{ background:rgba(255,255,255,.85); transform:rotate(180deg); }
     #parcelAlert::before{
       content:""; position:absolute; inset:0; z-index:-1;
       background:radial-gradient(130px 70px at 14% -10%, rgba(255,255,255,.6), rgba(255,255,255,0) 70%);
@@ -158,6 +149,18 @@
       background:linear-gradient(180deg, #d6f9e6 0%, #83dfae 55%, #52bd88 100%);
       color:#155c37;
     }
+
+    /* ── Pull-to-refresh ── */
+    #ptrIndicator{
+      position:fixed; left:0; right:0; top:0; z-index:60;
+      display:flex; align-items:center; justify-content:center;
+      height:60px; margin-top:-60px;
+      color:var(--brand); pointer-events:none;
+      transition:margin-top .2s ease;
+    }
+    #ptrIndicator .ptr-spin{ transition:transform .1s linear; display:flex; }
+    #ptrIndicator.ptr-loading .ptr-spin{ animation:ptr-rotate .7s linear infinite; }
+    @keyframes ptr-rotate{ to{ transform:rotate(360deg); } }
 
     /* ── Cards ── */
     .card{
@@ -711,12 +714,11 @@
     </div>
   </div>
 
+  <div id="ptrIndicator" class="no-print"><span class="ptr-spin" data-icon="refresh" data-icon-size="22"></span></div>
+
   <div class="wrap">
 
-    <h3 id="parcelAlert" class="no-print">
-      <span id="parcelAlertText"></span>
-      <button type="button" id="parcelRefreshBtn" onclick="loadParcelAlert()" aria-label="Refresh" title="Refresh"><span data-icon="refresh" data-icon-size="16"></span></button>
-    </h3>
+    <h3 id="parcelAlert" class="no-print"></h3>
 
     <div class="no-print">
 
@@ -2140,7 +2142,6 @@
     function loadParcelAlert() {
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
       let alertBox = document.getElementById("parcelAlert");
-      let alertText = document.getElementById("parcelAlertText");
 
       // Receipt တစ်ခုမှ မရှိရင် box ကို ဖျောက်ထားမယ်
       if (salesHistory.length === 0) {
@@ -2157,15 +2158,15 @@
         return !_isWalkIn(sale) && !sale.printed;
       }).length;
 
-      alertBox.style.display = "flex";
+      alertBox.style.display = "block";
       alertBox.classList.remove("alert-warn", "alert-ok");
 
       if (parcelPending === 0 && printPending === 0) {
         alertBox.classList.add("alert-ok");
-        alertText.innerHTML = ssmIcon("checkCircle",{size:16}) + " Parcel & Print အားလုံး ပြီးပါပြီ";
+        alertBox.innerHTML = ssmIcon("checkCircle",{size:16}) + " Parcel & Print အားလုံး ပြီးပါပြီ";
       } else {
         alertBox.classList.add("alert-warn");
-        alertText.innerHTML = ssmIcon("warning",{size:16}) + " Parcel မထုတ်ရ " + parcelPending + " ခု · Print မထုတ်ရ " + printPending + " ခု";
+        alertBox.innerHTML = ssmIcon("warning",{size:16}) + " Parcel မထုတ်ရ " + parcelPending + " ခု · Print မထုတ်ရ " + printPending + " ခု";
       }
     }
 
@@ -2616,6 +2617,61 @@
     inp.addEventListener("focus", show);
     inp.addEventListener("input", show);
     inp.addEventListener("blur", function () { setTimeout(hide, 150); });
+  })();
+
+  // ── Pull-to-refresh (top of page ကို အောက်ကို ဆွဲရင် page reload) ──
+  (function () {
+    var el = document.getElementById("ptrIndicator");
+    if (!el) return;
+    var THRESHOLD = 68;   // ဒီမှတ်ကျော် ဆွဲမှ refresh လုပ်မယ်
+    var MAX_PULL = 100;
+    var startY = 0, pulling = false, dragging = false, triggered = false;
+
+    function atTop() {
+      return (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) <= 0;
+    }
+
+    window.addEventListener("touchstart", function (e) {
+      if (!atTop()) { dragging = false; return; }
+      dragging = true;
+      triggered = false;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    window.addEventListener("touchmove", function (e) {
+      if (!dragging || triggered) return;
+      var dy = e.touches[0].clientY - startY;
+      if (dy <= 0) { pulling = false; el.style.marginTop = "-60px"; return; }
+      if (!atTop()) { dragging = false; pulling = false; el.style.marginTop = "-60px"; return; }
+      pulling = true;
+      // pull လုပ်နေရင် page ကိုယ်တိုင် bounce မဆွဲအောင် ကာမယ်
+      if (e.cancelable) e.preventDefault();
+      var dist = Math.min(dy * 0.5, MAX_PULL);
+      el.style.marginTop = (dist - 60) + "px";
+      el.classList.toggle("ptr-loading", dist >= THRESHOLD);
+    }, { passive: false });
+
+    function reset() {
+      pulling = false; dragging = false;
+      el.style.marginTop = "-60px";
+      if (!triggered) el.classList.remove("ptr-loading");
+    }
+
+    window.addEventListener("touchend", function () {
+      if (pulling && !triggered) {
+        var dist = parseFloat(el.style.marginTop || "-60") + 60;
+        if (dist >= THRESHOLD) {
+          triggered = true;
+          el.classList.add("ptr-loading");
+          el.style.marginTop = "0px";
+          setTimeout(function () { location.reload(); }, 300);
+          return;
+        }
+      }
+      reset();
+    }, { passive: true });
+
+    window.addEventListener("touchcancel", reset, { passive: true });
   })();
   </script>
   <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
