@@ -132,10 +132,19 @@
     /* ── Parcel alert ── */
     #parcelAlert{
       position:relative; overflow:hidden; isolation:isolate;
-      margin:0 0 14px 0; padding:8px 14px; border-radius:16px;
+      margin:0 0 14px 0; padding:8px 10px 8px 14px; border-radius:16px;
       font-size:13px; font-weight:700; border:none;
+      display:flex; align-items:center; justify-content:space-between; gap:8px;
       box-shadow:0 4px 14px rgba(47,35,89,.16), inset 0 1px 0 rgba(255,255,255,.45);
     }
+    #parcelAlertText{ flex:1; min-width:0; }
+    #parcelRefreshBtn{
+      flex:none; display:flex; align-items:center; justify-content:center;
+      width:28px; height:28px; padding:0; border-radius:50%;
+      border:none; background:rgba(255,255,255,.55); color:inherit;
+      cursor:pointer; transition:transform .15s, background .15s;
+    }
+    #parcelRefreshBtn:active{ background:rgba(255,255,255,.85); transform:rotate(180deg); }
     #parcelAlert::before{
       content:""; position:absolute; inset:0; z-index:-1;
       background:radial-gradient(130px 70px at 14% -10%, rgba(255,255,255,.6), rgba(255,255,255,0) 70%);
@@ -704,7 +713,10 @@
 
   <div class="wrap">
 
-    <h3 id="parcelAlert" class="no-print"></h3>
+    <h3 id="parcelAlert" class="no-print">
+      <span id="parcelAlertText"></span>
+      <button type="button" id="parcelRefreshBtn" onclick="loadParcelAlert()" aria-label="Refresh" title="Refresh"><span data-icon="refresh" data-icon-size="16"></span></button>
+    </h3>
 
     <div class="no-print">
 
@@ -2128,6 +2140,7 @@
     function loadParcelAlert() {
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
       let alertBox = document.getElementById("parcelAlert");
+      let alertText = document.getElementById("parcelAlertText");
 
       // Receipt တစ်ခုမှ မရှိရင် box ကို ဖျောက်ထားမယ်
       if (salesHistory.length === 0) {
@@ -2144,15 +2157,15 @@
         return !_isWalkIn(sale) && !sale.printed;
       }).length;
 
-      alertBox.style.display = "block";
+      alertBox.style.display = "flex";
       alertBox.classList.remove("alert-warn", "alert-ok");
 
       if (parcelPending === 0 && printPending === 0) {
         alertBox.classList.add("alert-ok");
-        alertBox.innerHTML = ssmIcon("checkCircle",{size:16}) + " Parcel & Print အားလုံး ပြီးပါပြီ";
+        alertText.innerHTML = ssmIcon("checkCircle",{size:16}) + " Parcel & Print အားလုံး ပြီးပါပြီ";
       } else {
         alertBox.classList.add("alert-warn");
-        alertBox.innerHTML = ssmIcon("warning",{size:16}) + " Parcel မထုတ်ရ " + parcelPending + " ခု · Print မထုတ်ရ " + printPending + " ခု";
+        alertText.innerHTML = ssmIcon("warning",{size:16}) + " Parcel မထုတ်ရ " + parcelPending + " ခု · Print မထုတ်ရ " + printPending + " ခု";
       }
     }
 
