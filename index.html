@@ -67,7 +67,7 @@
       -webkit-touch-callout:none; -webkit-tap-highlight-color:transparent;
     }
     input, textarea, [contenteditable]{ -webkit-user-select:text; user-select:text; }
-    html,body{ margin:0; overscroll-behavior-y:contain; }
+    html,body{ margin:0; }
     body{
       font-family:system-ui,'Noto Sans Myanmar','Padauk','Myanmar Text','Segoe UI',sans-serif;
       background:linear-gradient(160deg, var(--bg-2) 0%, var(--bg) 45%, var(--bg-3) 100%);
@@ -149,18 +149,6 @@
       background:linear-gradient(180deg, #d6f9e6 0%, #83dfae 55%, #52bd88 100%);
       color:#155c37;
     }
-
-    /* ── Pull-to-refresh ── */
-    #ptrIndicator{
-      position:fixed; left:0; right:0; top:0; z-index:60;
-      display:flex; align-items:center; justify-content:center;
-      height:60px; margin-top:-60px;
-      color:var(--brand); pointer-events:none;
-      transition:margin-top .2s ease;
-    }
-    #ptrIndicator .ptr-spin{ transition:transform .1s linear; display:flex; }
-    #ptrIndicator.ptr-loading .ptr-spin{ animation:ptr-rotate .7s linear infinite; }
-    @keyframes ptr-rotate{ to{ transform:rotate(360deg); } }
 
     /* ── Cards ── */
     .card{
@@ -693,7 +681,7 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
     <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic" data-icon="income" data-icon-size="20"></span> Delivery ဆီမှရငွေ</div>
     <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
@@ -713,8 +701,6 @@
       <button type="button" data-v="shop" onclick="setAppMode('shop')">Shop</button>
     </div>
   </div>
-
-  <div id="ptrIndicator" class="no-print"><span class="ptr-spin" data-icon="refresh" data-icon-size="22"></span></div>
 
   <div class="wrap">
 
@@ -1770,7 +1756,6 @@
       }
 
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
-      clearDraft();   // Order သိမ်းပြီးရင် ကူးထားတဲ့ draft ကို ရှင်း (နောက် New Receipt ဝင်ရင် အလွတ်ဖြစ်ရန်)
 
       if (!isEditMode) {
         orderNo++;
@@ -1955,7 +1940,6 @@
     // ── New Receipt ───────────────────────────────────────────────
     function newReceipt() {
       ssmBeep(700, 0.08);
-      clearDraft();
       location.href = "index.html";
     }
 
@@ -2051,93 +2035,6 @@
       calculateNet();
     }
 
-    // ── Draft autosave (Index only) ─────────────────────────────────
-    // Order စာရိုက်နေရင်း တခြား page ကူးမိ/ ဆွဲမိလို့ ပြန်ရောက်လာရင် စာမပျောက်စေရအောင်
-    // sessionStorage (tab session ပဲ ရှင်၊ browser/tab ပိတ်ရင် အလိုအလျောက် ရှင်းသွား) ထဲ
-    // လက်ရှိ form/cart state ကို ခဏခဏ သိမ်းထား — page ပြန်လာချိန် ပြန်ဖြည့်ပေး။
-    var DRAFT_KEY = "ssm_indexDraft";
-    function collectDraft() {
-      try {
-        var g = function (id) { var el = document.getElementById(id); return el ? el.value : ""; };
-        return {
-          t: Date.now(),
-          editIndex: editIndex, editOrderNo: window.editOrderNo || null, editOrderDate: window.editOrderDate || null,
-          staff: g("staff"), name: g("name"), phone: g("phone"), address: g("address"),
-          township: g("township"), receiverName: g("receiverName"), receiverPhone: g("receiverPhone"),
-          receiverAddress: g("receiverAddress"), orderapp: g("orderapp"), delivery: g("delivery"),
-          deliveryService: g("deliveryService"), note: g("note"), discountValue: g("discountValue"),
-          items: items, grandTotal: grandTotal, selectedPayments: selectedPayments
-        };
-      } catch (e) { return null; }
-    }
-    function saveDraftNow() {
-      try {
-        var d = collectDraft();
-        // စာရင်း/ item တစ်ခုမှ မရှိသေးရင် (form အလွတ်) သိမ်းစရာမလို
-        var hasContent = d && ((d.items && d.items.length) || d.name || d.phone || d.address);
-        if (hasContent) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d));
-        else sessionStorage.removeItem(DRAFT_KEY);
-      } catch (e) {}
-    }
-    function clearDraft() { try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) {} }
-
-    function restoreDraftIfAny() {
-      var raw; try { raw = sessionStorage.getItem(DRAFT_KEY); } catch (e) { raw = null; }
-      if (!raw) return false;
-      var d; try { d = JSON.parse(raw); } catch (e) { return false; }
-      if (!d) return false;
-
-      var set = function (id, v) { var el = document.getElementById(id); if (el) el.value = v || ""; };
-      editIndex           = d.editIndex != null ? d.editIndex : null;
-      window.editOrderNo   = d.editOrderNo   || null;
-      window.editOrderDate = d.editOrderDate || null;
-
-      set("staff", d.staff); set("name", d.name); set("phone", d.phone); set("address", d.address);
-      set("township", d.township); set("receiverName", d.receiverName); set("receiverPhone", d.receiverPhone);
-      set("receiverAddress", d.receiverAddress); set("orderapp", d.orderapp); set("delivery", d.delivery);
-      set("deliveryService", d.deliveryService); set("note", d.note); set("discountValue", d.discountValue);
-
-      if (d.receiverName || d.receiverPhone || d.receiverAddress) {
-        var _rBtn = document.getElementById("recipientToggleBtn");
-        var _rSec = document.getElementById("receiverSection");
-        if (_rBtn) _rBtn.classList.add("active");
-        if (_rSec) _rSec.style.display = "";
-      }
-
-      selectedPayments = d.selectedPayments || [];
-      renderPaySummary();
-
-      items = [];
-      grandTotal = 0;
-      document.getElementById("saleTable").innerHTML = "";
-      (d.items || []).forEach(function (item) {
-        items.push(item);
-        grandTotal += Number(item.total) || 0;
-
-        let giftTag = item.isGift ? " " + ssmIcon("gift",{size:12}) : "";
-        var _sub2 = (item.saleType === "weight")
-          ? (item.weightText ? item.weightText : ((item.size || "") + " | " + item.qty + " x " + item.price))
-          : ((item.isGift ? "လက်ဆောင် | " : "") + item.qty + " x " + item.price);
-        document.getElementById("saleTable").innerHTML += `
-          <div class="rcart-item" data-id="${item.id}" data-total="${item.total}">
-            <div class="rcart-main">
-              <div class="item-name">${item.product}${giftTag}</div>
-              <div class="item-sub"><span>${_sub2}</span><span>${item.total}</span></div>
-              ${item.remark ? `<div class="item-remark">${ssmIcon("back",{size:10})} ${item.remark}</div>` : ""}
-            </div>
-            <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">${ssmIcon("edit",{size:15})}</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">${ssmIcon("trash",{size:15})}</button></span>
-          </div>`;
-      });
-
-      document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
-      calculateNet();
-      return true;
-    }
-
-    // Page ဆွဲမိ/ tab ပြောင်း/ တခြား page ကူးမိတိုင်း လက်ရှိစာရင်းကို ခဏသိမ်းထား
-    window.addEventListener("pagehide", saveDraftNow);
-    document.addEventListener("visibilitychange", function () { if (document.hidden) saveDraftNow(); });
-
     // ── Parcel Alert ──────────────────────────────────────────────
     function loadParcelAlert() {
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
@@ -2173,7 +2070,7 @@
     // ── Init ──────────────────────────────────────────────────────
     loadStaffDropdown();
     loadProductsDropdown();
-    if (!restoreDraftIfAny()) loadEditReceipt();   // draft ရှိရင် ဒါကို ပဲယူ (edit-in-progress ပါ ပါပါမယ်) — မရှိမှ edit-deep-link ကို ပုံမှန်စစ်
+    loadEditReceipt();
     updateCartCount();
     loadParcelAlert();
 
@@ -2617,61 +2514,6 @@
     inp.addEventListener("focus", show);
     inp.addEventListener("input", show);
     inp.addEventListener("blur", function () { setTimeout(hide, 150); });
-  })();
-
-  // ── Pull-to-refresh (top of page ကို အောက်ကို ဆွဲရင် page reload) ──
-  (function () {
-    var el = document.getElementById("ptrIndicator");
-    if (!el) return;
-    var THRESHOLD = 68;   // ဒီမှတ်ကျော် ဆွဲမှ refresh လုပ်မယ်
-    var MAX_PULL = 100;
-    var startY = 0, pulling = false, dragging = false, triggered = false;
-
-    function atTop() {
-      return (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) <= 0;
-    }
-
-    window.addEventListener("touchstart", function (e) {
-      if (!atTop()) { dragging = false; return; }
-      dragging = true;
-      triggered = false;
-      startY = e.touches[0].clientY;
-    }, { passive: true });
-
-    window.addEventListener("touchmove", function (e) {
-      if (!dragging || triggered) return;
-      var dy = e.touches[0].clientY - startY;
-      if (dy <= 0) { pulling = false; el.style.marginTop = "-60px"; return; }
-      if (!atTop()) { dragging = false; pulling = false; el.style.marginTop = "-60px"; return; }
-      pulling = true;
-      // pull လုပ်နေရင် page ကိုယ်တိုင် bounce မဆွဲအောင် ကာမယ်
-      if (e.cancelable) e.preventDefault();
-      var dist = Math.min(dy * 0.5, MAX_PULL);
-      el.style.marginTop = (dist - 60) + "px";
-      el.classList.toggle("ptr-loading", dist >= THRESHOLD);
-    }, { passive: false });
-
-    function reset() {
-      pulling = false; dragging = false;
-      el.style.marginTop = "-60px";
-      if (!triggered) el.classList.remove("ptr-loading");
-    }
-
-    window.addEventListener("touchend", function () {
-      if (pulling && !triggered) {
-        var dist = parseFloat(el.style.marginTop || "-60") + 60;
-        if (dist >= THRESHOLD) {
-          triggered = true;
-          el.classList.add("ptr-loading");
-          el.style.marginTop = "0px";
-          setTimeout(function () { location.reload(); }, 300);
-          return;
-        }
-      }
-      reset();
-    }, { passive: true });
-
-    window.addEventListener("touchcancel", reset, { passive: true });
   })();
   </script>
   <script>(function(){try{var r=localStorage.getItem('ssm_role')||'staff';if(r!=='admin'){document.querySelectorAll('.admin-only').forEach(function(e){e.style.display='none';});}}catch(e){}})();</script>
