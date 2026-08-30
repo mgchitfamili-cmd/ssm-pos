@@ -42,8 +42,25 @@
     #menuBtn, .iconbtn{ background:none; border:none; font-size:23px; line-height:1; color:var(--ink);
       cursor:pointer; padding:6px 9px; border-radius:10px; }
     #menuBtn:active, .iconbtn:active{ background:var(--line); }
-    .top-bar h1{ margin:0; font-size:16px; font-weight:700; letter-spacing:-.01em; flex:1;
+    .top-bar h1{ margin:0; font-size:16px; font-weight:700; letter-spacing:-.01em; flex:none;
       white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    .header-search{
+      flex:1 1 auto; min-width:0; display:flex; align-items:center;
+      background:var(--surface); border:1px solid var(--line-2); border-radius:999px;
+      padding:3px; transition:border-color .15s, box-shadow .15s;
+    }
+    .header-search:focus-within{ border-color:var(--brand); box-shadow:0 0 0 3px rgba(109,40,217,.13); }
+    #searchBox{ flex:1 1 auto; min-width:0; display:block; width:auto; margin:0; padding:8px 4px 8px 14px;
+      font-size:14px; color:var(--ink); background:transparent; border:none;
+      outline:none; -webkit-appearance:none; appearance:none; }
+    #searchBtn{ flex:none; width:34px; height:34px; margin-right:1px; padding:0; border:none; border-radius:50%;
+      background:var(--surface); box-shadow:var(--shadow); color:var(--ink); cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      -webkit-tap-highlight-color:transparent; outline:none; -webkit-user-select:none; user-select:none; }
+    #searchBtn svg{ width:19px; height:19px; display:block; }
+    #searchBtn:active{ opacity:.55; }
+    #searchBtn:focus, #searchBtn:focus-visible{ outline:none; box-shadow:none; }
 
     .wrap{ max-width:600px; margin:0 auto; padding:14px; }
 
@@ -179,7 +196,7 @@
         <h2>Sone Sone Mommy</h2>
         <p>POS System</p>
       </div>
-      <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+      <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
       <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic" data-icon="income" data-icon-size="20"></span> Delivery ဆီမှရငွေ</div>
       <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
       <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
@@ -193,6 +210,15 @@
     <div class="top-bar">
       <button id="menuBtn" onclick="openMenu()">⋮</button>
       <h1>ပစ္စည်းများ</h1>
+      <div class="header-search">
+        <input id="searchBox" placeholder="Search Product" oninput="loadProducts()">
+        <button type="button" id="searchBtn" aria-label="Search" onclick="loadProducts(); document.getElementById('searchBox').focus();">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10.5" cy="10.5" r="6.5"></circle>
+            <line x1="20" y1="20" x2="15.3" y2="15.3"></line>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <div class="wrap">
@@ -382,13 +408,14 @@
 
     function loadProducts() {
       products = JSON.parse(localStorage.getItem("products")) || [];
+      let kw = (document.getElementById("searchBox").value || "").trim().toLowerCase();
       let html = "";
-
-      if (products.length === 0) {
-        html = '<p class="empty">Product မရှိသေးပါ။<br>＋ နှိပ်ပြီး ထည့်ပါ။</p>';
-      }
+      let matched = 0;
 
       products.forEach(function (p, index) {
+        if (kw && !(p.name || "").toLowerCase().includes(kw)) return;   // search Product Name
+        matched++;
+
         let tags = "";
         if (p.allowWeight) tags += '<span class="tag tag-weight">' + ssmIcon("scale",{size:12}) + ' Weight</span>';
         if (p.allowUnit)   tags += '<span class="tag tag-unit">' + ssmIcon("package",{size:12}) + ' A:' + (p.unitPriceA || "-") + ' / B:' + (p.unitPriceB || "-") + '</span>';
@@ -406,6 +433,12 @@
             </div>
           </div>`;
       });
+
+      if (matched === 0) {
+        html = kw
+          ? '<p class="empty">"' + kw + '" နဲ့ ကိုက်ညီတဲ့ Product မတွေ့ပါ။</p>'
+          : '<p class="empty">Product မရှိသေးပါ။<br>＋ နှိပ်ပြီး ထည့်ပါ။</p>';
+      }
 
       document.getElementById("productList").innerHTML = html;
     }

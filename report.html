@@ -17,6 +17,7 @@
   <meta name="apple-mobile-web-app-title" content="Sone Sone Mommy">
   <link rel="apple-touch-icon" href="icon-180.png">
   <script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("service-worker.js").catch(function(){});});}</script>
+  <script>(function(){try{if((localStorage.getItem('ssm_role')||'staff')!=='admin'){location.replace('index.html');}}catch(e){}})();</script>
   <style>
     :root{
       --bg:#f4f5f8; --surface:#ffffff; --line:#eaecf1; --line-2:#dcdfe7;
@@ -252,7 +253,7 @@
       <h2>Sone Sone Mommy</h2>
       <p>POS System</p>
     </div>
-    <div class="menu-item" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
+    <div class="menu-item admin-only" data-page="report.html"   onclick="location.href='report.html'"><span class="ic" data-icon="report" data-icon-size="20"></span> စာရင်းချုပ်</div>
     <div class="menu-item admin-only" data-page="income.html"   onclick="location.href='income.html'"><span class="ic" data-icon="income" data-icon-size="20"></span> Delivery ဆီမှရငွေ</div>
     <div class="menu-item" data-page="index.html"    onclick="location.href='index.html'"><span class="ic" data-icon="cart" data-icon-size="20"></span> အရောင်း (Sales)</div>
     <div class="menu-item" data-page="receipts.html" onclick="location.href='receipts.html'"><span class="ic" data-icon="receipt" data-icon-size="20"></span> ဘောင်ချာများ</div>
