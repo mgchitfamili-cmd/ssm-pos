@@ -64,6 +64,7 @@
       var _doPushKey   = null;                    // (key,val) → appdata push (sync ready မှ)
       var _doPushSales = null;                    // (val) → sales push (sync ready မှ)
       var _doLocalPrune = null;                   // (val?) → local image prune (quota ပြည့်ရင်)
+      var _doLocalHistoryPrune = null;            // () → cloud ရောက်ပြီးသား ဟောင်းတဲ့ (LOCAL_HISTORY_DAYS+) sales/payments text data ကို local ကနေ ဖယ် (quota ပြည့်ရင် / ကြိုတင်)
       var _pendKeys    = {};                      // queued appdata pushes
       var _pendSales   = null;                    // queued salesHistory val
 
@@ -125,15 +126,24 @@
         }
         try { _protoSet.call(this, key, val); }
         catch (qe) {
-          if (key === "salesHistory" && _doLocalPrune && qe && (qe.name === "QuotaExceededError" || /quota|exceeded/i.test("" + (qe.name || "") + (qe.message || "")))) {
+          var isQuota = qe && (qe.name === "QuotaExceededError" || /quota|exceeded/i.test("" + (qe.name || "") + (qe.message || "")));
+          if (!isQuota) { throw qe; }
+          if (key === "salesHistory" && _doLocalPrune) {
             try {
               var pv = _doLocalPrune(val);                 // ပုံအဟောင်း (backup ထဲ ရှိပြီးသား) ဖယ်ပြီး space လွတ်
               _protoSet.call(this, key, pv);               // pruned ကို ပြန်သိမ်း
               val = pv;                                    // push လည်း pruned သုံး (stripped sale → guard နဲ့ skip၊ cloud ပုံ မထိ)
             } catch (qe2) {
-              console.warn("[sales] local full — could not free enough space silently");
-              throw qe2;
+              // ပုံ prune ကိုယ်တိုင် မလုံလောက် → ဟောင်းတဲ့ (cloud ရောက်ပြီးသား) sales/payments record တွေကို local ကနေထပ်ဖယ်ပြီး ပြန်ကြိုးစား
+              if (_doLocalHistoryPrune) {
+                try { _doLocalHistoryPrune(); _protoSet.call(this, key, val); }
+                catch (qe3) { console.warn("[sales] local full — could not free enough space silently"); throw qe3; }
+              } else { console.warn("[sales] local full — could not free enough space silently"); throw qe2; }
             }
+          } else if (_doLocalHistoryPrune) {
+            // ဥပမာ paymentsList စတဲ့ key တစ်ခုခု quota ပြည့်နေရင်လည်း ဟောင်းတဲ့ local record တွေ ဖယ်ပြီး ပြန်ကြိုးစား
+            try { _doLocalHistoryPrune(); _protoSet.call(this, key, val); }
+            catch (qe4) { throw qe4; }
           } else { throw qe; }
         }
         if (SYNC_KEYS.indexOf(key) >= 0) {
@@ -354,6 +364,55 @@
           return out;
         }
         _doLocalPrune = ssmLocalImagePrune;
+
+        // ── LOCAL history prune (text data — device ထဲ ဘယ်တော့မှ မဖျက်ဖူးခဲ့တဲ့ ဟောင်းတဲ့ order/payment record) ──
+        // salesHistory/paymentsList ကို local ထဲမှာ ထာဝရ ကျန်နေတာကြောင့် device ကြာလာရင် quota ပြည့်တတ်လို့ —
+        // cloud ကို ရောက်ပြီးသား (syncedIds) + LOCAL_HISTORY_DAYS ထက် ဟောင်းတဲ့ record တွေကိုသာ local ကနေ ဖယ်။
+        // Cloud (Firestore) မှာ အပြည့် ကျန်ပြီး app ဖွင့်တိုင်း paginated pull (SALES_STEP_DAYS) က ပြန်ဆွဲပေးနိုင်တာမို့ data မပျောက်ပါ။
+        var LOCAL_HISTORY_DAYS = 20;
+        function isLocalOldSale(s) {
+          try {
+            var t = (s && s.orderDate) ? new Date(s.orderDate).getTime() : NaN;
+            if (!t || isNaN(t)) return false;                    // date မရှိ/မဖတ်နိုင် → local ကနေ ဘယ်တော့မှ မဖယ် (safe)
+            return (Date.now() - t) > LOCAL_HISTORY_DAYS * 86400000;
+          } catch (e) { return false; }
+        }
+        function ssmLocalHistoryPrune() {
+          try {
+            var last = +(localStorage.getItem("ssm_lastLocalHistPrune") || 0);
+            if (Date.now() - last < 12 * 3600000) return;         // device တစ်လုံးကို ၁၂ နာရီ တစ်ခါပဲ
+          } catch (e) {}
+          try {
+            var sales = JSON.parse(localStorage.getItem("salesHistory")) || [];
+            var kept = sales.filter(function (s) {
+              var sid = sidOf(s);
+              // ဟောင်း (30d+) ဖြစ်ပြီး cloud ကို ရောက်ပြီးသား ဖြစ်မှသာ local ကနေ ဖယ် — မ sync ရသေးရင် (offline device) ဘယ်တော့မှ မဖျက်
+              return !(isLocalOldSale(s) && syncedIds[sid]);
+            });
+            if (kept.length !== sales.length) {
+              rawSet("salesHistory", JSON.stringify(kept));
+              _salesSnap = {}; kept.forEach(function (s) { _salesSnap[String(s.orderNo)] = _saleHash(s); });
+              trackedSids = {}; kept.forEach(function (s) { trackedSids[sidOf(s)] = true; });
+              console.log("[hist] local prune: removed " + (sales.length - kept.length) + " sale(s) older than " + LOCAL_HISTORY_DAYS + "d (already on cloud)");
+
+              // ကျန်နေသေးတဲ့ sale တွေက ကိုးကားနေသေးတဲ့ payment id (linkedPayments) တွေကို မဖယ်ရအောင် မှတ်ထား
+              var stillNeeded = {};
+              kept.forEach(function (s) { (s.linkedPayments || []).forEach(function (pid) { stillNeeded[pid] = true; }); });
+              var pays = JSON.parse(localStorage.getItem("paymentsList")) || [];
+              var keptPays = pays.filter(function (p) {
+                var old = (Date.now() - (p.createdAt || 0)) > LOCAL_HISTORY_DAYS * 86400000;
+                return !old || stillNeeded[p.id];               // ဟောင်းပေမယ့် sale ကနေ ကိုးကားနေရင် ချန်ထား
+              });
+              if (keptPays.length !== pays.length) {
+                rawSet("paymentsList", JSON.stringify(keptPays));
+                console.log("[hist] local prune: removed " + (pays.length - keptPays.length) + " payment record(s)");
+              }
+            }
+          } catch (e) {}
+          try { origSet("ssm_lastLocalHistPrune", String(Date.now())); } catch (e) {}
+        }
+        _doLocalHistoryPrune = ssmLocalHistoryPrune;
+        try { setTimeout(ssmLocalHistoryPrune, 4000); } catch (e) {}   // sync စပြီး cache/syncedIds အသင့်ဖြစ်အောင် ခဏစောင့်ပြီး တစ်ခါ run
 
         function ssmPushSales(val) {
           var arr; try { arr = JSON.parse(val) || []; } catch (e) { return; }
