@@ -1756,6 +1756,7 @@
       }
 
       localStorage.setItem("salesHistory", JSON.stringify(salesHistory));
+      clearDraft();   // Order သိမ်းပြီးရင် ကူးထားတဲ့ draft ကို ရှင်း (နောက် New Receipt ဝင်ရင် အလွတ်ဖြစ်ရန်)
 
       if (!isEditMode) {
         orderNo++;
@@ -1940,6 +1941,7 @@
     // ── New Receipt ───────────────────────────────────────────────
     function newReceipt() {
       ssmBeep(700, 0.08);
+      clearDraft();
       location.href = "index.html";
     }
 
@@ -2035,6 +2037,93 @@
       calculateNet();
     }
 
+    // ── Draft autosave (Index only) ─────────────────────────────────
+    // Order စာရိုက်နေရင်း တခြား page ကူးမိ/ ဆွဲမိလို့ ပြန်ရောက်လာရင် စာမပျောက်စေရအောင်
+    // sessionStorage (tab session ပဲ ရှင်၊ browser/tab ပိတ်ရင် အလိုအလျောက် ရှင်းသွား) ထဲ
+    // လက်ရှိ form/cart state ကို ခဏခဏ သိမ်းထား — page ပြန်လာချိန် ပြန်ဖြည့်ပေး။
+    var DRAFT_KEY = "ssm_indexDraft";
+    function collectDraft() {
+      try {
+        var g = function (id) { var el = document.getElementById(id); return el ? el.value : ""; };
+        return {
+          t: Date.now(),
+          editIndex: editIndex, editOrderNo: window.editOrderNo || null, editOrderDate: window.editOrderDate || null,
+          staff: g("staff"), name: g("name"), phone: g("phone"), address: g("address"),
+          township: g("township"), receiverName: g("receiverName"), receiverPhone: g("receiverPhone"),
+          receiverAddress: g("receiverAddress"), orderapp: g("orderapp"), delivery: g("delivery"),
+          deliveryService: g("deliveryService"), note: g("note"), discountValue: g("discountValue"),
+          items: items, grandTotal: grandTotal, selectedPayments: selectedPayments
+        };
+      } catch (e) { return null; }
+    }
+    function saveDraftNow() {
+      try {
+        var d = collectDraft();
+        // စာရင်း/ item တစ်ခုမှ မရှိသေးရင် (form အလွတ်) သိမ်းစရာမလို
+        var hasContent = d && ((d.items && d.items.length) || d.name || d.phone || d.address);
+        if (hasContent) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+        else sessionStorage.removeItem(DRAFT_KEY);
+      } catch (e) {}
+    }
+    function clearDraft() { try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+
+    function restoreDraftIfAny() {
+      var raw; try { raw = sessionStorage.getItem(DRAFT_KEY); } catch (e) { raw = null; }
+      if (!raw) return false;
+      var d; try { d = JSON.parse(raw); } catch (e) { return false; }
+      if (!d) return false;
+
+      var set = function (id, v) { var el = document.getElementById(id); if (el) el.value = v || ""; };
+      editIndex           = d.editIndex != null ? d.editIndex : null;
+      window.editOrderNo   = d.editOrderNo   || null;
+      window.editOrderDate = d.editOrderDate || null;
+
+      set("staff", d.staff); set("name", d.name); set("phone", d.phone); set("address", d.address);
+      set("township", d.township); set("receiverName", d.receiverName); set("receiverPhone", d.receiverPhone);
+      set("receiverAddress", d.receiverAddress); set("orderapp", d.orderapp); set("delivery", d.delivery);
+      set("deliveryService", d.deliveryService); set("note", d.note); set("discountValue", d.discountValue);
+
+      if (d.receiverName || d.receiverPhone || d.receiverAddress) {
+        var _rBtn = document.getElementById("recipientToggleBtn");
+        var _rSec = document.getElementById("receiverSection");
+        if (_rBtn) _rBtn.classList.add("active");
+        if (_rSec) _rSec.style.display = "";
+      }
+
+      selectedPayments = d.selectedPayments || [];
+      renderPaySummary();
+
+      items = [];
+      grandTotal = 0;
+      document.getElementById("saleTable").innerHTML = "";
+      (d.items || []).forEach(function (item) {
+        items.push(item);
+        grandTotal += Number(item.total) || 0;
+
+        let giftTag = item.isGift ? " " + ssmIcon("gift",{size:12}) : "";
+        var _sub2 = (item.saleType === "weight")
+          ? (item.weightText ? item.weightText : ((item.size || "") + " | " + item.qty + " x " + item.price))
+          : ((item.isGift ? "လက်ဆောင် | " : "") + item.qty + " x " + item.price);
+        document.getElementById("saleTable").innerHTML += `
+          <div class="rcart-item" data-id="${item.id}" data-total="${item.total}">
+            <div class="rcart-main">
+              <div class="item-name">${item.product}${giftTag}</div>
+              <div class="item-sub"><span>${_sub2}</span><span>${item.total}</span></div>
+              ${item.remark ? `<div class="item-remark">${ssmIcon("back",{size:10})} ${item.remark}</div>` : ""}
+            </div>
+            <span class="rcart-act no-print"><button class="cart-edit" onclick="editRow(this)" aria-label="Edit">${ssmIcon("edit",{size:15})}</button><button class="cart-del" onclick="deleteRow(this)" aria-label="Delete">${ssmIcon("trash",{size:15})}</button></span>
+          </div>`;
+      });
+
+      document.getElementById("grandTotal").innerHTML = "Total : " + grandTotal;
+      calculateNet();
+      return true;
+    }
+
+    // Page ဆွဲမိ/ tab ပြောင်း/ တခြား page ကူးမိတိုင်း လက်ရှိစာရင်းကို ခဏသိမ်းထား
+    window.addEventListener("pagehide", saveDraftNow);
+    document.addEventListener("visibilitychange", function () { if (document.hidden) saveDraftNow(); });
+
     // ── Parcel Alert ──────────────────────────────────────────────
     function loadParcelAlert() {
       let salesHistory = JSON.parse(localStorage.getItem("salesHistory")) || [];
@@ -2070,7 +2159,7 @@
     // ── Init ──────────────────────────────────────────────────────
     loadStaffDropdown();
     loadProductsDropdown();
-    loadEditReceipt();
+    if (!restoreDraftIfAny()) loadEditReceipt();   // draft ရှိရင် ဒါကို ပဲယူ (edit-in-progress ပါ ပါပါမယ်) — မရှိမှ edit-deep-link ကို ပုံမှန်စစ်
     updateCartCount();
     loadParcelAlert();
 
