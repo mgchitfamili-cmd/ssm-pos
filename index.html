@@ -276,6 +276,11 @@
     }
     input[readonly]{ background:#f4f5f7; color:var(--ink-2); }
     textarea{ min-height:62px; resize:vertical; display:block; }
+    textarea.autoexpand{
+      min-height:45.75px; height:45.75px; resize:none; overflow:hidden;
+      white-space:pre-wrap; word-wrap:break-word; overflow-wrap:break-word;
+      font-family:inherit;
+    }
     ::placeholder{ color:var(--ink-3); }
 
     .row{ display:flex; gap:10px; }
@@ -747,7 +752,7 @@
           <input id="phone" placeholder="ဖုန်း">
         </div>
         <div class="field">
-          <input id="address" placeholder="လိပ်စာ">
+          <textarea id="address" class="autoexpand" placeholder="လိပ်စာ" rows="1" oninput="autoExpand(this)"></textarea>
         </div>
         <div class="field">
           <div class="row">
@@ -780,7 +785,7 @@
             <input id="receiverPhone" placeholder="လက်ခံသူ ဖုန်း">
           </div>
           <div class="field">
-            <input id="receiverAddress" placeholder="လက်ခံသူ လိပ်စာ">
+            <textarea id="receiverAddress" class="autoexpand" placeholder="လက်ခံသူ လိပ်စာ" rows="1" oninput="autoExpand(this)"></textarea>
           </div>
         </div>
           </div>
@@ -955,6 +960,14 @@
   </div>
 
     <script>
+
+    // Auto-grow address textareas downward as text wraps, instead of
+    // scrolling sideways like a single-line input.
+    function autoExpand(el) {
+      if (!el) return;
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    }
 
     // Safety net: if icons.js failed to load or hasn't defined ssmIcon yet,
     // fall back to a plain-text glyph instead of throwing a ReferenceError.
@@ -1999,10 +2012,12 @@
       document.getElementById("name").value            = receipt.customer        || "";
       document.getElementById("phone").value           = receipt.phone           || "";
       document.getElementById("address").value         = receipt.address         || "";
+      autoExpand(document.getElementById("address"));
       document.getElementById("township").value        = receipt.township        || "";
       document.getElementById("receiverName").value    = receipt.receiverName    || "";
       document.getElementById("receiverPhone").value   = receipt.receiverPhone   || "";
       document.getElementById("receiverAddress").value = receipt.receiverAddress || "";
+      autoExpand(document.getElementById("receiverAddress"));
       if (receipt.receiverName || receipt.receiverPhone || receipt.receiverAddress) {
         var _rBtn = document.getElementById("recipientToggleBtn");
         var _rSec = document.getElementById("receiverSection");
