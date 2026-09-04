@@ -406,10 +406,12 @@
     }
     .add-btn:active{ background:linear-gradient(180deg, #8f72c9 0%, #6244ab 55%, #442c82 100%) !important; }
     /* Weight / Unit segmented switch */
-    .seg-toggle{ display:flex; flex:1; min-width:120px; gap:3px; padding:3px;
+    .seg-toggle{ display:flex; align-items:center; flex:1; min-width:120px; gap:3px; padding:3px;
+      height:45.75px; box-sizing:border-box;
       background:var(--brand-tint); border:1px solid var(--line-2); border-radius:var(--r-sm); }
-    .seg-opt{ flex:1; border:none; background:transparent; color:var(--ink-3);
-      font-size:14px; font-weight:700; padding:9px 6px; border-radius:calc(var(--r-sm) - 3px);
+    .seg-opt{ flex:1; height:100%; display:flex; align-items:center; justify-content:center;
+      border:none; background:transparent; color:var(--ink-3);
+      font-size:14px; font-weight:700; padding:0 6px; border-radius:calc(var(--r-sm) - 3px);
       cursor:pointer; white-space:nowrap; transition:background .15s, color .15s; }
     .seg-opt.active{ background:var(--brand); color:#fff; box-shadow:0 2px 6px rgba(91,59,138,.28); }
     .seg-opt.seg-disabled{ opacity:.32; pointer-events:none; }
@@ -857,7 +859,16 @@
         </div>
 
         <div class="field">
-          <input id="remark" placeholder="Remark">
+          <div class="row">
+            <div class="seg-toggle" id="flavorToggle">
+              <button type="button" class="seg-opt" data-v="sweet" onclick="setFlavor('sweet')">အချို</button>
+              <button type="button" class="seg-opt" data-v="spicy" onclick="setFlavor('spicy')">အစပ်</button>
+            </div>
+            <div>
+              <input id="remark" placeholder="Remark">
+            </div>
+          </div>
+          <input type="hidden" id="flavor" value="">
         </div>
 
         <button class="add-btn" onclick="addItem()"><span data-icon="add" data-icon-size="16"></span> Add Item</button>
@@ -1386,6 +1397,17 @@
       if (c) c.textContent = items.length;
     }
 
+    // ── Sweet / Spicy flavor toggle (click again to clear) ─────────
+    function setFlavor(v) {
+      var fEl = document.getElementById("flavor");
+      if (!fEl) return;
+      var next = (fEl.value === v) ? "" : v;
+      fEl.value = next;
+      document.querySelectorAll("#flavorToggle .seg-opt").forEach(function (b) {
+        b.classList.toggle("active", b.dataset.v === next);
+      });
+    }
+
     function addItem() {
       let product   = document.getElementById("product").value;
       let saleType  = document.getElementById("saleType").value;
@@ -1395,6 +1417,8 @@
       let price     = Number(document.getElementById("price").value);
       let qty       = Number(document.getElementById("qty").value);
       let remark    = document.getElementById("remark").value;
+      let flavorEl  = document.getElementById("flavor");
+      let flavor    = flavorEl ? flavorEl.value : "";
       let total     = Number(document.getElementById("itemTotal").value);
 
       // Size / Unit label
@@ -1430,7 +1454,8 @@
         price, qty, remark, total,
         weightText: weightText,
         isGift: isGift,
-        repPrice: repPrice
+        repPrice: repPrice,
+        flavor: flavor
       };
 
       items.push(item);
@@ -1439,6 +1464,7 @@
 
       let giftTag = isGift ? " " + ssmIcon("gift",{size:12}) : "";
       let repTag  = repPrice ? " " + ssmIcon("tag",{size:12}) : "";
+      let flavorTag = flavor === "sweet" ? " (အချို)" : (flavor === "spicy" ? " (အစပ်)" : "");
 
       var _sub = (saleType === "weight")
         ? weightText
@@ -1447,7 +1473,7 @@
         document.getElementById("saleTable").innerHTML += `
           <div class="rcart-item" data-id="${item.id}" data-total="${total}">
             <div class="rcart-main">
-              <div class="item-name">${product}${giftTag}${repTag}</div>
+              <div class="item-name">${product}${giftTag}${repTag}${flavorTag}</div>
               <div class="item-sub"><span>${_sub}</span><span>${total}</span></div>
               ${remark ? `<div class="item-remark">${ssmIcon("back",{size:10})} ${remark}</div>` : ""}
             </div>
@@ -1469,6 +1495,8 @@
       document.getElementById("remark").value    = "";
       document.getElementById("itemTotal").value = "";
       document.getElementById("isGift").checked  = false;
+      if (flavorEl) flavorEl.value = "";
+      document.querySelectorAll("#flavorToggle .seg-opt").forEach(function (b) { b.classList.remove("active"); });
       if (document.getElementById("repPrice")) document.getElementById("repPrice").checked = false;
       setSaleTypeAvail(true, true);   // toggle ပြန် fresh (Weight, both enable)
       saleTypeChanged();
@@ -1499,6 +1527,13 @@
       var pr = document.getElementById("price");   if (pr) pr.value = it.price;
       var q  = document.getElementById("qty");     if (q)  q.value  = it.qty;
       var rm = document.getElementById("remark");  if (rm) rm.value = it.remark || "";
+      var fl = document.getElementById("flavor");
+      if (fl) {
+        fl.value = it.flavor || "";
+        document.querySelectorAll("#flavorToggle .seg-opt").forEach(function (b) {
+          b.classList.toggle("active", b.dataset.v === (it.flavor || ""));
+        });
+      }
       var g  = document.getElementById("isGift");  if (g)  g.checked = !!it.isGift;
       var rp = document.getElementById("repPrice"); if (rp) rp.checked = !!it.repPrice;
       if (typeof calculateItemTotal === "function") calculateItemTotal();
@@ -1623,28 +1658,15 @@
     }
 
     // ── Promo Discount Rule ────────────────────────────────────────
-    // 7000 ကျပ်တန် item (product တူ/မတူ) — ကိုယ်စားလှယ်ဈေး (repPrice) မဟုတ်တဲ့
-    // item တွေကိုသာ ရေတွက်သည် (ကိုယ်စားလှယ်ဈေးက 10% လျော့ပြီးသားဖြစ်၍ ဒီ promo
-    // rule 2 ခုနှင့် မသက်ဆိုင်) — unit အရေအတွက် စုစုပေါင်းအလိုက်:
-    //   • 10 ခု (နှင့်အထက်) ရောက်ရင် → item အားလုံးကို 1 ခုလျှင် 6500 နှုန်း
-    //     ဖြစ်အောင် (count × 500) discount ပေး (10 ခု=5000, 12 ခု=6000, ...)
-    //   • 10 ခု မပြည့်သေးရင် → ၃ ခုစီအတွက် 1000 discount (3-ခု rule)
+    // (3-ခု rule / 10-ခု rule ပယ်ဖျက်လိုက်ပါပြီ — discount field ကို auto
+    //  ဖြည့်တော့မည် မဟုတ်ပါ၊ manual ရိုက်ထည့်ရန်သာ ကျန်ရှိပါသည်)
     function computePromoDiscount() {
-      var count = 0;
-      items.forEach(function (it) {
-        if (it.repPrice) return;   // ကိုယ်စားလှယ်ဈေး item များကို promo မှ ချန်
-        if (Number(it.price) === 7000) count += Number(it.qty) || 0;
-      });
-      if (count >= 10) return count * 500;
-      return Math.floor(count / 3) * 1000;
+      return 0;
     }
 
-    // items ပြောင်းတိုင်း (add/delete) ခေါ်ပြီး discount field ကို auto ဖြည့်ပေးသည်
+    // items ပြောင်းတိုင်း ခေါ်နေသော်လည်း promo auto-fill logic ဖျက်ထားပါပြီ
     function applyPromoDiscount() {
-      var dv = document.getElementById("discountValue");
-      if (!dv) return;
-      var promo = computePromoDiscount();
-      dv.value = promo > 0 ? promo : "";
+      // no-op — auto discount ပယ်ဖျက်ထားသည်
     }
 
     // ── On-page message banner (alert() can be suppressed on mobile) ──
@@ -1805,7 +1827,8 @@
       let itemHtml = "";
       data.items.forEach(function (item) {
         let giftTag = item.isGift ? " " + ssmIcon("gift",{size:12}) + "(လက်ဆောင်)" : "";
-        itemHtml += `<p>${item.product}${giftTag} | ${item.size} | ${item.qty} x ${item.price} = ${item.total}</p>`;
+        let flavorTag3 = item.flavor === "sweet" ? " (အချို)" : (item.flavor === "spicy" ? " (အစပ်)" : "");
+        itemHtml += `<p>${item.product}${giftTag}${flavorTag3} | ${item.size} | ${item.qty} x ${item.price} = ${item.total}</p>`;
       });
       document.getElementById("rp-items").innerHTML = itemHtml;
 
@@ -2017,13 +2040,14 @@
         grandTotal += Number(item.total);
 
         let giftTag = item.isGift ? " " + ssmIcon("gift",{size:12}) : "";
+        let flavorTag2 = item.flavor === "sweet" ? " (အချို)" : (item.flavor === "spicy" ? " (အစပ်)" : "");
         var _sub2 = (item.saleType === "weight")
           ? (item.weightText ? item.weightText : ((item.size || "") + " | " + item.qty + " x " + item.price))
           : ((item.isGift ? "လက်ဆောင် | " : "") + item.qty + " x " + item.price);
         document.getElementById("saleTable").innerHTML += `
           <div class="rcart-item" data-id="${item.id}" data-total="${item.total}">
             <div class="rcart-main">
-              <div class="item-name">${item.product}${giftTag}</div>
+              <div class="item-name">${item.product}${giftTag}${flavorTag2}</div>
               <div class="item-sub"><span>${_sub2}</span><span>${item.total}</span></div>
               ${item.remark ? `<div class="item-remark">${ssmIcon("back",{size:10})} ${item.remark}</div>` : ""}
             </div>

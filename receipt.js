@@ -142,13 +142,14 @@
     var itemHtml = "";
     (sale.items || []).forEach(function (item) {
       var giftTag = item.isGift ? " \uD83C\uDF81" : "";
+      var flavorTag = item.flavor === "sweet" ? " (\u1021\u1001\u103B\u102D\u102F)" : (item.flavor === "spicy" ? " (\u1021\u1005\u1015\u103A)" : "");
       var subText = "";
       if (item.saleType === "weight") {
         subText = item.weightText ? item.weightText : ((item.size || "") + " | " + item.qty + " x " + item.price);
       } else {
         subText = (item.isGift ? "\u101C\u1000\u103A\u1006\u1031\u102C\u1004\u103A | " : "") + item.qty + " x " + item.price;
       }
-      itemHtml += '<div class="item-name mm">' + item.product + giftTag + '</div>';
+      itemHtml += '<div class="item-name mm">' + item.product + giftTag + flavorTag + '</div>';
       itemHtml += '<div class="item-sub mm"><span>' + subText + '</span><span>' + fmt(item.total) + '</span></div>';
       if (item.remark) {
         itemHtml += '<div class="item-remark mm">\u2192 ' + item.remark + '</div>';
